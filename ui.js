@@ -79,6 +79,12 @@ window.ElectronCloud.UI.init = function() {
         });
     }
     
+    // 手势控制按钮逻辑
+    const gestureBtn = document.getElementById('gesture-control-btn');
+    if (gestureBtn) {
+        gestureBtn.addEventListener('click', window.ElectronCloud.UI.onGestureButtonClick);
+    }
+    
     if (ui.plotTypeSelect) {
         ui.plotTypeSelect.addEventListener('change', () => {
             window.ElectronCloud.Orbital.drawProbabilityChart();
@@ -802,5 +808,87 @@ window.ElectronCloud.UI.updateFullscreenBtnState = function() {
     } else {
         fullscreenBtn.disabled = false;
         fullscreenBtn.title = document.fullscreenElement ? '退出全屏' : '全屏模式';
+    }
+};
+
+// 启用手势按钮
+window.ElectronCloud.UI.enableGestureButton = function() {
+    const btn = document.getElementById('gesture-control-btn');
+    if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.title = '手势控制';
+    }
+};
+
+// 禁用手势按钮
+window.ElectronCloud.UI.disableGestureButton = function() {
+    const btn = document.getElementById('gesture-control-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+        btn.title = '手势控制 (渲染完成后可用)';
+        
+        // 如果正在运行手势，停止它
+        if (window.ElectronCloud.Gesture && window.ElectronCloud.Gesture.stop) {
+            window.ElectronCloud.Gesture.stop();
+        }
+    }
+};
+
+// 手势按钮点击处理
+window.ElectronCloud.UI.onGestureButtonClick = function() {
+    // 1. 进入全屏
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+    }
+    
+    // 2. 收起两侧面板
+    const controlPanel = document.getElementById('control-panel');
+    const dataPanel = document.getElementById('data-panel');
+    if (controlPanel) controlPanel.classList.add('collapsed');
+    if (dataPanel) dataPanel.classList.add('collapsed');
+    
+    // 3. 开启"固定至中心"
+    const centerLock = document.getElementById('center-lock');
+    if (centerLock && !centerLock.checked) {
+        centerLock.checked = true;
+        // 触发 change 事件以应用逻辑
+        centerLock.dispatchEvent(new Event('change'));
+    }
+    
+    // 4. 调整视角 (缩放至合适大小)
+    const state = window.ElectronCloud.state;
+    if (state.controls) {
+        // 重置相机位置或调整距离
+        // 假设合适的大小是能看到整个电子云
+        // farthestDistance 是电子云半径
+        // 相机距离应该 > farthestDistance
+        if (state.farthestDistance > 0) {
+            // 简单的调整：将相机移动到 z 轴上合适距离
+            // 保持当前角度可能更好，只调整距离
+            // state.controls.reset(); // reset 会回到初始位置 (0,0,40)
+            
+            // 计算合适距离
+            const targetDist = state.farthestDistance * 2.5;
+            
+            // 获取当前方向向量
+            const vec = new THREE.Vector3().copy(state.camera.position).sub(state.controls.target);
+            vec.normalize().multiplyScalar(targetDist);
+            
+            state.camera.position.copy(state.controls.target).add(vec);
+            state.controls.update();
+        }
+    }
+    
+    // 5. 开始手势识别
+    if (window.ElectronCloud.Gesture && window.ElectronCloud.Gesture.start) {
+        window.ElectronCloud.Gesture.start();
+    } else {
+        console.error("Gesture module not loaded");
     }
 };

@@ -42,6 +42,36 @@ body {
     transform: none;
 }
 
+#gesture-control-btn {
+    position: absolute;
+    top: 20px;
+    left: 70px;
+    z-index: 1000;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-color: rgba(40, 40, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#gesture-control-btn:hover {
+    background-color: rgba(60, 60, 60, 0.9);
+    transform: scale(1.05);
+}
+
+#gesture-control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .panel {
     position: absolute;
     bottom: 20px;
@@ -759,4 +789,35 @@ select[multiple] option.orbital-visible {
     background-color: #1a1a1a;
     color: #e0e0e0;
     padding: 8px;
+}
+
+.gesture-popup {
+    position: absolute;
+    top: 80px; /* 避开全屏按钮 */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999; /* 确保最高层级 */
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    transition: opacity 0.3s;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: red;
+    box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+}
+
+#gesture-status-text {
+    font-size: 14px;
+    font-weight: bold;
 }

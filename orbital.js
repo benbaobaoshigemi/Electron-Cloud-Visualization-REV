@@ -95,6 +95,9 @@ window.ElectronCloud.Orbital.startDrawing = function() {
     // 更新全屏按钮状态
     window.ElectronCloud.UI.updateFullscreenBtnState();
     
+    // 禁用手势按钮
+    window.ElectronCloud.UI.disableGestureButton();
+    
     // 更新角向分布叠加
     const angular3dToggle = ui.angular3dToggle;
     if (angular3dToggle && angular3dToggle.checked) {

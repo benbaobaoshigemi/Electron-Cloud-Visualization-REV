@@ -227,6 +227,9 @@ window.ElectronCloud.Scene.onSamplingCompleted = function() {
 
     // 更新全屏按钮状态
     window.ElectronCloud.UI.updateFullscreenBtnState();
+
+    // 启用手势按钮
+    window.ElectronCloud.UI.enableGestureButton();
 };
 
 // 清除场景中的点云

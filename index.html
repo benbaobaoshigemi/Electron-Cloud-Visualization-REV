@@ -8,6 +8,11 @@
 </head>
 <body>
     <button id="app-fullscreen-btn" title="全屏模式">⛶</button>
+    <button id="gesture-control-btn" title="手势控制 (渲染完成后可用)" disabled style="opacity: 0.5; cursor: not-allowed;">🖐</button>
+    <div id="gesture-status-popup" class="gesture-popup" style="display: none;">
+        <div class="status-indicator"></div>
+        <span id="gesture-status-text">等待手势...</span>
+    </div>
     <div id="container"></div>
     <div id="control-panel" class="panel">
         <div class="panel-tab" id="control-panel-tab" title="点击展开控制面板">◂ 控制</div>
@@ -165,6 +170,16 @@
     <script src="sampling.js"></script>
     <script src="visualization.js"></script>
     <script src="ui.js"></script>
+    <script type="module" src="gesture.js"></script>
+    <script>
+        // 环境检测
+        if (window.location.protocol === 'file:') {
+            const div = document.createElement('div');
+            div.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:white;text-align:center;padding:10px;z-index:99999;font-weight:bold;';
+            div.innerHTML = '警告：检测到您正在直接打开 HTML 文件。手势识别功能需要 HTTP 服务器环境。<br>请运行文件夹中的 <code>start_server.py</code> 脚本，或使用 VS Code Live Server。';
+            document.body.appendChild(div);
+        }
+    </script>
     <script src="main.js"></script>
 </body>
 </html>

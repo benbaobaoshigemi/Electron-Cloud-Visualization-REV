@@ -380,7 +380,7 @@ window.ElectronCloud.UI.onMultiselectToggle = function() {
         if (ui.orbitalSelect) {
             ui.orbitalSelect.style.pointerEvents = 'auto';
             ui.orbitalSelect.multiple = false;
-            ui.orbitalSelect.removeAttribute('size');
+            ui.orbitalSelect.size = 6; // 保持列表样式
         }
         
         // 清除强制样式类
@@ -455,7 +455,7 @@ window.ElectronCloud.UI.onCompareToggle = function() {
         // 重新启用显示开关功能
         window.ElectronCloud.UI.enableAngular3DToggle();
         
-        if (label) label.textContent = '选择轨道:';
+        if (label) label.textContent = '选择轨道';
         if (controlPanel) {
             controlPanel.classList.remove('multiselect-active');
             controlPanel.classList.remove('compare-active');
@@ -464,7 +464,7 @@ window.ElectronCloud.UI.onCompareToggle = function() {
         if (ui.orbitalSelect) {
             ui.orbitalSelect.style.pointerEvents = 'auto';
             ui.orbitalSelect.multiple = false; // 关闭多选模式
-            ui.orbitalSelect.removeAttribute('size'); // 恢复默认下拉样式
+            ui.orbitalSelect.size = 6; // 保持列表样式
         }
         
         // 清除强制样式类

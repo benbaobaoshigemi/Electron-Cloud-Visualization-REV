@@ -314,8 +314,24 @@ select:focus, input:focus, button:focus {
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
 }
 
+/* 带 size 属性的 select 元素（列表样式） */
+.control-group select[size] {
+    width: 100%; /* 占满容器宽度 */
+    max-width: 200px; /* 限制最大宽度 */
+    background-color: rgba(20, 20, 20, 0.95) !important;
+    padding: 6px;
+    height: auto;
+    min-height: 120px;
+    max-height: 200px;
+    overflow-y: auto;
+    text-align: center;
+    appearance: listbox;
+    -webkit-appearance: listbox;
+}
+
 .control-group select[multiple]{
     width: 100%; /* 占满容器宽度 */
+    max-width: 200px; /* 限制最大宽度 */
     background-color: rgba(20, 20, 20, 0.95) !important;
     padding: 6px;
     height: 200px; /* 增加高度以容纳更多选项 */

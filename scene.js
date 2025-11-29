@@ -17,7 +17,13 @@ window.ElectronCloud.Scene.init = function() {
 
     // 渲染器
     const container = document.getElementById('container');
-    state.renderer = new THREE.WebGLRenderer({ antialias: true });
+    // 开启 alpha: true 以支持透明背景截图
+    // 开启 preserveDrawingBuffer: true 以支持 toDataURL 导出图片
+    state.renderer = new THREE.WebGLRenderer({ 
+        antialias: true, 
+        alpha: true,
+        preserveDrawingBuffer: true 
+    });
     state.renderer.setSize(window.innerWidth, window.innerHeight);
     state.renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(state.renderer.domElement);

@@ -230,3 +230,92 @@ window.ElectronCloud.Visualization.createAngularOverlayFromSamples = function() 
     
     return overlayGroup;
 };
+
+// 导出8K高清透明背景截图
+window.ElectronCloud.Visualization.exportImage = function() {
+    console.log('开始导出8K图片...');
+    const state = window.ElectronCloud.state;
+    
+    if (!state.renderer || !state.scene || !state.camera) {
+        console.error('导出失败: 渲染器或场景未初始化');
+        alert('导出失败: 渲染器未就绪，请等待页面完全加载后重试');
+        return;
+    }
+
+    const renderer = state.renderer;
+    const camera = state.camera;
+    const scene = state.scene;
+
+    // 保存原始尺寸和像素比
+    const originalSize = new THREE.Vector2();
+    renderer.getSize(originalSize);
+    const originalPixelRatio = renderer.getPixelRatio();
+
+    // 8K 分辨率: 7680 x 4320
+    const exportWidth = 7680;
+    const exportHeight = 4320;
+
+    try {
+        // 临时调整渲染器尺寸为8K
+        renderer.setSize(exportWidth, exportHeight);
+        renderer.setPixelRatio(1);
+        
+        // 更新相机宽高比
+        camera.aspect = exportWidth / exportHeight;
+        camera.updateProjectionMatrix();
+
+        // 渲染高清帧
+        renderer.render(scene, camera);
+
+        // 获取 Data URL
+        const canvas = renderer.domElement;
+        console.log('导出尺寸:', canvas.width, 'x', canvas.height);
+        
+        let dataURL;
+        try {
+            dataURL = canvas.toDataURL('image/png');
+        } catch (securityError) {
+            console.error('Canvas toDataURL 安全错误:', securityError);
+            alert('导出失败：浏览器安全策略阻止了图片导出。');
+            return;
+        }
+        
+        // 检查 dataURL 是否有效
+        if (!dataURL || dataURL === 'data:,' || dataURL.length < 100) {
+            console.error('生成的 dataURL 无效');
+            alert('导出失败：生成的图片数据无效，请重试');
+            return;
+        }
+
+        // 创建下载链接
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `electron-cloud-8K-${timestamp}.png`;
+        link.download = filename;
+        link.href = dataURL;
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+            document.body.removeChild(link);
+        }, 100);
+
+        console.log('已导出8K截图:', filename);
+
+    } catch (err) {
+        console.error('导出截图失败:', err);
+        alert('导出截图失败: ' + (err.message || '未知错误'));
+    } finally {
+        // 恢复原始尺寸和像素比
+        renderer.setSize(originalSize.x, originalSize.y);
+        renderer.setPixelRatio(originalPixelRatio);
+        
+        // 恢复相机宽高比
+        camera.aspect = originalSize.x / originalSize.y;
+        camera.updateProjectionMatrix();
+        
+        // 重新渲染一帧恢复显示
+        renderer.render(scene, camera);
+    }
+};

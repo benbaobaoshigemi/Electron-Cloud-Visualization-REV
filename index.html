@@ -8,12 +8,56 @@
 </head>
 <body>
     <button id="app-fullscreen-btn" title="全屏模式">⛶</button>
-    <button id="gesture-control-btn" title="手势控制 (渲染完成后可用)" disabled style="opacity: 0.5; cursor: not-allowed;">🖐</button>
-    <div id="gesture-status-popup" class="gesture-popup" style="display: none; position: fixed; top: 20px; right: 20px; left: auto; transform: none;">
+    
+    <!-- 右上角手势状态图标 (默认隐藏) -->
+    <div id="gesture-status-icon" title="手势控制运行中" style="display: none;">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path>
+            <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"></path>
+            <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"></path>
+            <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path>
+        </svg>
+    </div>
+
+    <div id="gesture-status-popup" class="gesture-popup" style="display: none; position: fixed; top: 20px; right: 60px; left: auto; transform: none;">
         <div class="status-indicator"></div>
         <span id="gesture-status-text">等待手势...</span>
     </div>
     <div id="container"></div>
+
+    <!-- 实验功能面板 -->
+    <div id="experimental-panel" class="panel collapsed">
+        <div class="panel-tab" id="experimental-panel-tab" title="点击展开实验功能">实验 ◂</div>
+        <div class="panel-content">
+            <div class="panel-header">
+                <h3>实验功能</h3>
+                <div>
+                    <button id="experimental-collapse-btn" class="collapse-btn" title="收起">▸</button>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div class="control-group action-buttons">
+                    <button id="gesture-control-btn" title="手势控制 (渲染完成后可用)" disabled>
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path>
+                            <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"></path>
+                            <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"></path>
+                            <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path>
+                        </svg>
+                        <span>手势控制</span>
+                    </button>
+                    <button id="export-image-btn" title="导出4K透明背景截图">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        <span>导出图片</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="control-panel" class="panel">
         <div class="panel-tab" id="control-panel-tab" title="点击展开控制面板">◂ 控制</div>
         <div class="panel-content">

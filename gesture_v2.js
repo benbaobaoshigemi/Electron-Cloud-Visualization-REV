@@ -727,6 +727,12 @@ window.ElectronCloud.Gesture.start = async function() {
             popup.style.display = 'flex';
             popup.style.zIndex = '9999';
         }
+
+        // 显示右上角状态图标
+        const statusIcon = document.getElementById('gesture-status-icon');
+        if (statusIcon) {
+            statusIcon.style.display = 'flex';
+        }
         
         updateStatus("🖐️ 就绪\n捏合拇指食指开始", 'ready');
         
@@ -767,6 +773,12 @@ window.ElectronCloud.Gesture.stop = function() {
     
     const popup = document.getElementById('gesture-status-popup');
     if (popup) popup.style.display = 'none';
+
+    // 隐藏右上角状态图标
+    const statusIcon = document.getElementById('gesture-status-icon');
+    if (statusIcon) {
+        statusIcon.style.display = 'none';
+    }
     
     if (canvasElement && canvasCtx) {
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);

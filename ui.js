@@ -52,6 +52,41 @@ window.ElectronCloud.UI.init = function() {
         });
     }
 
+    // 实验功能面板折叠逻辑
+    const experimentalPanel = document.getElementById('experimental-panel');
+    const experimentalCollapseBtn = document.getElementById('experimental-collapse-btn');
+    const experimentalPanelTab = document.getElementById('experimental-panel-tab');
+
+    if (experimentalPanel && experimentalCollapseBtn && experimentalPanelTab) {
+        experimentalCollapseBtn.addEventListener('click', () => {
+            experimentalPanel.classList.add('collapsed');
+        });
+
+        experimentalPanelTab.addEventListener('click', () => {
+            experimentalPanel.classList.remove('collapsed');
+        });
+    }
+
+    // 导出图片按钮逻辑
+    const exportImageBtn = document.getElementById('export-image-btn');
+    if (exportImageBtn) {
+        exportImageBtn.addEventListener('click', window.ElectronCloud.Visualization.exportImage);
+    }
+
+    // 手势状态图标点击逻辑 (停止手势)
+    const gestureStatusIcon = document.getElementById('gesture-status-icon');
+    if (gestureStatusIcon) {
+        gestureStatusIcon.addEventListener('click', () => {
+            if (window.ElectronCloud.Gesture && window.ElectronCloud.Gesture.stop) {
+                window.ElectronCloud.Gesture.stop();
+                // 退出全屏
+                if (document.fullscreenElement) {
+                    document.exitFullscreen().catch(err => console.error(err));
+                }
+            }
+        });
+    }
+
     // 全屏按钮逻辑
     const fullscreenBtn = document.getElementById('app-fullscreen-btn');
     if (fullscreenBtn) {

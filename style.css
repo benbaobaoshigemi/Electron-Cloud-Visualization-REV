@@ -812,10 +812,130 @@ select[multiple] option.orbital-visible {
     padding: 8px;
 }
 
+/* 实验功能按钮样式 */
+#experimental-panel .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#experimental-panel button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#experimental-panel button:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+#experimental-panel button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 重置手势按钮样式 (覆盖原来的绝对定位) */
+#gesture-control-btn {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    z-index: auto !important;
+    font-size: 13px !important;
+}
+
+/* 手势激活状态 */
+#gesture-control-btn.gesture-active {
+    background-color: rgba(0, 180, 0, 0.3) !important;
+    border-color: rgba(0, 255, 0, 0.5) !important;
+    animation: none !important; /* 移除原来的脉冲动画 */
+}
+
+/* 右上角手势状态图标 */
+/* 右上角手势状态图标 */
+#gesture-status-icon {
+    position: absolute;
+    top: 20px;
+    left: 70px; /* 移到全屏图标右侧 (20px + 40px + 10px) */
+    right: auto;
+    z-index: 1000;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-color: rgba(0, 180, 0, 0.8);
+    border: 1px solid rgba(0, 255, 0, 0.5);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    animation: pulse-green 2s infinite;
+    cursor: pointer; /* 添加手型光标 */
+    transition: all 0.2s ease;
+}
+
+#gesture-status-icon:hover {
+    transform: scale(1.05);
+    background-color: rgba(180, 0, 0, 0.8); /* 悬停变红，提示可停止 */
+    border-color: rgba(255, 0, 0, 0.5);
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+}
+
+@keyframes pulse-green {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+    }
+}
+
+/* 实验功能面板 - 与数据面板样式一致 */
+#experimental-panel {
+    top: 80px;
+    right: 20px;
+    bottom: auto;
+    width: 200px;
+    z-index: 1001;
+    padding: 0;
+}
+
+/* 实验面板标签 - 与数据面板一致 */
+#experimental-panel .panel-tab {
+    left: -45px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 8px 0 0 8px;
+    border-right: none;
+}
+
+#experimental-panel .panel-tab:hover {
+    left: -48px;
+}
+
+/* 收起状态：滑出屏幕 - 与数据面板一致 */
+#experimental-panel.collapsed {
+    transform: translateX(calc(100% + 20px));
+}
+
+/* 实验功能面板内容样式 */
+#experimental-panel .panel-content {
+    padding: 20px;
+}
+
 .gesture-popup {
     position: absolute;
     top: 20px;
-    right: 20px;
+    right: 70px; /* 调整位置，避开图标 */
     z-index: 9999; /* 确保最高层级 */
     background-color: rgba(0, 0, 0, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.2);

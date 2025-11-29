@@ -838,8 +838,32 @@ window.ElectronCloud.UI.disableGestureButton = function() {
     }
 };
 
-// 手势按钮点击处理
+// 手势按钮点击处理 - 支持开始和停止切换
 window.ElectronCloud.UI.onGestureButtonClick = function() {
+    // 检查手势识别是否正在运行
+    if (window.ElectronCloud.Gesture && window.ElectronCloud.Gesture.isRunning && window.ElectronCloud.Gesture.isRunning()) {
+        // 正在运行，则停止
+        window.ElectronCloud.Gesture.stop();
+        
+        // 退出全屏
+        if (document.fullscreenElement) {
+            document.exitFullscreen().catch(err => {
+                console.error('退出全屏失败:', err);
+            });
+        }
+        
+        // 更新按钮状态
+        const btn = document.getElementById('gesture-control-btn');
+        if (btn) {
+            btn.classList.remove('gesture-active');
+            btn.title = '手势控制';
+        }
+        
+        console.log('[UI] 手势控制已停止');
+        return;
+    }
+    
+    // 未运行，则启动
     // 1. 进入全屏
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => {
@@ -864,28 +888,23 @@ window.ElectronCloud.UI.onGestureButtonClick = function() {
     // 4. 调整视角 (缩放至合适大小)
     const state = window.ElectronCloud.state;
     if (state.controls) {
-        // 重置相机位置或调整距离
-        // 假设合适的大小是能看到整个电子云
-        // farthestDistance 是电子云半径
-        // 相机距离应该 > farthestDistance
         if (state.farthestDistance > 0) {
-            // 简单的调整：将相机移动到 z 轴上合适距离
-            // 保持当前角度可能更好，只调整距离
-            // state.controls.reset(); // reset 会回到初始位置 (0,0,40)
-            
-            // 计算合适距离
             const targetDist = state.farthestDistance * 2.5;
-            
-            // 获取当前方向向量
             const vec = new THREE.Vector3().copy(state.camera.position).sub(state.controls.target);
             vec.normalize().multiplyScalar(targetDist);
-            
             state.camera.position.copy(state.controls.target).add(vec);
             state.controls.update();
         }
     }
     
-    // 5. 开始手势识别
+    // 5. 更新按钮状态
+    const btn = document.getElementById('gesture-control-btn');
+    if (btn) {
+        btn.classList.add('gesture-active');
+        btn.title = '点击停止手势控制';
+    }
+    
+    // 6. 开始手势识别
     if (window.ElectronCloud.Gesture && window.ElectronCloud.Gesture.start) {
         window.ElectronCloud.Gesture.start();
     } else {

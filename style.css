@@ -72,6 +72,27 @@ body {
     transform: none;
 }
 
+/* 手势控制激活状态 */
+#gesture-control-btn.gesture-active {
+    background-color: rgba(0, 180, 0, 0.8);
+    border-color: rgba(0, 255, 0, 0.5);
+    animation: pulse-green 1.5s infinite;
+}
+
+#gesture-control-btn.gesture-active:hover {
+    background-color: rgba(180, 0, 0, 0.8);
+    border-color: rgba(255, 0, 0, 0.5);
+}
+
+@keyframes pulse-green {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+    }
+}
+
 .panel {
     position: absolute;
     bottom: 20px;

@@ -56,12 +56,19 @@ window.ElectronCloud.Orbital.startDrawing = function() {
 
     // 创建材质
     const sprite = window.ElectronCloud.Scene.generateCircleSprite();
+    
+    // 从亮度滑条计算初始透明度 (0-80 -> 0.05-1.0)
+    const brightnessValue = parseInt(ui.opacityRange.value, 10);
+    const initialOpacity = brightnessValue <= 80 
+        ? 0.05 + (brightnessValue / 80) * 0.95 
+        : 1.0;
+    
     const material = new THREE.PointsMaterial({
         map: sprite,
         size: window.ElectronCloud.UI.getPointSize(),
         transparent: true,
         depthWrite: false,
-        opacity: parseFloat(ui.opacityRange.value),
+        opacity: initialOpacity,
         vertexColors: true
     });
 

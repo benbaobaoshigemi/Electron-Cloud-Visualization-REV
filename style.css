@@ -101,8 +101,12 @@ body {
     backdrop-filter: blur(6px);
     padding: 18px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 20px rgba(100, 150, 255, 0.08),
+        0 0 40px rgba(100, 150, 255, 0.04);
     width: 280px;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-sizing: border-box; /* 确保宽度包含 padding 和 border */
@@ -250,6 +254,8 @@ body {
 
 #data-panel {
     right: 20px;
+    bottom: 20px;
+    top: auto;
     padding: 0;
 }
 
@@ -372,8 +378,8 @@ select:focus, input:focus, button:focus {
     background-color: rgba(20, 20, 20, 0.95) !important;
     padding: 6px;
     height: auto;
-    min-height: 120px;
-    max-height: 200px;
+    min-height: 60px;
+    max-height: 100px;
     overflow-y: auto;
     text-align: center;
     appearance: listbox;
@@ -385,7 +391,7 @@ select:focus, input:focus, button:focus {
     max-width: 200px; /* 限制最大宽度 */
     background-color: rgba(20, 20, 20, 0.95) !important;
     padding: 6px;
-    height: 200px; /* 增加高度以容纳更多选项 */
+    height: 100px; /* 压缩高度到原来一半 */
     overflow-y: auto;
     text-align: left; /* 列表模式下左对齐 */
     appearance: listbox; /* 恢复列表外观 */
@@ -512,6 +518,41 @@ input[type="range"]::-moz-range-thumb {
     cursor: pointer;
     border: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 亮度滑条容器样式 */
+.brightness-control {
+    flex-direction: column;
+    align-items: flex-start !important;
+}
+
+.brightness-control label {
+    margin-bottom: 6px;
+}
+
+.brightness-slider-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.brightness-slider-container input[type="range"] {
+    width: 100%;
+    margin: 0;
+}
+
+/* 80%标记线 */
+.brightness-marker {
+    position: absolute;
+    left: 80%;
+    top: -4px;
+    width: 2px;
+    height: 12px;
+    background: linear-gradient(180deg, rgba(255, 200, 100, 0.9) 0%, rgba(255, 150, 50, 0.7) 100%);
+    border-radius: 1px;
+    pointer-events: none;
+    box-shadow: 0 0 4px rgba(255, 180, 80, 0.5);
 }
 
 /* 拖动句柄样式 */
@@ -932,6 +973,74 @@ select[multiple] option.orbital-visible {
     padding: 20px;
 }
 
+/* 视图面板 - 在控制面板上方 */
+#view-panel {
+    left: 20px;
+    bottom: auto;
+    top: 80px;
+    width: 280px;
+    padding: 0;
+    z-index: 999;
+}
+
+#view-panel .panel-tab {
+    right: -45px;
+    border-radius: 0 8px 8px 0;
+    border-left: none;
+}
+
+#view-panel .panel-tab:hover {
+    right: -48px;
+}
+
+#view-panel.collapsed {
+    transform: translateX(calc(-100% - 20px));
+}
+
+/* 旋转轴输入框样式 */
+.rotation-axis-inputs {
+    flex-direction: column;
+    align-items: flex-start !important;
+}
+
+.rotation-axis-inputs label {
+    margin-bottom: 6px;
+}
+
+.axis-inputs {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+}
+
+.axis-inputs input[type="number"] {
+    width: 100%;
+    flex: 1;
+    padding: 6px 8px;
+    background-color: rgba(25, 25, 25, 0.95) !important;
+    color: #e8e8e8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.axis-inputs input[type="number"]:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* 隐藏number input的spinner */
+.axis-inputs input[type="number"]::-webkit-inner-spin-button,
+.axis-inputs input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.axis-inputs input[type="number"] {
+    -moz-appearance: textfield;
+}
+
 .gesture-popup {
     position: absolute;
     top: 20px;
@@ -960,4 +1069,27 @@ select[multiple] option.orbital-visible {
 #gesture-status-text {
     font-size: 14px;
     font-weight: bold;
+}
+
+/* 右上角当前点数显示 */
+#point-count-display {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 1000;
+    pointer-events: none;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+#point-count-display span {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+}
+
+/* 闪烁模式最大亮度控制 */
+.heartbeat-brightness-control {
+    margin-top: -5px;
 }

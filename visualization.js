@@ -263,9 +263,18 @@ window.ElectronCloud.Visualization.exportImage = function() {
         // 更新相机宽高比
         camera.aspect = exportWidth / exportHeight;
         camera.updateProjectionMatrix();
+        
+        // 更新composer尺寸（如果有）
+        if (state.composer) {
+            state.composer.setSize(exportWidth, exportHeight);
+        }
 
-        // 渲染高清帧
-        renderer.render(scene, camera);
+        // 根据辉光状态选择渲染方式
+        if (state.bloomEnabled && state.composer) {
+            state.composer.render();
+        } else {
+            renderer.render(scene, camera);
+        }
 
         // 获取 Data URL
         const canvas = renderer.domElement;
@@ -311,11 +320,20 @@ window.ElectronCloud.Visualization.exportImage = function() {
         renderer.setSize(originalSize.x, originalSize.y);
         renderer.setPixelRatio(originalPixelRatio);
         
+        // 恢复composer尺寸
+        if (state.composer) {
+            state.composer.setSize(originalSize.x, originalSize.y);
+        }
+        
         // 恢复相机宽高比
         camera.aspect = originalSize.x / originalSize.y;
         camera.updateProjectionMatrix();
         
         // 重新渲染一帧恢复显示
-        renderer.render(scene, camera);
+        if (state.bloomEnabled && state.composer) {
+            state.composer.render();
+        } else {
+            renderer.render(scene, camera);
+        }
     }
 };

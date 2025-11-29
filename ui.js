@@ -163,7 +163,100 @@ window.ElectronCloud.UI.init = function() {
         window.ElectronCloud.UI.onAxesSizeChange({ target: window.ElectronCloud.ui.axesSizeRange });
     }
     
+    // 视图面板折叠逻辑
+    const viewPanel = document.getElementById('view-panel');
+    const viewCollapseBtn = document.getElementById('view-collapse-btn');
+    const viewPanelTab = document.getElementById('view-panel-tab');
+
+    if (viewPanel && viewCollapseBtn && viewPanelTab) {
+        viewCollapseBtn.addEventListener('click', () => {
+            viewPanel.classList.add('collapsed');
+        });
+
+        viewPanelTab.addEventListener('click', () => {
+            viewPanel.classList.remove('collapsed');
+        });
+    }
+    
+    // 旋转轴输入
+    const rotationAxisX = document.getElementById('rotation-axis-x');
+    const rotationAxisY = document.getElementById('rotation-axis-y');
+    const rotationAxisZ = document.getElementById('rotation-axis-z');
+    const rotationSpeedRange = document.getElementById('rotation-speed-range');
+    const rotationSpeedValue = document.getElementById('rotation-speed-value');
+    
+    const updateRotationAxis = () => {
+        const state = window.ElectronCloud.state;
+        const x = parseFloat(rotationAxisX?.value) || 0;
+        const y = parseFloat(rotationAxisY?.value) || 0;
+        const z = parseFloat(rotationAxisZ?.value) || 0;
+        
+        state.autoRotate.axis.set(x, y, z);
+        
+        // 如果有有效轴，显示辅助线
+        if (x !== 0 || y !== 0 || z !== 0) {
+            if (window.ElectronCloud.Scene.showRotationAxisHelper) {
+                window.ElectronCloud.Scene.showRotationAxisHelper(state.autoRotate.axis);
+            }
+        }
+    };
+    
+    if (rotationAxisX) rotationAxisX.addEventListener('change', updateRotationAxis);
+    if (rotationAxisY) rotationAxisY.addEventListener('change', updateRotationAxis);
+    if (rotationAxisZ) rotationAxisZ.addEventListener('change', updateRotationAxis);
+    
+    // 旋转速度滑动条
+    if (rotationSpeedRange) {
+        rotationSpeedRange.addEventListener('input', (e) => {
+            const state = window.ElectronCloud.state;
+            const value = parseFloat(e.target.value);
+            state.autoRotate.speed = value;
+            state.autoRotate.enabled = value > 0;
+            
+            if (rotationSpeedValue) {
+                rotationSpeedValue.textContent = value.toFixed(2);
+            }
+        });
+    }
+    
+    // 心跳模式开关
+    const heartbeatToggle = document.getElementById('heartbeat-toggle');
+    const heartbeatBrightnessControl = document.querySelector('.heartbeat-brightness-control');
+    const heartbeatMaxBrightness = document.getElementById('heartbeat-max-brightness');
+    
+    if (heartbeatToggle) {
+        heartbeatToggle.addEventListener('change', (e) => {
+            const state = window.ElectronCloud.state;
+            state.heartbeat.enabled = e.target.checked;
+            
+            // 显示/隐藏最大亮度控制
+            if (heartbeatBrightnessControl) {
+                heartbeatBrightnessControl.style.display = e.target.checked ? 'flex' : 'none';
+            }
+            
+            // 心跳模式时禁用亮度滑动条
+            if (ui.opacityRange) {
+                ui.opacityRange.disabled = e.target.checked;
+                ui.opacityRange.style.opacity = e.target.checked ? '0.5' : '1';
+            }
+            
+            // 保存当前bloom强度作为基准
+            if (e.target.checked && state.bloomPass) {
+                state.heartbeat.baseStrength = state.bloomPass.strength;
+            }
+        });
+    }
+    
+    // 心跳最大亮度滑动条
+    if (heartbeatMaxBrightness) {
+        heartbeatMaxBrightness.addEventListener('input', (e) => {
+            const state = window.ElectronCloud.state;
+            state.heartbeat.maxBrightness = parseInt(e.target.value, 10);
+        });
+    }
+    
     console.log('UI 事件监听器初始化完成');
+
 };
 
 // 处理坐标系大小调节
@@ -404,8 +497,46 @@ window.ElectronCloud.UI.onOpacityChange = function() {
     const state = window.ElectronCloud.state;
     const ui = window.ElectronCloud.ui;
     
-    if (state.points && state.points.material && ui.opacityRange) {
-        state.points.material.opacity = parseFloat(ui.opacityRange.value);
+    if (!ui.opacityRange) return;
+    
+    const value = parseInt(ui.opacityRange.value, 10); // 0-100
+    
+    // 前80%映射到透明度 (0-80 -> 0.05-1.0)
+    // 后20%映射到辉光强度 (80-100 -> 0-4.5)，使用曲线映射
+    
+    if (value <= 80) {
+        // 透明度区间：0-80 映射到 0.05-1.0
+        const opacity = 0.05 + (value / 80) * 0.95;
+        
+        if (state.points && state.points.material) {
+            state.points.material.opacity = opacity;
+        }
+        
+        // 关闭辉光
+        if (state.bloomPass) {
+            state.bloomPass.strength = 0;
+        }
+        state.bloomEnabled = false;
+        
+    } else {
+        // 辉光区间：80-100 映射到辉光强度 0-4.5 (300%增强)
+        // 使用曲线映射(指数函数)，在低值时能精细调节
+        // 透明度保持最大
+        if (state.points && state.points.material) {
+            state.points.material.opacity = 1.0;
+        }
+        
+        // 开启辉光，使用曲线映射计算强度
+        const glowProgress = (value - 80) / 20; // 0-1
+        // 使用平方曲线: y = x^2，这样小值区间更精细
+        const curvedProgress = glowProgress * glowProgress;
+        const bloomStrength = curvedProgress * 4.5; // 0-4.5 (300%增强)
+        
+        if (state.bloomPass) {
+            state.bloomPass.strength = bloomStrength;
+        }
+        state.bloomEnabled = true;
+        state.bloomStrength = bloomStrength;
     }
 };
 
@@ -464,7 +595,7 @@ window.ElectronCloud.UI.onMultiselectToggle = function() {
         if (ui.orbitalSelect) {
             ui.orbitalSelect.style.pointerEvents = 'auto';
             ui.orbitalSelect.multiple = true;
-            ui.orbitalSelect.size = 10;
+            ui.orbitalSelect.size = 5; // 压缩后的高度
         }
         
         // 多选模式下只禁用3D角向形状开关，保持坐标轴开关可用
@@ -482,7 +613,7 @@ window.ElectronCloud.UI.onMultiselectToggle = function() {
         if (ui.orbitalSelect) {
             ui.orbitalSelect.style.pointerEvents = 'auto';
             ui.orbitalSelect.multiple = false;
-            ui.orbitalSelect.size = 6; // 保持列表样式
+            ui.orbitalSelect.size = 3; // 压缩后的高度
         }
         
         // 清除强制样式类
@@ -540,7 +671,7 @@ window.ElectronCloud.UI.onCompareToggle = function() {
         if (ui.orbitalSelect) {
             ui.orbitalSelect.style.pointerEvents = 'auto';
             ui.orbitalSelect.multiple = true; // 显式开启多选模式
-            ui.orbitalSelect.size = 10; // 确保展开显示
+            ui.orbitalSelect.size = 5; // 压缩后的高度
         }
         
         window.ElectronCloud.UI.updateSelectionCount();
@@ -566,7 +697,7 @@ window.ElectronCloud.UI.onCompareToggle = function() {
         if (ui.orbitalSelect) {
             ui.orbitalSelect.style.pointerEvents = 'auto';
             ui.orbitalSelect.multiple = false; // 关闭多选模式
-            ui.orbitalSelect.size = 6; // 保持列表样式
+            ui.orbitalSelect.size = 3; // 压缩后的高度
         }
         
         // 清除强制样式类

@@ -227,9 +227,6 @@ window.ElectronCloud.Sampling.updateFarthestDistance = function(r) {
     
     if (r > state.farthestDistance) {
         state.farthestDistance = r;
-        if (ui.farthestSpan) {
-            ui.farthestSpan.textContent = state.farthestDistance.toFixed(3);
-        }
         state.samplingBoundary = Math.max(state.samplingBoundary, state.farthestDistance * 1.05);
         
         // 注意：坐标系的实时更新现在主要在动画循环中处理

@@ -76,7 +76,6 @@ window.ElectronCloud.ui = {
     centerLock: document.getElementById('center-lock'),
     sizeSelect: document.getElementById('size-select'),
     opacityRange: document.getElementById('opacity-range'),
-    farthestSpan: document.getElementById('farthest-dist'),
     pauseButton: document.getElementById('pause-button'),
     clearButton: document.getElementById('clear-button'),
     plotTypeSelect: document.getElementById('plot-type-select'),
@@ -162,9 +161,6 @@ window.ElectronCloud.resetState = function() {
     if (window.ElectronCloud.ui.pointCountSpan) {
         window.ElectronCloud.ui.pointCountSpan.textContent = '0';
     }
-    if (window.ElectronCloud.ui.farthestSpan) {
-        window.ElectronCloud.ui.farthestSpan.textContent = '0';
-    }
     if (window.ElectronCloud.ui.axesSizeRange) {
         window.ElectronCloud.ui.axesSizeRange.value = '0';
         // 实际重置坐标轴显示
@@ -222,9 +218,6 @@ window.ElectronCloud.resetSamplingState = function() {
     // 更新UI显示
     if (window.ElectronCloud.ui.pointCountSpan) {
         window.ElectronCloud.ui.pointCountSpan.textContent = '0';
-    }
-    if (window.ElectronCloud.ui.farthestSpan) {
-        window.ElectronCloud.ui.farthestSpan.textContent = '0';
     }
     // 不重置坐标轴滑动条值，保留用户设置
     

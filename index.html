@@ -19,6 +19,9 @@
         </svg>
     </div>
 
+    <!-- 当前点数显示 -->
+    <div id="point-count-display">当前点数 <span id="point-count">0</span></div>
+
     <div id="gesture-status-popup" class="gesture-popup" style="display: none; position: fixed; top: 20px; right: 60px; left: auto; transform: none;">
         <div class="status-indicator"></div>
         <span id="gesture-status-text">等待手势...</span>
@@ -36,6 +39,14 @@
                 </div>
             </div>
             <div class="panel-body">
+                <div class="control-group">
+                    <label for="heartbeat-toggle">闪烁模式</label>
+                    <input type="checkbox" id="heartbeat-toggle" />
+                </div>
+                <div class="control-group heartbeat-brightness-control" style="display: none;">
+                    <label for="heartbeat-max-brightness">最大亮度</label>
+                    <input id="heartbeat-max-brightness" type="range" min="100" max="300" step="10" value="200">
+                </div>
                 <div class="control-group action-buttons">
                     <button id="gesture-control-btn" title="手势控制 (渲染完成后可用)" disabled>
                         <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -46,13 +57,40 @@
                         </svg>
                         <span>手势控制</span>
                     </button>
-                    <button id="export-image-btn" title="导出4K透明背景截图">
+                    <button id="export-image-btn" title="导出8K透明背景截图">
                         <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                             <circle cx="12" cy="13" r="4"></circle>
                         </svg>
                         <span>导出图片</span>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 视图面板 -->
+    <div id="view-panel" class="panel collapsed">
+        <div class="panel-tab" id="view-panel-tab" title="点击展开视图面板">◂ 视图</div>
+        <div class="panel-content">
+            <div class="panel-header">
+                <h3>视图</h3>
+                <div>
+                    <button id="view-collapse-btn" class="collapse-btn" title="收起">▸</button>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div class="control-group rotation-axis-inputs">
+                    <label>旋转轴</label>
+                    <div class="axis-inputs">
+                        <input type="number" id="rotation-axis-x" value="0" step="0.1" placeholder="X">
+                        <input type="number" id="rotation-axis-y" value="1" step="0.1" placeholder="Y">
+                        <input type="number" id="rotation-axis-z" value="0" step="0.1" placeholder="Z">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label for="rotation-speed-range">旋转速度 <span id="rotation-speed-value">0</span></label>
+                    <input id="rotation-speed-range" type="range" min="0" max="10" step="0.1" value="0">
                 </div>
             </div>
         </div>
@@ -81,7 +119,7 @@
             </div>
         <div class="control-group">
             <label for="orbital-select">选择轨道</label>
-            <select id="orbital-select" size="6">
+            <select id="orbital-select" size="3">
                 <!-- n=1 -->
                 <option value="1s" selected>1s</option>
                 <!-- n=2 -->
@@ -153,20 +191,17 @@
                 <option value="large">大</option>
             </select>
         </div>
-        <div class="control-group">
-            <label for="opacity-range">不透明度</label>
-            <input id="opacity-range" type="range" min="0.05" max="1" step="0.01" value="1">
-        </div>
-        <div class="control-group">
-            <p>最远距离 / <span id="farthest-dist">0</span></p>
+        <div class="control-group brightness-control">
+            <label for="opacity-range">亮度</label>
+            <div class="brightness-slider-container">
+                <input id="opacity-range" type="range" min="0" max="100" step="1" value="80">
+                <div class="brightness-marker" title="80%：辉光起点"></div>
+            </div>
         </div>
         <div class="control-group action-buttons">
             <button id="start-button">启动</button>
             <button id="pause-button">暂停</button>
             <button id="clear-button">重置</button>
-        </div>
-        <div class="control-group">
-            <p>当前点数 / <span id="point-count">0</span></p>
         </div>
             </div> <!-- 结束 panel-body -->
         </div> <!-- 结束 panel-content -->
@@ -205,6 +240,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <script src="physics.js"></script>
     <script src="data_panel.js"></script>
     <!-- 模块化脚本文件 -->

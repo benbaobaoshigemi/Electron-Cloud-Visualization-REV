@@ -25,30 +25,31 @@ window.ElectronCloud.Gesture = window.ElectronCloud.Gesture || {};
 // ========================================
 const CONFIG = {
     // 捏合检测（相对距离 = 手指距离/手部大小）
-    pinchStartThreshold: 0.35,    // 开始捏合（相对距离，约35%手掌宽度）
-    pinchEndThreshold: 0.18,      // 结束捏合（约18%手掌宽度）
-    pinchReleaseVelocity: 0.08,   // 手指分开速度阈值（快速分开=意图松开）
+    // 优化：调整阈值以获得更好的操作手感
+    pinchStartThreshold: 0.22,    // 开始捏合（需要捏得比较紧，约22%手掌宽度）
+    pinchEndThreshold: 0.32,      // 结束捏合（稍微降低，配合意图识别）
+    pinchReleaseVelocity: 0.04,   // 手指分开速度阈值（降低阈值，让轻快张开也能触发）
     
     // 旋转控制
-    rotationSensitivity: 5.0,     // 旋转灵敏度
-    deadzone: 0.001,              // 死区（更灵敏）
+    rotationSensitivity: 3.5,     // 降低灵敏度，提高精确度
+    deadzone: 0.001,              // 死区
     maxDelta: 0.15,               // 单帧最大位移限幅
     
     // 平滑
-    smoothingFactor: 0.35,        // EMA 平滑系数 (降低，更平滑)
-    pinchDistanceSmoothing: 0.5,  // 捏合距离平滑系数
+    smoothingFactor: 0.15,        // 降低平滑系数，减少抖动，使移动更平滑
+    pinchDistanceSmoothing: 0.4,  // 捏合距离平滑系数
     
     // 惯性
-    friction: 0.98,               // 阻尼系数
+    friction: 0.94,               // 增加阻尼（停得更快，更有掌控感）
     minVelocity: 0.0001,          // 惯性停止阈值
-    inertiaBoost: 1.2,            // 惯性初始速度放大
+    inertiaBoost: 1.0,            // 惯性初始速度放大
     
     // 缩放
-    zoomSensitivity: 3.0,         // 缩放灵敏度
+    zoomSensitivity: 2.5,         // 降低缩放灵敏度
     minHandSeparation: 0.15,      // 双手最小间距（防止误检）
     
     // 释放缓冲
-    releaseBufferFrames: 3,       // 松开后忽略的帧数
+    releaseBufferFrames: 4,       // 松开后忽略的帧数
 };
 
 // ========================================
@@ -141,7 +142,10 @@ async function initializeHandLandmarker() {
             delegate: "GPU"
         },
         runningMode: "VIDEO",
-        numHands: 2
+        numHands: 2,
+        minHandDetectionConfidence: 0.8, // 提高检测置信度
+        minHandPresenceConfidence: 0.8,  // 提高存在置信度
+        minTrackingConfidence: 0.8       // 提高追踪置信度
     });
 
     console.log('[Gesture v4] HandLandmarker 初始化完成');
@@ -207,10 +211,19 @@ function checkPinch(landmarks, wasPinching) {
     let releaseIntent = false;
     if (lastPinchDist !== null && wasPinching) {
         const distVelocity = smoothedPinchDist - lastPinchDist;
-        // 手指快速分开 = 意图松开
-        if (distVelocity > CONFIG.pinchReleaseVelocity) {
+        
+        // 策略1: 快速分开 (原有逻辑，阈值已降低)
+        const isFastRelease = distVelocity > CONFIG.pinchReleaseVelocity;
+        
+        // 策略2: 持续分开且距离已适度增加 (新逻辑)
+        // 如果正在张开 (velocity > 0.015) 且距离已经超过了开始阈值的一定比例 (比如 1.25倍)
+        // 这允许用户以中等速度张开，而不需要达到很大的绝对距离
+        const isOpening = distVelocity > 0.015;
+        const isWideEnough = distance > (CONFIG.pinchStartThreshold * 1.25);
+        
+        if (isFastRelease || (isOpening && isWideEnough)) {
             releaseIntent = true;
-            console.log('[Gesture] 检测到松开意图, 速度:', distVelocity.toFixed(4));
+            console.log('[Gesture] 检测到松开意图, 速度:', distVelocity.toFixed(4), '距离:', distance.toFixed(3));
         }
     }
     lastPinchDist = smoothedPinchDist;
@@ -413,6 +426,7 @@ function processHands(results) {
     // ========================================
     // 优先处理双手缩放
     // ========================================
+    let isZooming = false;
     if (hands.length >= 2) {
         const hand1 = hands[0];
         const hand2 = hands[1];
@@ -420,6 +434,7 @@ function processHands(results) {
         const hand1Pinching = checkPinch(hand1, currentState === STATE.ZOOMING);
         const hand2Pinching = checkPinch(hand2, currentState === STATE.ZOOMING);
         
+        // 只有当两只手都捏合时，才进入缩放模式
         if (hand1Pinching && hand2Pinching && areHandsSeparated(hand1, hand2)) {
             const currentDistance = getHandsDistance(hand1, hand2);
             
@@ -435,6 +450,7 @@ function processHands(results) {
             
             lastPinchDistance = currentDistance;
             currentState = STATE.ZOOMING;
+            isZooming = true;
             
             // 重置单手状态
             isPinching = false;
@@ -446,19 +462,29 @@ function processHands(results) {
     }
     
     // 退出缩放状态
-    if (currentState === STATE.ZOOMING) {
+    if (currentState === STATE.ZOOMING && !isZooming) {
         currentState = STATE.IDLE;
         lastPinchDistance = null;
     }
     
     // ========================================
-    // 单手捏合旋转
+    // 单手捏合旋转 (支持多手存在时，只要有一只手捏合即可)
     // ========================================
-    const hand = hands[0];
-    const nowPinching = checkPinch(hand, isPinching);
+    let activeHand = null;
     
-    if (nowPinching) {
-        const pinchPos = getPinchPosition(hand);
+    // 遍历所有检测到的手，找到第一个捏合的手
+    for (const hand of hands) {
+        if (checkPinch(hand, isPinching)) {
+            activeHand = hand;
+            break;
+        }
+    }
+    
+    // 如果当前正在捏合旋转，优先使用之前追踪的手（这里简化为只要有捏合的手就继续）
+    // 实际上由于 landmarks 顺序可能会变，这里简单取第一个捏合的手是可行的
+    
+    if (activeHand) {
+        const pinchPos = getPinchPosition(activeHand);
         
         if (!isPinching) {
             // 刚开始捏合 - 初始化

@@ -39,13 +39,21 @@
                 </div>
             </div>
             <div class="panel-body">
-                <div class="control-group">
-                    <label for="heartbeat-toggle">闪烁模式</label>
-                    <input type="checkbox" id="heartbeat-toggle" />
+                <!-- 闪烁模式：左设置图标 | 右功能框(名称+点击切换) -->
+                <div class="feature-row">
+                    <button id="flicker-settings-btn" class="feature-settings-btn" title="闪烁设置">⚙</button>
+                    <div id="flicker-feature-box" class="feature-box clickable">
+                        <span class="feature-name">闪烁模式</span>
+                        <input type="checkbox" id="heartbeat-toggle" style="display:none" />
+                    </div>
                 </div>
-                <div class="control-group heartbeat-brightness-control" style="display: none;">
-                    <label for="heartbeat-max-brightness">最大亮度</label>
-                    <input id="heartbeat-max-brightness" type="range" min="100" max="300" step="10" value="200">
+                <!-- 导出图片：左设置图标 | 右功能框(名称+执行按钮) -->
+                <div class="feature-row">
+                    <button id="export-settings-btn" class="feature-settings-btn" title="导出设置">⚙</button>
+                    <div id="export-feature-box" class="feature-box">
+                        <span class="feature-name">导出图片</span>
+                        <button id="export-image-btn" class="feature-action-btn" title="导出">导出</button>
+                    </div>
                 </div>
                 <div class="control-group action-buttons">
                     <button id="gesture-control-btn" title="手势控制 (渲染完成后可用)" disabled>
@@ -57,14 +65,43 @@
                         </svg>
                         <span>手势控制</span>
                     </button>
-                    <button id="export-image-btn" title="导出8K透明背景截图">
-                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                            <circle cx="12" cy="13" r="4"></circle>
-                        </svg>
-                        <span>导出图片</span>
-                    </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 闪烁设置二级面板 -->
+    <div id="flicker-submenu" class="submenu-panel right-side">
+        <div class="submenu-header">闪烁设置</div>
+        <div class="submenu-body">
+            <div class="control-group">
+                <label>闪烁类型</label>
+                <select id="flicker-mode-select">
+                    <option value="heartbeat" selected>心跳</option>
+                    <option value="starry">星空</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="flicker-frequency-range">闪烁频率</label>
+                <input id="flicker-frequency-range" type="range" min="0" max="100" step="1" value="70">
+            </div>
+            <div class="control-group">
+                <label for="heartbeat-max-brightness">最大亮度</label>
+                <input id="heartbeat-max-brightness" type="range" min="100" max="300" step="10" value="200">
+            </div>
+        </div>
+    </div>
+
+    <!-- 导出设置二级面板 -->
+    <div id="export-submenu" class="submenu-panel right-side">
+        <div class="submenu-header">导出设置</div>
+        <div class="submenu-body">
+            <div class="control-group">
+                <label>背景</label>
+                <select id="export-background-select">
+                    <option value="black" selected>黑色</option>
+                    <option value="transparent">透明</option>
+                </select>
             </div>
         </div>
     </div>
@@ -80,18 +117,43 @@
                 </div>
             </div>
             <div class="panel-body">
-                <div class="control-group rotation-axis-inputs">
-                    <label>旋转轴</label>
-                    <div class="axis-inputs">
-                        <input type="number" id="rotation-axis-x" value="0" step="0.1" placeholder="X">
-                        <input type="number" id="rotation-axis-y" value="1" step="0.1" placeholder="Y">
-                        <input type="number" id="rotation-axis-z" value="0" step="0.1" placeholder="Z">
+                <div class="control-group">
+                    <label>锁定视角</label>
+                    <div class="view-lock-buttons">
+                        <button class="view-lock-btn" data-axis="x" title="锁定到X轴视角">X</button>
+                        <button class="view-lock-btn" data-axis="y" title="锁定到Y轴视角">Y</button>
+                        <button class="view-lock-btn" data-axis="z" title="锁定到Z轴视角">Z</button>
                     </div>
                 </div>
-                <div class="control-group">
-                    <label for="rotation-speed-range">旋转速度 <span id="rotation-speed-value">0</span></label>
-                    <input id="rotation-speed-range" type="range" min="0" max="10" step="0.1" value="0">
+                <div class="control-group has-submenu-right">
+                    <!-- 自动旋转：改为类似闪烁模式的样式 -->
+                    <div class="feature-row compact">
+                        <button id="rotation-settings-btn" class="feature-settings-btn" title="自动旋转设置">⚙</button>
+                        <div id="rotation-feature-box" class="feature-box">
+                            <span class="feature-name">自动旋转</span>
+                            <input type="checkbox" id="auto-rotate-toggle" />
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自动旋转设置二级面板 -->
+    <div id="rotation-submenu" class="submenu-panel left-side">
+        <div class="submenu-header">自动旋转设置</div>
+        <div class="submenu-body">
+            <div class="control-group rotation-axis-inputs">
+                <label>旋转轴</label>
+                <div class="axis-inputs">
+                    <input type="number" id="rotation-axis-x" value="0" step="0.1" placeholder="X">
+                    <input type="number" id="rotation-axis-y" value="1" step="0.1" placeholder="Y">
+                    <input type="number" id="rotation-axis-z" value="0" step="0.1" placeholder="Z">
+                </div>
+            </div>
+            <div class="control-group">
+                <label for="rotation-speed-range">旋转速度 <span id="rotation-speed-value">0</span></label>
+                <input id="rotation-speed-range" type="range" min="0" max="10" step="0.1" value="0">
             </div>
         </div>
     </div>
@@ -106,13 +168,16 @@
                 </div>
             </div>
             <div class="panel-body">
-            <div class="control-group">
-                <label for="multiselect-toggle">多选模式</label>
-                <input type="checkbox" id="multiselect-toggle" />
-            </div>
-            <div class="control-group">
-                <label for="compare-toggle">比照模式</label>
-                <input type="checkbox" id="compare-toggle" />
+            <!-- 多选/比照模式放在一行，使用新UI样式 -->
+            <div class="mode-toggle-row">
+                <div class="mode-toggle-box" id="multiselect-box">
+                    <span class="mode-name">多选</span>
+                    <input type="checkbox" id="multiselect-toggle" />
+                </div>
+                <div class="mode-toggle-box" id="compare-box">
+                    <span class="mode-name">比照</span>
+                    <input type="checkbox" id="compare-toggle" />
+                </div>
             </div>
             <div class="control-group multiselect-controls" style="display: none;">
                 <button id="clear-all-selections" class="clear-selections-btn">清除所有选择</button>
@@ -156,9 +221,16 @@
                 <option value="4f_y(3x2-y2)">4f(y(3x^2-y^2))</option>
             </select>
         </div>
-        <div class="control-group">
-            <label for="phase-toggle">渲染相位</label>
-            <input type="checkbox" id="phase-toggle" />
+        <!-- 渲染相位/固定至中心 并排放置，使用变绿样式 -->
+        <div class="mode-toggle-row">
+            <div class="mode-toggle-box" id="phase-box">
+                <span class="mode-name">渲染相位</span>
+                <input type="checkbox" id="phase-toggle" />
+            </div>
+            <div class="mode-toggle-box" id="center-lock-box">
+                <span class="mode-name">固定至中心</span>
+                <input type="checkbox" id="center-lock" />
+            </div>
         </div>
         <div class="control-group">
             <label for="max-points-select">最大点数</label>
@@ -178,10 +250,6 @@
         <div class="control-group">
             <label for="speed-range">生成速度</label>
             <input id="speed-range" type="range" min="20000" max="800000" step="1000" value="500000">
-        </div>
-        <div class="control-group">
-            <label for="center-lock">固定至中心</label>
-            <input type="checkbox" id="center-lock">
         </div>
         <div class="control-group">
             <label for="size-select">点的大小</label>
@@ -249,12 +317,12 @@
     <script src="physics.js"></script>
     <script src="data_panel.js"></script>
     <!-- 模块化脚本文件 -->
-    <script src="core.js"></script>
-    <script src="scene.js"></script>
-    <script src="orbital.js"></script>
-    <script src="sampling.js"></script>
-    <script src="visualization.js"></script>
-    <script src="ui.js"></script>
+    <script src="core.js?v=5"></script>
+    <script src="scene.js?v=5"></script>
+    <script src="orbital.js?v=5"></script>
+    <script src="sampling.js?v=5"></script>
+    <script src="visualization.js?v=7"></script>
+    <script src="ui.js?v=5"></script>
     <!-- gesture_v2.js v4.0: 捏合旋转模式 - 更稳定的手势控制 -->
     <script type="module" src="gesture_v2.js?v=4.0"></script>
     <script>

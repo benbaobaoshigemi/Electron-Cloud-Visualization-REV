@@ -151,6 +151,10 @@ window.ElectronCloud.resetState = function() {
     state.originalPositions = null;
     state.orbitalSamplesMap = {};
     
+    // 重置星空闪烁的基础颜色
+    state.baseColors = null;
+    state.baseColorsCount = 0;
+    
     // 重置图表数据
     state.backgroundChartData = {
         radial: null,
@@ -208,6 +212,10 @@ window.ElectronCloud.resetSamplingState = function() {
     state.orbitalPointsMap = {};
     state.originalPositions = null;
     state.orbitalSamplesMap = {};
+    
+    // 重置星空闪烁的基础颜色
+    state.baseColors = null;
+    state.baseColorsCount = 0;
     
     // 重置图表数据
     state.backgroundChartData = {

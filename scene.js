@@ -61,7 +61,10 @@ window.ElectronCloud.Scene.init = function() {
         enabled: false,
         phase: 0,
         baseStrength: 0,
-        maxBrightness: 200
+        maxBrightness: 200,
+        mode: 'heartbeat', // 'heartbeat' 或 'starry'
+        frequency: 70,     // 0-100，默认70%
+        starryPhases: null // 星空模式的随机相位数组
     };
 
     // 监听窗口大小变化
@@ -75,14 +78,22 @@ window.ElectronCloud.Scene.createCustomAxes = function(size) {
     const axes = new THREE.Group();
     const material = new THREE.LineBasicMaterial({ color: 0xffffff });
 
+    // 为每个轴创建独立的组，以便单独控制可见性
+    const xAxisGroup = new THREE.Group();
+    xAxisGroup.name = 'axis-x';
+    const yAxisGroup = new THREE.Group();
+    yAxisGroup.name = 'axis-y';
+    const zAxisGroup = new THREE.Group();
+    zAxisGroup.name = 'axis-z';
+
     // 轴线
     const pointsX = [new THREE.Vector3(-size, 0, 0), new THREE.Vector3(size, 0, 0)];
     const pointsY = [new THREE.Vector3(0, -size, 0), new THREE.Vector3(0, size, 0)];
     const pointsZ = [new THREE.Vector3(0, 0, -size), new THREE.Vector3(0, 0, size)];
     
-    axes.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsX), material));
-    axes.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsY), material));
-    axes.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsZ), material));
+    xAxisGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsX), material));
+    yAxisGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsY), material));
+    zAxisGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsZ), material));
 
     // 箭头
     const arrowGeom = new THREE.ConeGeometry(0.5, 2, 8);
@@ -91,16 +102,21 @@ window.ElectronCloud.Scene.createCustomAxes = function(size) {
     const arrowX = new THREE.Mesh(arrowGeom, arrowMat);
     arrowX.position.set(size, 0, 0);
     arrowX.rotation.z = -Math.PI / 2;
-    axes.add(arrowX);
+    xAxisGroup.add(arrowX);
 
     const arrowY = new THREE.Mesh(arrowGeom, arrowMat);
     arrowY.position.set(0, size, 0);
-    axes.add(arrowY);
+    yAxisGroup.add(arrowY);
 
     const arrowZ = new THREE.Mesh(arrowGeom, arrowMat);
     arrowZ.position.set(0, 0, size);
     arrowZ.rotation.x = Math.PI / 2;
-    axes.add(arrowZ);
+    zAxisGroup.add(arrowZ);
+    
+    // 将各轴组添加到主组
+    axes.add(xAxisGroup);
+    axes.add(yAxisGroup);
+    axes.add(zAxisGroup);
     
     // 标签
     const loader = new THREE.FontLoader();
@@ -113,19 +129,19 @@ window.ElectronCloud.Scene.createCustomAxes = function(size) {
             const textGeomX = new THREE.ShapeGeometry(textShapesX);
             const textMeshX = new THREE.Mesh(textGeomX, textMat);
             textMeshX.position.set(size + 2, 0, 0);
-            axes.add(textMeshX);
+            xAxisGroup.add(textMeshX);
 
             const textShapesY = font.generateShapes('Y', 1.5);
             const textGeomY = new THREE.ShapeGeometry(textShapesY);
             const textMeshY = new THREE.Mesh(textGeomY, textMat);
             textMeshY.position.set(0, size + 2, 0);
-            axes.add(textMeshY);
+            yAxisGroup.add(textMeshY);
 
             const textShapesZ = font.generateShapes('Z', 1.5);
             const textGeomZ = new THREE.ShapeGeometry(textShapesZ);
             const textMeshZ = new THREE.Mesh(textGeomZ, textMat);
             textMeshZ.position.set(0, 0, size + 2);
-            axes.add(textMeshZ);
+            zAxisGroup.add(textMeshZ);
         },
         undefined, // onProgress
         function (error) {
@@ -134,6 +150,30 @@ window.ElectronCloud.Scene.createCustomAxes = function(size) {
     );
 
     return axes;
+};
+
+// 设置某个轴的可见性
+window.ElectronCloud.Scene.setAxisVisibility = function(axis, visible) {
+    const state = window.ElectronCloud.state;
+    if (!state.customAxes) return;
+    
+    const axisGroup = state.customAxes.getObjectByName('axis-' + axis);
+    if (axisGroup) {
+        axisGroup.visible = visible;
+    }
+};
+
+// 重置所有轴的可见性
+window.ElectronCloud.Scene.resetAxesVisibility = function() {
+    const state = window.ElectronCloud.state;
+    if (!state.customAxes) return;
+    
+    ['x', 'y', 'z'].forEach(axis => {
+        const axisGroup = state.customAxes.getObjectByName('axis-' + axis);
+        if (axisGroup) {
+            axisGroup.visible = true;
+        }
+    });
 };
 
 // 处理窗口大小变化
@@ -167,11 +207,24 @@ window.ElectronCloud.Scene.initBloom = function() {
             return;
         }
         
-        // 创建EffectComposer
-        state.composer = new THREE.EffectComposer(state.renderer);
+        // 创建支持 alpha 通道的 RenderTarget（这是支持透明背景导出的关键）
+        const renderTarget = new THREE.WebGLRenderTarget(
+            window.innerWidth * window.devicePixelRatio,
+            window.innerHeight * window.devicePixelRatio,
+            {
+                minFilter: THREE.LinearFilter,
+                magFilter: THREE.LinearFilter,
+                format: THREE.RGBAFormat,  // 使用 RGBA 格式以支持 alpha 通道
+                stencilBuffer: false
+            }
+        );
+        
+        // 创建EffectComposer，使用支持 alpha 的 renderTarget
+        state.composer = new THREE.EffectComposer(state.renderer, renderTarget);
         
         // 渲染通道
         const renderPass = new THREE.RenderPass(state.scene, state.camera);
+        renderPass.clearAlpha = 0;  // 清除时使用透明背景
         state.composer.addPass(renderPass);
         
         // Bloom通道 (初始强度为0，由亮度滑条控制)
@@ -183,7 +236,7 @@ window.ElectronCloud.Scene.initBloom = function() {
         );
         state.composer.addPass(state.bloomPass);
         
-        console.log('Bloom辉光效果初始化完成');
+        console.log('Bloom辉光效果初始化完成（支持透明背景）');
     } catch (err) {
         console.warn('Bloom辉光效果初始化失败:', err);
         state.composer = null;
@@ -252,44 +305,123 @@ window.ElectronCloud.Scene.animate = function() {
     }
     
     // 自动旋转逻辑
-    if (state.autoRotate && state.autoRotate.enabled && state.autoRotate.speed > 0) {
+    // 【关键修复】只有在点云存在时才执行自动旋转，避免采样前坐标轴独自旋转导致偏移
+    if (state.autoRotate && state.autoRotate.enabled && state.autoRotate.speed > 0 && state.points) {
+        // 在当前原子坐标系下旋转（局部坐标系）
         const axis = state.autoRotate.axis.clone().normalize();
         // 速度系数：最大速度10对应之前1.5的效果
         const angle = state.autoRotate.speed * 0.0015;
         
-        // 绕指定轴旋转场景中的点云
-        if (state.points) {
-            state.points.rotateOnWorldAxis(axis, angle);
-        }
+        // 绕指定轴旋转场景中的点云（使用局部坐标系）
+        state.points.rotateOnAxis(axis, angle);
+        
         // 角向叠加层也一起旋转
         if (state.angularOverlay) {
-            state.angularOverlay.rotateOnWorldAxis(axis, angle);
+            state.angularOverlay.rotateOnAxis(axis, angle);
         }
         // 坐标轴也跟着旋转
         if (state.customAxes) {
-            state.customAxes.rotateOnWorldAxis(axis, angle);
+            state.customAxes.rotateOnAxis(axis, angle);
         }
     }
     
-    // 心跳闪烁模式
+    // 闪烁模式
     if (state.heartbeat && state.heartbeat.enabled && state.bloomPass) {
-        // 心跳频率约 72 BPM = 1.2Hz
-        // 使用模拟心跳的双峰波形
-        state.heartbeat.phase += 0.02; // 约60fps下的相位增量
-        if (state.heartbeat.phase > Math.PI * 2) {
-            state.heartbeat.phase -= Math.PI * 2;
+        const frequencyScale = 0.3 + (state.heartbeat.frequency / 100) * 1.4; // 0.3-1.7
+        
+        if (state.heartbeat.mode === 'heartbeat') {
+            // 心跳模式：所有点同时闪烁
+            state.heartbeat.phase += 0.02 * frequencyScale;
+            if (state.heartbeat.phase > Math.PI * 2) {
+                state.heartbeat.phase -= Math.PI * 2;
+            }
+            
+            // 双峰心跳波形：主峰 + 次峰
+            const t = state.heartbeat.phase;
+            const mainBeat = Math.pow(Math.max(0, Math.sin(t)), 4);
+            const secondBeat = Math.pow(Math.max(0, Math.sin(t + 0.6)), 6) * 0.3;
+            const heartbeatWave = mainBeat + secondBeat;
+            
+            // 应用到bloom强度
+            const maxStrength = (state.heartbeat.maxBrightness || 200) / 100 * 1.5;
+            state.bloomPass.strength = heartbeatWave * maxStrength;
+        } else if (state.heartbeat.mode === 'starry') {
+            // 星空模式：每个点独立随机闪烁，像星海一样
+            state.heartbeat.phase += 0.02 * frequencyScale;
+            
+            // 基础bloom强度 - 使用心跳模式的值的较高倍数，降低到原来的80%
+            const maxStrength = (state.heartbeat.maxBrightness || 200) / 100 * 1.5 * 2.5 * 0.8;
+            state.bloomPass.strength = maxStrength * 0.6; // 基础bloom
+            
+            // 更新每个点的亮度（通过临时修改颜色实现）
+            if (state.points && state.points.geometry) {
+                const colors = state.points.geometry.attributes.color;
+                if (colors) {
+                    const pointCount = state.pointCount || 0;
+                    const time = state.heartbeat.phase;
+                    
+                    // 初始化随机相位数组（每个点一个独立的相位）
+                    const maxPoints = state.MAX_POINTS || 100000;
+                    if (!state.heartbeat.starryPhases || state.heartbeat.starryPhases.length < maxPoints) {
+                        state.heartbeat.starryPhases = new Float32Array(maxPoints);
+                        state.heartbeat.starryFrequencies = new Float32Array(maxPoints);
+                        // 为每个点生成随机相位和频率
+                        for (let i = 0; i < maxPoints; i++) {
+                            state.heartbeat.starryPhases[i] = Math.random() * Math.PI * 2;
+                            state.heartbeat.starryFrequencies[i] = 0.5 + Math.random() * 1.5;
+                        }
+                    }
+                    
+                    // 确保有基础颜色数组用于保存原始颜色
+                    // 注意：新点的颜色在采样时已经同步到 baseColors 中
+                    if (!state.baseColors || state.baseColors.length < maxPoints * 3) {
+                        state.baseColors = new Float32Array(maxPoints * 3);
+                        state.baseColorsCount = 0;
+                    }
+                    
+                    // 如果星空模式刚刚启动，需要从当前颜色初始化已存在点的baseColors
+                    // 但如果颜色已经被修改过，这里会读到错误的值
+                    // 所以只在 baseColorsCount 为 0 时初始化
+                    if (state.baseColorsCount === 0 && pointCount > 0) {
+                        const colorArray = colors.array;
+                        for (let i = 0; i < pointCount * 3; i++) {
+                            state.baseColors[i] = colorArray[i];
+                        }
+                        state.baseColorsCount = pointCount;
+                    }
+                    
+                    // 亮度范围：暗时允许接近透明（5%），亮时为心跳模式值的2.0倍（80%的2.5）
+                    const minBrightness = 0.05;
+                    const maxBrightnessMultiplier = 2.0;
+                    
+                    // 更新每个点的颜色亮度
+                    const colorArray = colors.array;
+                    
+                    // 只处理已经有baseColors的点
+                    const processCount = Math.min(pointCount, state.baseColorsCount);
+                    
+                    for (let i = 0; i < processCount; i++) {
+                        const phase = state.heartbeat.starryPhases[i];
+                        const freq = state.heartbeat.starryFrequencies[i];
+                        
+                        // 每个点独立的闪烁波形 (0-1)
+                        const individualWave = 0.5 + 0.5 * Math.sin(time * freq + phase);
+                        // 添加一些随机闪烁（偶尔变亮）
+                        const sparkle = Math.random() < 0.002 ? 1.3 : 1.0;
+                        
+                        // 亮度范围从 minBrightness 到 maxBrightnessMultiplier
+                        const brightness = (minBrightness + individualWave * (maxBrightnessMultiplier - minBrightness)) * sparkle;
+                        
+                        const i3 = i * 3;
+                        // 基于原始颜色应用亮度调整
+                        colorArray[i3] = Math.min(1.0, state.baseColors[i3] * brightness);
+                        colorArray[i3 + 1] = Math.min(1.0, state.baseColors[i3 + 1] * brightness);
+                        colorArray[i3 + 2] = Math.min(1.0, state.baseColors[i3 + 2] * brightness);
+                    }
+                    colors.needsUpdate = true;
+                }
+            }
         }
-        
-        // 双峰心跳波形：主峰 + 次峰
-        const t = state.heartbeat.phase;
-        const mainBeat = Math.pow(Math.max(0, Math.sin(t)), 4);
-        const secondBeat = Math.pow(Math.max(0, Math.sin(t + 0.6)), 6) * 0.3;
-        const heartbeatWave = mainBeat + secondBeat;
-        
-        // 应用到bloom强度
-        // maxBrightness范围100-300，直接映射到bloom强度1.5-4.5
-        const maxStrength = (state.heartbeat.maxBrightness || 200) / 100 * 1.5;
-        state.bloomPass.strength = heartbeatWave * maxStrength;
         state.bloomEnabled = true;
     }
 

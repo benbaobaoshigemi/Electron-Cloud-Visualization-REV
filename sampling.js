@@ -121,15 +121,29 @@ window.ElectronCloud.Sampling.processCompareModePoint = function(x, y, z, r, the
         positions[i3 + 2] = z;
         
         // 直接使用采样轨道对应的颜色
+        let r_color, g_color, b_color;
         if (randomOrbitalIndex < constants.compareColors.length) {
             const color = constants.compareColors[randomOrbitalIndex].value;
-            colors[i3] = color[0];
-            colors[i3 + 1] = color[1];
-            colors[i3 + 2] = color[2];
+            r_color = color[0];
+            g_color = color[1];
+            b_color = color[2];
         } else {
-            colors[i3] = 1;
-            colors[i3 + 1] = 1;
-            colors[i3 + 2] = 1;
+            r_color = 1;
+            g_color = 1;
+            b_color = 1;
+        }
+        
+        colors[i3] = r_color;
+        colors[i3 + 1] = g_color;
+        colors[i3 + 2] = b_color;
+        
+        // 同步更新baseColors（用于星空闪烁模式）
+        if (state.baseColors) {
+            state.baseColors[i3] = r_color;
+            state.baseColors[i3 + 1] = g_color;
+            state.baseColors[i3 + 2] = b_color;
+            // 更新计数器（pointCount还没有增加，所以是 pointCount + 1）
+            state.baseColorsCount = state.pointCount + 1;
         }
         
         // 记录这个点属于哪个轨道（用于后续的显示开关）
@@ -199,12 +213,26 @@ window.ElectronCloud.Sampling.processNormalModePoint = function(x, y, z, r, thet
             sign = psi > 0 ? 1 : (psi < 0 ? -1 : 0);
         }
         
+        let r_color, g_color, b_color;
         if (sign > 0) { // 红色
-            colors[i3] = 1; colors[i3 + 1] = 0.2; colors[i3 + 2] = 0.2;
+            r_color = 1; g_color = 0.2; b_color = 0.2;
         } else if (sign < 0) { // 蓝色
-            colors[i3] = 0.2; colors[i3 + 1] = 0.2; colors[i3 + 2] = 1;
+            r_color = 0.2; g_color = 0.2; b_color = 1;
         } else { // 中性白
-            colors[i3] = 1; colors[i3 + 1] = 1; colors[i3 + 2] = 1;
+            r_color = 1; g_color = 1; b_color = 1;
+        }
+        
+        colors[i3] = r_color; 
+        colors[i3 + 1] = g_color; 
+        colors[i3 + 2] = b_color;
+        
+        // 同步更新baseColors（用于星空闪烁模式）
+        if (state.baseColors) {
+            state.baseColors[i3] = r_color;
+            state.baseColors[i3 + 1] = g_color;
+            state.baseColors[i3 + 2] = b_color;
+            // 更新计数器（pointCount还没有增加，所以是 pointCount + 1）
+            state.baseColorsCount = state.pointCount + 1;
         }
         
         state.pointCount++;

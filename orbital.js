@@ -74,6 +74,16 @@ window.ElectronCloud.Orbital.startDrawing = function() {
 
     state.points = new THREE.Points(geometry, material);
     state.scene.add(state.points);
+    
+    // 【关键修复】渲染开始前，强制重置自动旋转状态，避免坐标轴偏移
+    if (state.autoRotate) {
+        state.autoRotate.enabled = false;
+        // 同步UI状态
+        const autoRotateToggle = document.getElementById('auto-rotate-toggle');
+        const rotationFeatureBox = document.getElementById('rotation-feature-box');
+        if (autoRotateToggle) autoRotateToggle.checked = false;
+        if (rotationFeatureBox) rotationFeatureBox.classList.remove('active');
+    }
 
     // 开始绘制
     state.isDrawing = true;
@@ -188,6 +198,7 @@ window.ElectronCloud.Orbital.updateOrbitalVisibility = function() {
     const state = window.ElectronCloud.state;
     const ui = window.ElectronCloud.ui;
     
+    // 只有渲染完成后才能切换可见性
     if (!state.points || !state.renderingCompleted || !ui.compareToggle.checked) return;
     
     const positions = state.points.geometry.attributes.position.array;
@@ -231,13 +242,23 @@ window.ElectronCloud.Orbital.toggleOrbitalVisibility = function(orbitalKey) {
     const state = window.ElectronCloud.state;
     const ui = window.ElectronCloud.ui;
     
-    if (!state.renderingCompleted || !ui.compareToggle.checked) return;
+    console.log(`toggleOrbitalVisibility called with: ${orbitalKey}`);
+    console.log(`renderingCompleted: ${state.renderingCompleted}, compareToggle.checked: ${ui.compareToggle?.checked}`);
+    console.log(`currentOrbitals: ${JSON.stringify(state.currentOrbitals)}`);
+    
+    // 只有渲染完成后才能切换可见性
+    if (!state.renderingCompleted || !ui.compareToggle.checked) {
+        console.log('渲染未完成或不在比照模式，返回');
+        return;
+    }
     
     // 只有已渲染的轨道才能被切换可见性
     if (!state.currentOrbitals.includes(orbitalKey)) {
-        console.log(`轨道 ${orbitalKey} 未被渲染，无法切换可见性`);
+        console.log(`轨道 ${orbitalKey} 未被渲染，无法切换可见性。currentOrbitals: ${state.currentOrbitals.join(', ')}`);
         return;
     }
+    
+    console.log(`开始切换轨道 ${orbitalKey} 的可见性`);
     
     // 确保 orbitalVisibility 中有这个轨道的记录
     if (state.orbitalVisibility[orbitalKey] === undefined) {
@@ -245,6 +266,8 @@ window.ElectronCloud.Orbital.toggleOrbitalVisibility = function(orbitalKey) {
     }
     
     state.orbitalVisibility[orbitalKey] = !state.orbitalVisibility[orbitalKey];
+    console.log(`轨道 ${orbitalKey} 可见性设为: ${state.orbitalVisibility[orbitalKey]}`);
+    
     window.ElectronCloud.Orbital.updateOrbitalVisibility();
     
     // 更新UI显示 - 使用删除线和透明度来表示隐藏状态，但保持选中状态不变
@@ -260,6 +283,62 @@ window.ElectronCloud.Orbital.toggleOrbitalVisibility = function(orbitalKey) {
             option.title = '点击显示此轨道';
         }
     }
+    
+    // 同步更新图表中对应曲线的可见性
+    window.ElectronCloud.Orbital.syncChartVisibility(orbitalKey);
+};
+
+// 同步图表曲线的可见性
+window.ElectronCloud.Orbital.syncChartVisibility = function(orbitalKey) {
+    const state = window.ElectronCloud.state;
+    
+    // 获取图表实例
+    const chart = window.DataPanel?.state?.chart;
+    if (!chart || !chart.data || !chart.data.datasets) {
+        console.log('图表不存在或没有数据集');
+        return;
+    }
+    
+    // 轨道键值到显示名称的映射
+    const orbitalDisplayNameMap = {
+        '1s': '1s',
+        '2s': '2s', '2px': '2px', '2py': '2py', '2pz': '2pz',
+        '3s': '3s', '3px': '3px', '3py': '3py', '3pz': '3pz',
+        '3d_xy': '3d(xy)', '3d_xz': '3d(xz)', '3d_yz': '3d(yz)', 
+        '3d_x2-y2': '3d(x^2-y^2)', '3d_z2': '3d(z^2)',
+        '4s': '4s', '4px': '4px', '4py': '4py', '4pz': '4pz',
+        '4d_xy': '4d(xy)', '4d_xz': '4d(xz)', '4d_yz': '4d(yz)', 
+        '4d_x2-y2': '4d(x^2-y^2)', '4d_z2': '4d(z^2)',
+        '4f_xyz': '4f(xyz)', '4f_xz2': '4f(xz^2)', '4f_yz2': '4f(yz^2)', 
+        '4f_z3': '4f(z^3)', '4f_z(x2-y2)': '4f(z(x^2-y^2))', 
+        '4f_x(x2-3y2)': '4f(x(x^2-3y^2))', '4f_y(3x2-y2)': '4f(y(3x^2-y^2))'
+    };
+    
+    const displayName = orbitalDisplayNameMap[orbitalKey] || orbitalKey;
+    const isVisible = state.orbitalVisibility[orbitalKey] !== false;
+    
+    console.log(`同步图表曲线: orbitalKey=${orbitalKey}, displayName=${displayName}, isVisible=${isVisible}`);
+    console.log(`图表数据集数量: ${chart.data.datasets.length}`);
+    console.log(`数据集标签: ${chart.data.datasets.map(ds => ds.label).join(', ')}`);
+    
+    // 查找并更新对应曲线的hidden状态
+    let found = false;
+    for (let i = 0; i < chart.data.datasets.length; i++) {
+        const dataset = chart.data.datasets[i];
+        if (dataset.label === displayName) {
+            dataset.hidden = !isVisible;
+            found = true;
+            console.log(`找到匹配的数据集，设置 hidden=${!isVisible}`);
+            break;
+        }
+    }
+    
+    if (!found) {
+        console.log(`未找到匹配的数据集: ${displayName}`);
+    }
+    
+    // 更新图表
+    chart.update('none');
 };
 
 // 初始化理论曲线数据（在采样开始前调用，显示参考线）

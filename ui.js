@@ -67,12 +67,6 @@ window.ElectronCloud.UI.init = function() {
         });
     }
 
-    // 导出图片按钮逻辑
-    const exportImageBtn = document.getElementById('export-image-btn');
-    if (exportImageBtn) {
-        exportImageBtn.addEventListener('click', window.ElectronCloud.Visualization.exportImage);
-    }
-
     // 手势状态图标点击逻辑 (停止手势)
     const gestureStatusIcon = document.getElementById('gesture-status-icon');
     if (gestureStatusIcon) {
@@ -146,8 +140,14 @@ window.ElectronCloud.UI.init = function() {
         ui.clearAllSelectionsBtn.addEventListener('click', window.ElectronCloud.UI.clearAllSelections);
     }
     
+    // 为所有 mode-toggle-box 添加点击切换逻辑
+    window.ElectronCloud.UI.setupModeToggleBoxes();
+    
     // 强制同步一次多选状态
     window.ElectronCloud.UI.onMultiselectToggle();
+    
+    // 初始化单选模式的选中样式
+    window.ElectronCloud.UI.updateSingleSelectStyle();
     
     // 确保初始状态下显示开关的状态正确
     window.ElectronCloud.UI.updateAngular3DToggleState();
@@ -205,13 +205,13 @@ window.ElectronCloud.UI.init = function() {
     if (rotationAxisY) rotationAxisY.addEventListener('change', updateRotationAxis);
     if (rotationAxisZ) rotationAxisZ.addEventListener('change', updateRotationAxis);
     
-    // 旋转速度滑动条
+    // 旋转速度滑动条（只设置速度，不自动启动）
     if (rotationSpeedRange) {
         rotationSpeedRange.addEventListener('input', (e) => {
             const state = window.ElectronCloud.state;
             const value = parseFloat(e.target.value);
             state.autoRotate.speed = value;
-            state.autoRotate.enabled = value > 0;
+            // 不再自动启动，由开关控制
             
             if (rotationSpeedValue) {
                 rotationSpeedValue.textContent = value.toFixed(2);
@@ -219,35 +219,158 @@ window.ElectronCloud.UI.init = function() {
         });
     }
     
-    // 心跳模式开关
+    // 自动旋转开关
+    const autoRotateToggle = document.getElementById('auto-rotate-toggle');
+    const rotationFeatureBox = document.getElementById('rotation-feature-box');
+    
+    if (autoRotateToggle) {
+        autoRotateToggle.addEventListener('change', (e) => {
+            const state = window.ElectronCloud.state;
+            state.autoRotate.enabled = e.target.checked;
+            
+            // 功能框激活状态变绿
+            if (rotationFeatureBox) {
+                rotationFeatureBox.classList.toggle('active', e.target.checked);
+            }
+            
+            // 互斥逻辑：自动旋转启用时，禁用锁定视角
+            window.ElectronCloud.UI.updateRotationLockMutualExclusion();
+        });
+    }
+    
+    // 点击 rotation-feature-box 切换开关
+    if (rotationFeatureBox) {
+        rotationFeatureBox.addEventListener('click', (e) => {
+            if (autoRotateToggle && !autoRotateToggle.disabled) {
+                autoRotateToggle.checked = !autoRotateToggle.checked;
+                autoRotateToggle.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }
+    
+    // 闪烁模式开关
     const heartbeatToggle = document.getElementById('heartbeat-toggle');
-    const heartbeatBrightnessControl = document.querySelector('.heartbeat-brightness-control');
+    const flickerSettingsBtn = document.getElementById('flicker-settings-btn');
+    const flickerSubmenu = document.getElementById('flicker-submenu');
+    const flickerFeatureBox = document.getElementById('flicker-feature-box');
+    const flickerModeSelect = document.getElementById('flicker-mode-select');
+    const flickerFrequencyRange = document.getElementById('flicker-frequency-range');
     const heartbeatMaxBrightness = document.getElementById('heartbeat-max-brightness');
     
     if (heartbeatToggle) {
         heartbeatToggle.addEventListener('change', (e) => {
             const state = window.ElectronCloud.state;
             state.heartbeat.enabled = e.target.checked;
+            console.log('闪烁模式:', e.target.checked, 'bloomPass:', !!state.bloomPass);
             
-            // 显示/隐藏最大亮度控制
-            if (heartbeatBrightnessControl) {
-                heartbeatBrightnessControl.style.display = e.target.checked ? 'flex' : 'none';
+            // 功能框激活状态变绿
+            if (flickerFeatureBox) {
+                flickerFeatureBox.classList.toggle('active', e.target.checked);
             }
             
-            // 心跳模式时禁用亮度滑动条
-            if (ui.opacityRange) {
-                ui.opacityRange.disabled = e.target.checked;
-                ui.opacityRange.style.opacity = e.target.checked ? '0.5' : '1';
-            }
+            // 闪烁模式下仍然允许调节亮度（不再禁用滑动条）
+            // 亮度滑动条控制点云基础透明度，闪烁效果在此基础上叠加
             
-            // 保存当前bloom强度作为基准
-            if (e.target.checked && state.bloomPass) {
-                state.heartbeat.baseStrength = state.bloomPass.strength;
+            // 如果关闭闪烁模式，恢复bloom状态和原始颜色
+            if (!e.target.checked && state.bloomPass) {
+                // 保持最低辉光效果（不完全关闭），让画面保持一定亮度
+                state.bloomPass.strength = 0.15;
+                state.bloomEnabled = true;
+                
+                // 恢复星空模式下修改的原始颜色
+                if (state.baseColors && state.points && state.points.geometry) {
+                    const colors = state.points.geometry.attributes.color;
+                    if (colors) {
+                        const baseColors = state.baseColors;
+                        const pointCount = state.pointCount || 0;
+                        for (let i = 0; i < pointCount * 3 && i < baseColors.length; i++) {
+                            colors.array[i] = baseColors[i];
+                        }
+                        colors.needsUpdate = true;
+                    }
+                }
+                // 清除星空模式的缓存数据（保留baseColors以便重新开启时使用）
+                state.heartbeat.starryPhases = null;
+                state.heartbeat.starryFrequencies = null;
+            }
+        });
+    } else {
+        console.error('heartbeat-toggle 元素未找到');
+    }
+    
+    // 点击 flicker-feature-box 切换闪烁模式
+    if (flickerFeatureBox) {
+        flickerFeatureBox.addEventListener('click', (e) => {
+            if (heartbeatToggle) {
+                heartbeatToggle.checked = !heartbeatToggle.checked;
+                heartbeatToggle.dispatchEvent(new Event('change', { bubbles: true }));
             }
         });
     }
     
-    // 心跳最大亮度滑动条
+    // 闪烁设置二级面板
+    if (flickerSettingsBtn && flickerSubmenu) {
+        flickerSettingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = flickerSubmenu.classList.contains('visible');
+            closeAllSubmenus();
+            if (!isVisible) {
+                // 获取实验面板的位置
+                const experimentalPanel = document.getElementById('experimental-panel');
+                const panelRect = experimentalPanel ? experimentalPanel.getBoundingClientRect() : null;
+                const btnRect = flickerSettingsBtn.getBoundingClientRect();
+                
+                // 二级菜单定位在面板左侧，完全不重叠
+                flickerSubmenu.style.top = btnRect.top + 'px';
+                flickerSubmenu.style.right = 'auto';
+                flickerSubmenu.style.left = 'auto';
+                if (panelRect) {
+                    // 定位在面板左边缘的左侧，留出10px间距
+                    flickerSubmenu.style.right = (window.innerWidth - panelRect.left + 10) + 'px';
+                } else {
+                    flickerSubmenu.style.right = (window.innerWidth - btnRect.left + 10) + 'px';
+                }
+                flickerSubmenu.classList.add('visible');
+                flickerSettingsBtn.classList.add('active');
+            }
+        });
+    }
+    
+    // 闪烁模式选择
+    if (flickerModeSelect) {
+        flickerModeSelect.addEventListener('change', (e) => {
+            const state = window.ElectronCloud.state;
+            const previousMode = state.heartbeat.mode;
+            state.heartbeat.mode = e.target.value;
+            state.heartbeat.phase = 0;
+            
+            // 如果从星空模式切换出去，恢复原始颜色
+            if (previousMode === 'starry' && state.heartbeat.originalColors && state.points && state.points.geometry) {
+                const colors = state.points.geometry.attributes.color;
+                if (colors) {
+                    const originalColors = state.heartbeat.originalColors;
+                    for (let i = 0; i < colors.array.length && i < originalColors.length; i++) {
+                        colors.array[i] = originalColors[i];
+                    }
+                    colors.needsUpdate = true;
+                }
+                // 清除星空模式的缓存数据
+                state.heartbeat.starryPhases = null;
+                state.heartbeat.starryFrequencies = null;
+                state.heartbeat.originalColors = null;
+            }
+        });
+    }
+    
+    // 闪烁频率
+    if (flickerFrequencyRange) {
+        flickerFrequencyRange.addEventListener('input', (e) => {
+            const state = window.ElectronCloud.state;
+            state.heartbeat.frequency = parseInt(e.target.value, 10);
+        });
+    }
+    
+    // 最大亮度滑动条
     if (heartbeatMaxBrightness) {
         heartbeatMaxBrightness.addEventListener('input', (e) => {
             const state = window.ElectronCloud.state;
@@ -255,8 +378,565 @@ window.ElectronCloud.UI.init = function() {
         });
     }
     
+    // 导出设置二级面板
+    const exportSettingsBtn = document.getElementById('export-settings-btn');
+    const exportSubmenu = document.getElementById('export-submenu');
+    const exportImageBtn = document.getElementById('export-image-btn');
+    
+    if (exportSettingsBtn && exportSubmenu) {
+        exportSettingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = exportSubmenu.classList.contains('visible');
+            closeAllSubmenus();
+            if (!isVisible) {
+                // 获取实验面板的位置
+                const experimentalPanel = document.getElementById('experimental-panel');
+                const panelRect = experimentalPanel ? experimentalPanel.getBoundingClientRect() : null;
+                const btnRect = exportSettingsBtn.getBoundingClientRect();
+                
+                // 二级菜单定位在面板左侧，完全不重叠
+                exportSubmenu.style.top = btnRect.top + 'px';
+                exportSubmenu.style.right = 'auto';
+                exportSubmenu.style.left = 'auto';
+                if (panelRect) {
+                    // 定位在面板左边缘的左侧，留出10px间距
+                    exportSubmenu.style.right = (window.innerWidth - panelRect.left + 10) + 'px';
+                } else {
+                    exportSubmenu.style.right = (window.innerWidth - btnRect.left + 10) + 'px';
+                }
+                exportSubmenu.classList.add('visible');
+                exportSettingsBtn.classList.add('active');
+            }
+        });
+    }
+    
+    // 导出图片按钮
+    if (exportImageBtn) {
+        exportImageBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // 防止事件冒泡
+            console.log('导出按钮被点击');
+            console.log('检查 Visualization 对象:', window.ElectronCloud.Visualization);
+            console.log('检查 exportImage 函数:', typeof window.ElectronCloud.Visualization?.exportImage);
+            
+            if (window.ElectronCloud.Visualization && typeof window.ElectronCloud.Visualization.exportImage === 'function') {
+                window.ElectronCloud.Visualization.exportImage();
+            } else {
+                console.error('导出函数不可用');
+                console.error('ElectronCloud:', window.ElectronCloud);
+                console.error('Visualization:', window.ElectronCloud?.Visualization);
+                alert('导出功能暂时不可用，请刷新页面后重试');
+            }
+        });
+        console.log('导出按钮事件已绑定');
+    } else {
+        console.error('导出按钮元素未找到');
+    }
+    
+    // 旋转设置二级面板
+    const rotationSettingsBtn = document.getElementById('rotation-settings-btn');
+    const rotationSubmenu = document.getElementById('rotation-submenu');
+    
+    if (rotationSettingsBtn && rotationSubmenu) {
+        rotationSettingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = rotationSubmenu.classList.contains('visible');
+            closeAllSubmenus();
+            if (!isVisible) {
+                // 获取视图面板的位置
+                const viewPanel = document.getElementById('view-panel');
+                const panelRect = viewPanel ? viewPanel.getBoundingClientRect() : null;
+                const btnRect = rotationSettingsBtn.getBoundingClientRect();
+                
+                // 二级菜单定位在面板右侧，完全不重叠
+                rotationSubmenu.style.top = btnRect.top + 'px';
+                rotationSubmenu.style.right = 'auto';
+                rotationSubmenu.style.left = 'auto';
+                if (panelRect) {
+                    // 定位在面板右边缘的右侧，留出10px间距
+                    rotationSubmenu.style.left = (panelRect.right + 10) + 'px';
+                } else {
+                    rotationSubmenu.style.left = (btnRect.right + 10) + 'px';
+                }
+                rotationSubmenu.classList.add('visible');
+                rotationSettingsBtn.classList.add('active');
+            }
+        });
+    }
+    
+    // 视角锁定按钮
+    const viewLockBtns = document.querySelectorAll('.view-lock-btn');
+    viewLockBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const axis = btn.dataset.axis;
+            const state = window.ElectronCloud.state;
+            
+            // 切换激活状态
+            const wasActive = btn.classList.contains('active');
+            // 清除 active 和 green 状态
+            viewLockBtns.forEach(b => { b.classList.remove('active'); b.classList.remove('green'); });
+            
+            if (!wasActive) {
+                btn.classList.add('active');
+                btn.classList.add('green');
+                // 锁定到对应视角
+                window.ElectronCloud.UI.lockCameraToAxis(axis);
+                // 互斥逻辑：锁定视角时禁用自动旋转
+                window.ElectronCloud.UI.updateRotationLockMutualExclusion();
+            } else {
+                // 解锁 - 恢复控制器并清除锁定状态
+                window.ElectronCloud.UI.clearLockedAxisRotation();
+                
+                // 重置所有场景对象的旋转到初始状态
+                if (state.points) {
+                    state.points.rotation.set(0, 0, 0);
+                    state.points.updateMatrix();
+                }
+                if (state.angularOverlay) {
+                    state.angularOverlay.rotation.set(0, 0, 0);
+                    state.angularOverlay.updateMatrix();
+                }
+                if (state.customAxes) {
+                    state.customAxes.rotation.set(0, 0, 0);
+                    state.customAxes.updateMatrix();
+                }
+                
+                // 恢复所有坐标轴的可见性
+                if (window.ElectronCloud.Scene.resetAxesVisibility) {
+                    window.ElectronCloud.Scene.resetAxesVisibility();
+                }
+                
+                state.controls.enabled = true;
+                state.controls.enableRotate = true;  // 恢复旋转
+                state.controls.enableZoom = true;
+                state.controls.enablePan = true;
+                state.lockedAxis = null;
+                // 恢复默认up向量
+                state.camera.up.set(0, 1, 0);
+                // 恢复无限制的旋转角度
+                state.controls.minAzimuthAngle = -Infinity;
+                state.controls.maxAzimuthAngle = Infinity;
+                state.controls.minPolarAngle = 0;
+                state.controls.maxPolarAngle = Math.PI;
+                // 解除锁定时更新互斥状态
+                window.ElectronCloud.UI.updateRotationLockMutualExclusion();
+            }
+        });
+    });
+    
+    // 关闭所有子菜单的函数
+    function closeAllSubmenus() {
+        document.querySelectorAll('.submenu-panel').forEach(panel => {
+            panel.classList.remove('visible');
+        });
+        document.querySelectorAll('.feature-settings-btn, .submenu-trigger-right').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
+    
+    // 点击其他地方关闭子菜单
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.submenu-panel') && 
+            !e.target.closest('.feature-settings-btn') && 
+            !e.target.closest('.submenu-trigger-right')) {
+            closeAllSubmenus();
+        }
+    });
+    
     console.log('UI 事件监听器初始化完成');
 
+};
+
+// 锁定摄像机到指定轴视角
+window.ElectronCloud.UI.lockCameraToAxis = function(axis) {
+    const state = window.ElectronCloud.state;
+    const distance = state.camera.position.length() || 100;
+    
+    // 清除之前的自定义旋转处理
+    window.ElectronCloud.UI.clearLockedAxisRotation();
+    
+    // 重置所有场景对象的旋转到初始状态（清除之前锁定轴旋转累积的旋转）
+    if (state.points) {
+        state.points.rotation.set(0, 0, 0);
+        state.points.updateMatrix();
+    }
+    if (state.angularOverlay) {
+        state.angularOverlay.rotation.set(0, 0, 0);
+        state.angularOverlay.updateMatrix();
+    }
+    if (state.customAxes) {
+        state.customAxes.rotation.set(0, 0, 0);
+        state.customAxes.updateMatrix();
+    }
+    
+    // 重置所有轴的可见性，然后隐藏被锁定的轴
+    if (window.ElectronCloud.Scene.resetAxesVisibility) {
+        window.ElectronCloud.Scene.resetAxesVisibility();
+    }
+    if (window.ElectronCloud.Scene.setAxisVisibility) {
+        window.ElectronCloud.Scene.setAxisVisibility(axis, false);
+    }
+    
+    // 锁定哪个轴就是哪个轴指向屏幕外侧（指向观察者）
+    // 先重置相机up向量为默认值
+    state.camera.up.set(0, 1, 0);
+    
+    switch(axis) {
+        case 'x':
+            // X轴指向屏幕外侧（指向观察者），相机在+X方向看向原点
+            state.camera.position.set(distance, 0, 0);
+            break;
+        case 'y':
+            // Y轴指向屏幕外侧（指向观察者），相机在+Y方向看向原点
+            state.camera.position.set(0, distance, 0);
+            // Y轴向上时需要调整up向量避免万向锁
+            state.camera.up.set(0, 0, -1);
+            break;
+        case 'z':
+            // Z轴指向屏幕外侧（指向观察者），相机在+Z方向看向原点
+            state.camera.position.set(0, 0, distance);
+            break;
+    }
+    
+    state.camera.lookAt(0, 0, 0);
+    state.controls.target.set(0, 0, 0);
+    
+    // 记录当前锁定的轴
+    state.lockedAxis = axis;
+    
+    // 设置自定义旋转处理（绕锁定轴旋转场景对象）
+    // 注意：setupLockedAxisRotation 会禁用 OrbitControls
+    window.ElectronCloud.UI.setupLockedAxisRotation(axis);
+    
+    console.log(`视角已锁定到${axis}轴`);
+};
+
+// 设置锁定轴的自定义旋转处理
+window.ElectronCloud.UI.setupLockedAxisRotation = function(axis) {
+    const state = window.ElectronCloud.state;
+    const canvas = state.renderer.domElement;
+    
+    // 先清除之前的监听器
+    window.ElectronCloud.UI.clearLockedAxisRotation();
+    
+    console.log('设置锁定轴旋转处理, axis:', axis);
+    
+    // **关键修复**：完全禁用 OrbitControls 以避免事件冲突
+    // OrbitControls 即使 enableRotate=false，仍会拦截 pointer 事件
+    state.controls.enabled = false;
+    
+    let isDragging = false;
+    let previousMouseX = 0;
+    let previousMouseY = 0;
+    
+    // 缩放相关
+    let initialPinchDistance = 0;
+    let isPinching = false;
+    
+    // 获取旋转轴向量
+    const getRotationAxis = function() {
+        switch(state.lockedAxis) {
+            case 'x': return new THREE.Vector3(1, 0, 0);
+            case 'y': return new THREE.Vector3(0, 1, 0);
+            case 'z': return new THREE.Vector3(0, 0, 1);
+            default: return null;
+        }
+    };
+    
+    // 旋转场景对象
+    const rotateSceneObjects = function(angle) {
+        const rotationAxis = getRotationAxis();
+        if (!rotationAxis) return;
+        
+        if (state.points) {
+            state.points.rotateOnWorldAxis(rotationAxis, angle);
+        }
+        if (state.angularOverlay) {
+            state.angularOverlay.rotateOnWorldAxis(rotationAxis, angle);
+        }
+        if (state.customAxes) {
+            state.customAxes.rotateOnWorldAxis(rotationAxis, angle);
+        }
+    };
+    
+    // 缩放处理
+    const handleZoom = function(delta) {
+        const zoomSpeed = 0.001;
+        const factor = 1 - delta * zoomSpeed;
+        const minDistance = 5;
+        const maxDistance = 500;
+        
+        const currentDistance = state.camera.position.length();
+        const newDistance = Math.max(minDistance, Math.min(maxDistance, currentDistance * factor));
+        
+        state.camera.position.normalize().multiplyScalar(newDistance);
+    };
+    
+    // 使用 pointer 事件以获得更好的兼容性（包括触摸）
+    const onPointerDown = function(e) {
+        if (!state.lockedAxis) return;
+        
+        // 左键或触摸开始旋转
+        if (e.button === 0 || e.pointerType === 'touch') {
+            isDragging = true;
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+            canvas.setPointerCapture(e.pointerId);
+        }
+        
+        e.preventDefault();
+    };
+    
+    const onPointerMove = function(e) {
+        if (!state.lockedAxis) return;
+        if (!isDragging) return;
+        
+        const deltaX = e.clientX - previousMouseX;
+        // deltaY 暂时不用，但保留以备将来使用
+        // const deltaY = e.clientY - previousMouseY;
+        
+        previousMouseX = e.clientX;
+        previousMouseY = e.clientY;
+        
+        // 旋转速度
+        const rotationSpeed = 0.01;
+        const angle = deltaX * rotationSpeed;
+        
+        rotateSceneObjects(angle);
+        
+        e.preventDefault();
+    };
+    
+    const onPointerUp = function(e) {
+        if (isDragging) {
+            isDragging = false;
+            try {
+                canvas.releasePointerCapture(e.pointerId);
+            } catch(err) {
+                // 忽略释放捕获的错误
+            }
+        }
+    };
+    
+    // 滚轮缩放（包括触控板双指缩放）
+    const onWheel = function(e) {
+        if (!state.lockedAxis) return;
+        
+        // 触控板双指缩放通常会设置 ctrlKey，并且 deltaY 值较小
+        // 普通滚轮的 deltaY 通常是 100 或 -100 的倍数
+        if (e.ctrlKey) {
+            // 触控板捏合缩放：deltaY > 0 表示捏合（放大手势），应该缩小视图
+            // 但用户习惯是捏合=缩小，所以需要反转
+            handleZoom(-e.deltaY * 5);
+        } else {
+            // 普通滚轮
+            handleZoom(e.deltaY);
+        }
+        e.preventDefault();
+    };
+    
+    // 触摸缩放（双指捏合）
+    const activeTouches = new Map();
+    
+    const onTouchStart = function(e) {
+        for (let touch of e.changedTouches) {
+            activeTouches.set(touch.identifier, { x: touch.clientX, y: touch.clientY });
+        }
+        
+        if (activeTouches.size === 2) {
+            const touches = Array.from(activeTouches.values());
+            initialPinchDistance = Math.hypot(
+                touches[0].x - touches[1].x,
+                touches[0].y - touches[1].y
+            );
+            isPinching = true;
+        }
+    };
+    
+    const onTouchMove = function(e) {
+        for (let touch of e.changedTouches) {
+            if (activeTouches.has(touch.identifier)) {
+                activeTouches.set(touch.identifier, { x: touch.clientX, y: touch.clientY });
+            }
+        }
+        
+        if (isPinching && activeTouches.size === 2) {
+            const touches = Array.from(activeTouches.values());
+            const currentDistance = Math.hypot(
+                touches[0].x - touches[1].x,
+                touches[0].y - touches[1].y
+            );
+            
+            const delta = (initialPinchDistance - currentDistance) * 2;
+            handleZoom(delta);
+            initialPinchDistance = currentDistance;
+            
+            e.preventDefault();
+        }
+    };
+    
+    const onTouchEnd = function(e) {
+        for (let touch of e.changedTouches) {
+            activeTouches.delete(touch.identifier);
+        }
+        
+        if (activeTouches.size < 2) {
+            isPinching = false;
+        }
+    };
+    
+    // 保存引用以便后续移除
+    state.lockedAxisHandlers = {
+        canvas: canvas,
+        pointerdown: onPointerDown,
+        pointermove: onPointerMove,
+        pointerup: onPointerUp,
+        wheel: onWheel,
+        touchstart: onTouchStart,
+        touchmove: onTouchMove,
+        touchend: onTouchEnd
+    };
+    
+    // 绑定事件
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', onPointerUp);
+    canvas.addEventListener('pointercancel', onPointerUp);
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    canvas.addEventListener('touchstart', onTouchStart, { passive: true });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd, { passive: true });
+    
+    // 也在 window 上监听 pointerup 以确保拖动到窗口外也能释放
+    window.addEventListener('pointerup', onPointerUp);
+    
+    console.log('已设置锁定轴旋转处理，OrbitControls 已禁用，使用自定义 pointer 事件');
+};
+
+// 清除锁定轴的自定义旋转处理
+window.ElectronCloud.UI.clearLockedAxisRotation = function() {
+    const state = window.ElectronCloud.state;
+    
+    if (state.lockedAxisHandlers) {
+        const handlers = state.lockedAxisHandlers;
+        const canvas = handlers.canvas;
+        
+        if (canvas) {
+            // 移除 pointer 事件
+            if (handlers.pointerdown) {
+                canvas.removeEventListener('pointerdown', handlers.pointerdown);
+                canvas.removeEventListener('pointermove', handlers.pointermove);
+                canvas.removeEventListener('pointerup', handlers.pointerup);
+                canvas.removeEventListener('pointercancel', handlers.pointerup);
+            }
+            // 移除滚轮事件
+            if (handlers.wheel) {
+                canvas.removeEventListener('wheel', handlers.wheel);
+            }
+            // 移除触摸事件
+            if (handlers.touchstart) {
+                canvas.removeEventListener('touchstart', handlers.touchstart);
+                canvas.removeEventListener('touchmove', handlers.touchmove);
+                canvas.removeEventListener('touchend', handlers.touchend);
+            }
+            // 兼容旧版 mouse 事件（如果有）
+            if (handlers.mousedown) {
+                canvas.removeEventListener('mousedown', handlers.mousedown, true);
+                canvas.removeEventListener('mousemove', handlers.mousemove, true);
+                canvas.removeEventListener('mouseup', handlers.mouseup, true);
+            }
+        }
+        
+        // 移除 window 上的监听器
+        if (handlers.pointerup) {
+            window.removeEventListener('pointerup', handlers.pointerup);
+        }
+        if (handlers.mouseup) {
+            window.removeEventListener('mouseup', handlers.mouseup, true);
+        }
+        
+        state.lockedAxisHandlers = null;
+        console.log('已清除锁定轴旋转处理');
+    }
+    
+    // 重新启用 OrbitControls
+    if (state.controls) {
+        state.controls.enabled = true;
+    }
+};
+
+// 自动旋转与锁定视角互斥逻辑
+window.ElectronCloud.UI.updateRotationLockMutualExclusion = function() {
+    const state = window.ElectronCloud.state;
+    const viewLockBtns = document.querySelectorAll('.view-lock-btn');
+    const rotationSubmenu = document.getElementById('rotation-submenu');
+    const rotationSettingsBtn = document.getElementById('rotation-settings-btn');
+    const rotationSpeedRange = document.getElementById('rotation-speed-range');
+    const rotationAxisInputs = document.querySelectorAll('.axis-inputs input');
+    const autoRotateToggle = document.getElementById('auto-rotate-toggle');
+    const rotationFeatureBox = document.getElementById('rotation-feature-box');
+    
+    const isAutoRotating = state.autoRotate && state.autoRotate.enabled;
+    const isViewLocked = state.lockedAxis !== null && state.lockedAxis !== undefined;
+    
+    // 如果自动旋转启用，禁用锁定视角按钮
+    viewLockBtns.forEach(btn => {
+        if (isAutoRotating) {
+            btn.disabled = true;
+            btn.style.opacity = '0.4';
+            btn.style.pointerEvents = 'none';
+        } else {
+            btn.disabled = false;
+            btn.style.opacity = '';
+            btn.style.pointerEvents = '';
+        }
+    });
+    
+    // 如果视角锁定，禁用自动旋转控件
+    if (autoRotateToggle) {
+        if (isViewLocked) {
+            autoRotateToggle.disabled = true;
+            if (rotationFeatureBox) {
+                rotationFeatureBox.style.opacity = '0.4';
+                rotationFeatureBox.style.pointerEvents = 'none';
+            }
+        } else {
+            autoRotateToggle.disabled = false;
+            if (rotationFeatureBox) {
+                rotationFeatureBox.style.opacity = '';
+                rotationFeatureBox.style.pointerEvents = '';
+            }
+        }
+    }
+    
+    if (rotationSpeedRange) {
+        if (isViewLocked) {
+            rotationSpeedRange.disabled = true;
+            rotationSpeedRange.style.opacity = '0.4';
+        } else {
+            rotationSpeedRange.disabled = false;
+            rotationSpeedRange.style.opacity = '';
+        }
+    }
+    
+    rotationAxisInputs.forEach(input => {
+        if (isViewLocked) {
+            input.disabled = true;
+            input.style.opacity = '0.4';
+        } else {
+            input.disabled = false;
+            input.style.opacity = '';
+        }
+    });
+    
+    if (rotationSettingsBtn) {
+        if (isViewLocked) {
+            rotationSettingsBtn.disabled = true;
+            rotationSettingsBtn.style.opacity = '0.4';
+        } else {
+            rotationSettingsBtn.disabled = false;
+            rotationSettingsBtn.style.opacity = '';
+        }
+    }
 };
 
 // 处理坐标系大小调节
@@ -345,6 +1025,11 @@ window.ElectronCloud.UI.onOrbitalSelectChange = function() {
         state.currentOrbitals = opts.length ? opts : [ui.orbitalSelect.value || '1s'];
     }
     
+    // 单选模式下手动更新选中样式（因为浏览器不会自动更新 option:checked 背景）
+    if (!(ui.multiselectToggle && ui.multiselectToggle.checked) && !(ui.compareToggle && ui.compareToggle.checked)) {
+        window.ElectronCloud.UI.updateSingleSelectStyle();
+    }
+    
     // 重新选择轨道后，重置3D角向开关为关闭状态
     if (ui.angular3dToggle && ui.angular3dToggle.checked) {
         ui.angular3dToggle.checked = false;
@@ -359,6 +1044,30 @@ window.ElectronCloud.UI.onOrbitalSelectChange = function() {
         
         // 更新清空按钮状态
         window.ElectronCloud.UI.updateClearAllSelectionsState();
+    }
+};
+
+// 单选模式下更新选中样式
+window.ElectronCloud.UI.updateSingleSelectStyle = function() {
+    const ui = window.ElectronCloud.ui;
+    if (!ui.orbitalSelect) return;
+    
+    // 清除所有 option 的高亮样式
+    Array.from(ui.orbitalSelect.options).forEach(opt => {
+        opt.classList.remove('selected-green');
+        opt.style.background = '';
+        opt.style.color = '';
+        opt.style.fontWeight = '';
+    });
+    
+    // 给当前选中的 option 添加高亮样式
+    if (ui.orbitalSelect.selectedIndex >= 0) {
+        const selectedOpt = ui.orbitalSelect.options[ui.orbitalSelect.selectedIndex];
+        selectedOpt.classList.add('selected-green');
+        // 强制内联样式，确保在所有浏览器中生效
+        selectedOpt.style.background = 'rgba(80, 200, 120, 0.35)';
+        selectedOpt.style.color = 'rgba(120, 220, 150, 1)';
+        selectedOpt.style.fontWeight = 'bold';
     }
 };
 
@@ -547,12 +1256,59 @@ window.ElectronCloud.UI.onCenterLockChange = function() {
     if (!state.controls || !ui.centerLock) return;
     
     const locked = ui.centerLock.checked;
+    // 更新 center-lock-box 的 active 样式
+    const centerLockBox = document.getElementById('center-lock-box');
+    if (centerLockBox) {
+        centerLockBox.classList.toggle('active', locked);
+    }
+    
     // 禁用平移并锁定目标在原点
     state.controls.enablePan = !locked;
     if (locked) {
         state.controls.target.set(0, 0, 0);
         state.controls.update();
     }
+};
+
+// 渲染相位切换
+window.ElectronCloud.UI.onPhaseToggleChange = function() {
+    const phaseToggle = document.getElementById('phase-toggle');
+    const phaseBox = document.getElementById('phase-box');
+    
+    if (phaseBox && phaseToggle) {
+        phaseBox.classList.toggle('active', phaseToggle.checked);
+    }
+};
+
+// 为所有 mode-toggle-box 添加点击切换逻辑
+window.ElectronCloud.UI.setupModeToggleBoxes = function() {
+    const boxes = document.querySelectorAll('.mode-toggle-box');
+    boxes.forEach(box => {
+        box.addEventListener('click', function(e) {
+            // 如果点击的是 checkbox 本身，不需要额外处理
+            if (e.target.tagName === 'INPUT') return;
+            
+            const checkbox = box.querySelector('input[type="checkbox"]');
+            if (checkbox && !checkbox.disabled) {
+                checkbox.checked = !checkbox.checked;
+                // 触发 change 事件
+                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+        
+        // 设置鼠标样式为指针
+        box.style.cursor = 'pointer';
+    });
+    
+    // 为 phase-toggle 添加 change 监听
+    const phaseToggle = document.getElementById('phase-toggle');
+    if (phaseToggle) {
+        phaseToggle.addEventListener('change', window.ElectronCloud.UI.onPhaseToggleChange);
+    }
+    
+    // 初始化 phase-box 和 center-lock-box 的 active 状态
+    window.ElectronCloud.UI.onPhaseToggleChange();
+    window.ElectronCloud.UI.onCenterLockChange();
 };
 
 window.ElectronCloud.UI.onPauseToggle = function() {
@@ -588,6 +1344,12 @@ window.ElectronCloud.UI.onMultiselectToggle = function() {
     const label = document.querySelector('label[for="orbital-select"]');
     const controlPanel = document.getElementById('control-panel');
     const multiselectControls = document.querySelector('.multiselect-controls');
+    const multiselectBox = document.getElementById('multiselect-box');
+    
+    // 更新多选框激活样式
+    if (multiselectBox) {
+        multiselectBox.classList.toggle('active', isMultiselect);
+    }
     
     if (isMultiselect) {
         if (controlPanel) controlPanel.classList.add('multiselect-active');
@@ -652,12 +1414,24 @@ window.ElectronCloud.UI.onCompareToggle = function() {
     const controlPanel = document.getElementById('control-panel');
     const multiselectControls = document.querySelector('.multiselect-controls');
     const phaseToggle = document.getElementById('phase-toggle');
+    const compareBox = document.getElementById('compare-box');
+    
+    // 更新比照框激活样式
+    if (compareBox) {
+        compareBox.classList.toggle('active', isCompare);
+    }
     
     if (isCompare) {
         // 禁用渲染相位
         if (phaseToggle) {
             phaseToggle.disabled = true;
             phaseToggle.checked = false;
+        }
+        // 更新 phase-box 的 active 样式和禁用样式
+        const phaseBox = document.getElementById('phase-box');
+        if (phaseBox) {
+            phaseBox.classList.add('disabled');
+            phaseBox.classList.remove('active');
         }
         
         // 禁用显示开关功能，避免造成bug
@@ -683,6 +1457,11 @@ window.ElectronCloud.UI.onCompareToggle = function() {
         // 重新启用渲染相位
         if (phaseToggle) {
             phaseToggle.disabled = false;
+        }
+        // 更新 phase-box 的样式（恢复启用状态的样式）
+        const phaseBox = document.getElementById('phase-box');
+        if (phaseBox) {
+            phaseBox.classList.remove('disabled');
         }
         
         // 重新启用显示开关功能
@@ -744,7 +1523,7 @@ window.ElectronCloud.UI.setupMultiselectMode = function() {
     ui.orbitalSelect.addEventListener('mousedown', function(event) {
         const option = event.target;
         if (option.tagName === 'OPTION') {
-            // 如果渲染完成且在比照模式下，点击切换轨道可见性
+            // 只有渲染完成后才能切换轨道可见性
             if (state.renderingCompleted && ui.compareToggle && ui.compareToggle.checked) {
                 event.preventDefault();
                 window.ElectronCloud.Orbital.toggleOrbitalVisibility(option.value);
@@ -962,19 +1741,13 @@ window.ElectronCloud.UI.updateClearAllSelectionsState = function() {
 
 // 更新全屏按钮状态
 window.ElectronCloud.UI.updateFullscreenBtnState = function() {
-    const state = window.ElectronCloud.state;
     const fullscreenBtn = document.getElementById('app-fullscreen-btn');
     
     if (!fullscreenBtn) return;
     
-    // 渲染过程中（未完成）禁用全屏按钮
-    if (state.isDrawing && !state.samplingCompleted) {
-        fullscreenBtn.disabled = true;
-        fullscreenBtn.title = '渲染中不可切换全屏';
-    } else {
-        fullscreenBtn.disabled = false;
-        fullscreenBtn.title = document.fullscreenElement ? '退出全屏' : '全屏模式';
-    }
+    // 允许在任意时候切换全屏，不再在渲染中禁用
+    fullscreenBtn.disabled = false;
+    fullscreenBtn.title = document.fullscreenElement ? '退出全屏' : '全屏模式';
 };
 
 // 启用手势按钮
@@ -1037,13 +1810,58 @@ window.ElectronCloud.UI.onGestureButtonClick = function() {
         });
     }
     
-    // 2. 收起两侧面板
+    // 2. 收起所有面板
     const controlPanel = document.getElementById('control-panel');
     const dataPanel = document.getElementById('data-panel');
+    const viewPanel = document.getElementById('view-panel');
+    const experimentalPanel = document.getElementById('experimental-panel');
     if (controlPanel) controlPanel.classList.add('collapsed');
     if (dataPanel) dataPanel.classList.add('collapsed');
+    if (viewPanel) viewPanel.classList.add('collapsed');
+    if (experimentalPanel) experimentalPanel.classList.add('collapsed');
     
-    // 3. 开启"固定至中心"
+    // 3. 清除视图面板的所有设置
+    const state = window.ElectronCloud.state;
+    
+    // 3.1 解锁视角
+    const viewLockBtns = document.querySelectorAll('.view-lock-btn');
+    viewLockBtns.forEach(btn => btn.classList.remove('active'));
+    window.ElectronCloud.UI.clearLockedAxisRotation(); // 清除自定义旋转处理
+    if (state.controls) {
+        state.controls.enabled = true;
+        state.controls.enableRotate = true; // 恢复旋转功能
+        state.lockedAxis = null;
+        // 恢复默认up向量
+        if (state.camera) state.camera.up.set(0, 1, 0);
+        // 恢复无限制的旋转角度
+        state.controls.minAzimuthAngle = -Infinity;
+        state.controls.maxAzimuthAngle = Infinity;
+        state.controls.minPolarAngle = 0;
+        state.controls.maxPolarAngle = Math.PI;
+    }
+    
+    // 3.2 停止自动旋转
+    if (state.autoRotate) {
+        state.autoRotate.enabled = false;
+        state.autoRotate.speed = 0;
+    }
+    const rotationSpeedRange = document.getElementById('rotation-speed-range');
+    const rotationSpeedValue = document.getElementById('rotation-speed-value');
+    if (rotationSpeedRange) rotationSpeedRange.value = 0;
+    if (rotationSpeedValue) rotationSpeedValue.textContent = '0';
+    
+    // 3.3 重置旋转轴为默认值
+    const rotationAxisX = document.getElementById('rotation-axis-x');
+    const rotationAxisY = document.getElementById('rotation-axis-y');
+    const rotationAxisZ = document.getElementById('rotation-axis-z');
+    if (rotationAxisX) rotationAxisX.value = 0;
+    if (rotationAxisY) rotationAxisY.value = 1;
+    if (rotationAxisZ) rotationAxisZ.value = 0;
+    if (state.autoRotate && state.autoRotate.axis) {
+        state.autoRotate.axis.set(0, 1, 0);
+    }
+    
+    // 4. 开启"固定至中心"
     const centerLock = document.getElementById('center-lock');
     if (centerLock && !centerLock.checked) {
         centerLock.checked = true;
@@ -1051,8 +1869,7 @@ window.ElectronCloud.UI.onGestureButtonClick = function() {
         centerLock.dispatchEvent(new Event('change'));
     }
     
-    // 4. 调整视角 (缩放至合适大小)
-    const state = window.ElectronCloud.state;
+    // 5. 调整视角 (缩放至合适大小)
     if (state.controls) {
         if (state.farthestDistance > 0) {
             const targetDist = state.farthestDistance * 2.5;
@@ -1063,14 +1880,14 @@ window.ElectronCloud.UI.onGestureButtonClick = function() {
         }
     }
     
-    // 5. 更新按钮状态
+    // 6. 更新按钮状态
     const btn = document.getElementById('gesture-control-btn');
     if (btn) {
         btn.classList.add('gesture-active');
         btn.title = '点击停止手势控制';
     }
     
-    // 6. 开始手势识别
+    // 7. 开始手势识别
     if (window.ElectronCloud.Gesture && window.ElectronCloud.Gesture.start) {
         window.ElectronCloud.Gesture.start();
     } else {

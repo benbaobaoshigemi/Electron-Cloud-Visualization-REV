@@ -231,103 +231,156 @@ window.ElectronCloud.Visualization.createAngularOverlayFromSamples = function() 
     return overlayGroup;
 };
 
-// 导出8K高清透明背景截图
+// 导出截图（直接截取当前画面，保持辉光效果完全一致）
 window.ElectronCloud.Visualization.exportImage = function() {
-    console.log('开始导出8K图片...');
+    console.log('exportImage 函数被调用');
     const state = window.ElectronCloud.state;
     
-    if (!state.renderer || !state.scene || !state.camera) {
-        console.error('导出失败: 渲染器或场景未初始化');
+    if (!state) {
+        console.error('导出失败: state未初始化');
+        alert('导出失败: 应用程序未完全初始化，请刷新页面后重试');
+        return;
+    }
+    
+    if (!state.renderer) {
+        console.error('导出失败: 渲染器未初始化');
         alert('导出失败: 渲染器未就绪，请等待页面完全加载后重试');
         return;
     }
 
     const renderer = state.renderer;
-    const camera = state.camera;
     const scene = state.scene;
+    const camera = state.camera;
 
-    // 保存原始尺寸和像素比
-    const originalSize = new THREE.Vector2();
-    renderer.getSize(originalSize);
-    const originalPixelRatio = renderer.getPixelRatio();
-
-    // 8K 分辨率: 7680 x 4320
-    const exportWidth = 7680;
-    const exportHeight = 4320;
+    // 获取背景设置
+    const backgroundSelect = document.getElementById('export-background-select');
+    const background = backgroundSelect ? backgroundSelect.value : 'black';
+    
+    // 保存原始设置
+    const originalBackground = scene.background;
+    const originalClearAlpha = renderer.getClearAlpha();
 
     try {
-        // 临时调整渲染器尺寸为8K
-        renderer.setSize(exportWidth, exportHeight);
-        renderer.setPixelRatio(1);
+        // 确保黑色背景渲染（包含完整的 Bloom 效果）
+        scene.background = new THREE.Color(0x000000);
+        renderer.setClearAlpha(1);
         
-        // 更新相机宽高比
-        camera.aspect = exportWidth / exportHeight;
-        camera.updateProjectionMatrix();
-        
-        // 更新composer尺寸（如果有）
-        if (state.composer) {
-            state.composer.setSize(exportWidth, exportHeight);
-        }
-
-        // 根据辉光状态选择渲染方式
+        // 渲染一帧（保留 Bloom 效果）
         if (state.bloomEnabled && state.composer) {
+            renderer.clear();
             state.composer.render();
         } else {
             renderer.render(scene, camera);
         }
 
-        // 获取 Data URL
+        // 获取 canvas
         const canvas = renderer.domElement;
-        console.log('导出尺寸:', canvas.width, 'x', canvas.height);
+        console.log('画布尺寸:', canvas.width, 'x', canvas.height);
+        console.log('背景模式:', background);
         
-        let dataURL;
-        try {
-            dataURL = canvas.toDataURL('image/png');
-        } catch (securityError) {
-            console.error('Canvas toDataURL 安全错误:', securityError);
-            alert('导出失败：浏览器安全策略阻止了图片导出。');
-            return;
-        }
-        
-        // 检查 dataURL 是否有效
-        if (!dataURL || dataURL === 'data:,' || dataURL.length < 100) {
-            console.error('生成的 dataURL 无效');
-            alert('导出失败：生成的图片数据无效，请重试');
-            return;
-        }
+        if (background === 'transparent') {
+            // 透明背景：需要处理像素数据，基于亮度计算 alpha
+            // 创建临时 canvas 来处理像素
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const ctx = tempCanvas.getContext('2d');
+            
+            // 将 WebGL canvas 内容绘制到 2D canvas
+            ctx.drawImage(canvas, 0, 0);
+            
+            // 获取像素数据
+            const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const data = imageData.data;
+            
+            // 基于亮度计算 alpha
+            // 核心思路：黑色背景 -> 透明，发光区域 -> 根据亮度设置 alpha
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                // 计算亮度（人眼感知亮度公式）
+                const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                
+                // 使用 max(r,g,b) 作为 alpha，保留最亮的通道
+                // 这样彩色辉光的边缘也能正确保留
+                const maxChannel = Math.max(r, g, b);
+                
+                // alpha 取亮度和最大通道中较大的值，确保辉光效果完整保留
+                // 使用 gamma 校正使过渡更自然
+                let alpha = Math.max(luminance, maxChannel);
+                
+                // 轻微提升 alpha 以确保辉光边缘不会太透明
+                alpha = Math.min(255, alpha * 1.2);
+                
+                data[i + 3] = Math.round(alpha);
+            }
+            
+            // 写回像素数据
+            ctx.putImageData(imageData, 0, 0);
+            
+            // 从处理后的 canvas 导出
+            tempCanvas.toBlob(function(blob) {
+                if (!blob) {
+                    console.error('生成的 blob 无效');
+                    alert('导出失败：生成的图片数据无效，请重试');
+                    return;
+                }
+                
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const filename = `electron-cloud-${canvas.width}x${canvas.height}-transparent-${timestamp}.png`;
+                link.download = filename;
+                link.href = url;
+                
+                document.body.appendChild(link);
+                link.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 100);
 
-        // 创建下载链接
-        const link = document.createElement('a');
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `electron-cloud-8K-${timestamp}.png`;
-        link.download = filename;
-        link.href = dataURL;
-        
-        document.body.appendChild(link);
-        link.click();
-        
-        setTimeout(() => {
-            document.body.removeChild(link);
-        }, 100);
+                console.log('已导出透明背景截图（保留辉光）:', filename);
+            }, 'image/png');
+            
+        } else {
+            // 黑色背景：直接导出
+            canvas.toBlob(function(blob) {
+                if (!blob) {
+                    console.error('生成的 blob 无效');
+                    alert('导出失败：生成的图片数据无效，请重试');
+                    return;
+                }
+                
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const filename = `electron-cloud-${canvas.width}x${canvas.height}-black-${timestamp}.png`;
+                link.download = filename;
+                link.href = url;
+                
+                document.body.appendChild(link);
+                link.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 100);
 
-        console.log('已导出8K截图:', filename);
+                console.log('已导出黑色背景截图:', filename);
+            }, 'image/png');
+        }
 
     } catch (err) {
         console.error('导出截图失败:', err);
         alert('导出截图失败: ' + (err.message || '未知错误'));
     } finally {
-        // 恢复原始尺寸和像素比
-        renderer.setSize(originalSize.x, originalSize.y);
-        renderer.setPixelRatio(originalPixelRatio);
-        
-        // 恢复composer尺寸
-        if (state.composer) {
-            state.composer.setSize(originalSize.x, originalSize.y);
-        }
-        
-        // 恢复相机宽高比
-        camera.aspect = originalSize.x / originalSize.y;
-        camera.updateProjectionMatrix();
+        // 恢复原始设置
+        scene.background = originalBackground;
+        renderer.setClearAlpha(originalClearAlpha);
         
         // 重新渲染一帧恢复显示
         if (state.bloomEnabled && state.composer) {

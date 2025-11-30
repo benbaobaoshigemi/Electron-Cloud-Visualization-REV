@@ -288,13 +288,30 @@ window.ElectronCloud.UI.init = function() {
             
             // 如果关闭闪烁模式，恢复bloom状态、原始颜色和透明度
             if (!e.target.checked && state.bloomPass) {
-                // 保持最低辉光效果（不完全关闭），让画面保持一定亮度
-                state.bloomPass.strength = 0.15;
-                state.bloomEnabled = true;
+                // 【修复】根据亮度滑块当前值恢复辉光状态
+                const ui = window.ElectronCloud.ui;
+                const currentValue = ui.opacityRange ? parseInt(ui.opacityRange.value, 10) : 80;
+                if (currentValue > 80) {
+                    // 辉光区间：80-100 映射到辉光强度 0-4.5
+                    const glowProgress = (currentValue - 80) / 20;
+                    const curvedProgress = glowProgress * glowProgress;
+                    state.bloomPass.strength = curvedProgress * 4.5;
+                    state.bloomEnabled = true;
+                } else {
+                    // 透明度区间，关闭辉光
+                    state.bloomPass.strength = 0;
+                    state.bloomEnabled = false;
+                }
                 
-                // 【关键】恢复点云透明度为1
+                // 【修复】根据亮度滑块当前值恢复透明度
                 if (state.points && state.points.material) {
-                    state.points.material.opacity = 1;
+                    if (currentValue <= 80) {
+                        // 透明度区间：0-80 映射到 0.05-1.0
+                        state.points.material.opacity = 0.05 + (currentValue / 80) * 0.95;
+                    } else {
+                        // 辉光区间：透明度保持最大
+                        state.points.material.opacity = 1.0;
+                    }
                     state.points.material.needsUpdate = true;
                 }
                 
@@ -576,23 +593,8 @@ window.ElectronCloud.UI.lockCameraToAxis = function(axis) {
     // 清除之前的自定义旋转处理
     window.ElectronCloud.UI.clearLockedAxisRotation();
     
-    // 【根本修复】使用统一的旋转重置函数（但不触发完整的锁定清除逻辑）
-    // 重置所有场景对象的旋转到初始状态（清除之前锁定轴旋转累积的旋转）
-    if (state.points) {
-        state.points.rotation.set(0, 0, 0);
-        state.points.updateMatrix();
-        state.points.updateMatrixWorld(true);
-    }
-    if (state.angularOverlay) {
-        state.angularOverlay.rotation.set(0, 0, 0);
-        state.angularOverlay.updateMatrix();
-        state.angularOverlay.updateMatrixWorld(true);
-    }
-    if (state.customAxes) {
-        state.customAxes.rotation.set(0, 0, 0);
-        state.customAxes.updateMatrix();
-        state.customAxes.updateMatrixWorld(true);
-    }
+    // 重置所有场景对象的旋转到初始状态（使用公共函数）
+    window.ElectronCloud.UI.resetSceneObjectsRotation();
     
     // 重置自动旋转累计角度
     if (state.autoRotate) {
@@ -1004,6 +1006,28 @@ window.ElectronCloud.UI.resetOrbitalSelections = function() {
     });
     
     state.currentOrbitals = [];
+};
+
+// 重置所有场景对象的旋转状态（公共函数，避免重复代码）
+// 仅重置旋转，不清除锁定状态或其他逻辑
+window.ElectronCloud.UI.resetSceneObjectsRotation = function() {
+    const state = window.ElectronCloud.state;
+    
+    if (state.points) {
+        state.points.rotation.set(0, 0, 0);
+        state.points.updateMatrix();
+        state.points.updateMatrixWorld(true);
+    }
+    if (state.angularOverlay) {
+        state.angularOverlay.rotation.set(0, 0, 0);
+        state.angularOverlay.updateMatrix();
+        state.angularOverlay.updateMatrixWorld(true);
+    }
+    if (state.customAxes) {
+        state.customAxes.rotation.set(0, 0, 0);
+        state.customAxes.updateMatrix();
+        state.customAxes.updateMatrixWorld(true);
+    }
 };
 
 // ========================================

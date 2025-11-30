@@ -122,15 +122,7 @@ window.ElectronCloud.Orbital.startDrawing = function() {
         btn.classList.remove('active', 'green');
     });
     
-    // 【关键修复】重置所有场景对象的旋转，确保坐标系不歪斜
-    if (state.customAxes) {
-        state.customAxes.rotation.set(0, 0, 0);
-        state.customAxes.updateMatrix();
-    }
-    if (state.angularOverlay) {
-        state.angularOverlay.rotation.set(0, 0, 0);
-        state.angularOverlay.updateMatrix();
-    }
+    // 注意：resetAllSceneObjectsRotation 已经重置了 customAxes 和 angularOverlay
     // 新创建的 points 不需要重置，因为刚创建时旋转就是 (0,0,0)
 
     // 开始绘制

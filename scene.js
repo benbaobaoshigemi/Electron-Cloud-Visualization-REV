@@ -933,25 +933,26 @@ window.ElectronCloud.Scene.resetAllSceneObjectsRotation = function() {
     
     console.log('【统一旋转重置】重置所有场景对象的旋转状态');
     
-    // 重置点云旋转
-    if (state.points) {
-        state.points.rotation.set(0, 0, 0);
-        state.points.updateMatrix();
-        state.points.updateMatrixWorld(true);
-    }
-    
-    // 重置角向叠加层旋转
-    if (state.angularOverlay) {
-        state.angularOverlay.rotation.set(0, 0, 0);
-        state.angularOverlay.updateMatrix();
-        state.angularOverlay.updateMatrixWorld(true);
-    }
-    
-    // 重置坐标轴旋转
-    if (state.customAxes) {
-        state.customAxes.rotation.set(0, 0, 0);
-        state.customAxes.updateMatrix();
-        state.customAxes.updateMatrixWorld(true);
+    // 使用UI模块的公共函数重置旋转（避免代码重复）
+    if (window.ElectronCloud.UI && window.ElectronCloud.UI.resetSceneObjectsRotation) {
+        window.ElectronCloud.UI.resetSceneObjectsRotation();
+    } else {
+        // 降级方案：直接重置（防止初始化顺序问题）
+        if (state.points) {
+            state.points.rotation.set(0, 0, 0);
+            state.points.updateMatrix();
+            state.points.updateMatrixWorld(true);
+        }
+        if (state.angularOverlay) {
+            state.angularOverlay.rotation.set(0, 0, 0);
+            state.angularOverlay.updateMatrix();
+            state.angularOverlay.updateMatrixWorld(true);
+        }
+        if (state.customAxes) {
+            state.customAxes.rotation.set(0, 0, 0);
+            state.customAxes.updateMatrix();
+            state.customAxes.updateMatrixWorld(true);
+        }
     }
     
     // 重置旋转轴辅助线（如果存在）

@@ -104,6 +104,13 @@ window.ElectronCloud.Visualization.updateAngularOverlay = function() {
     // 创建新的叠加
     state.angularOverlay = window.ElectronCloud.Visualization.createAngularOverlay();
     state.angularOverlay.visible = true;
+    
+    // 【修复】继承电子云点云的旋转矩阵，确保角向形状与电子云对齐
+    if (state.points) {
+        state.angularOverlay.rotation.copy(state.points.rotation);
+        state.angularOverlay.updateMatrix();
+    }
+    
     state.scene.add(state.angularOverlay);
 };
 
@@ -125,6 +132,13 @@ window.ElectronCloud.Visualization.updateAngularOverlayFromSamples = function() 
     // 基于实际采样数据创建角向分布
     state.angularOverlay = window.ElectronCloud.Visualization.createAngularOverlayFromSamples();
     state.angularOverlay.visible = true;
+    
+    // 【修复】继承电子云点云的旋转矩阵，确保角向形状与电子云对齐
+    if (state.points) {
+        state.angularOverlay.rotation.copy(state.points.rotation);
+        state.angularOverlay.updateMatrix();
+    }
+    
     state.scene.add(state.angularOverlay);
 };
 

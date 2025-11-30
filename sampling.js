@@ -79,6 +79,11 @@ window.ElectronCloud.Sampling.handleWorkerResult = function(result, taskId) {
     const colorsAttr = state.points.geometry.getAttribute('color');
     const colors = colorsAttr ? colorsAttr.array : null;
     
+    // 确保 pointOrbitalIndices 数组存在
+    if (!state.pointOrbitalIndices || state.pointOrbitalIndices.length < state.MAX_POINTS) {
+        state.pointOrbitalIndices = new Int16Array(state.MAX_POINTS);
+    }
+    
     // 将 Worker 采样的点添加到主线程
     for (const point of result.points) {
         if (state.pointCount >= state.MAX_POINTS) break;
@@ -101,6 +106,9 @@ window.ElectronCloud.Sampling.handleWorkerResult = function(result, taskId) {
             state.baseColors[i3 + 2] = point.b;
             state.baseColorsCount = state.pointCount + 1;
         }
+        
+        // 存储每个点的轨道索引（用于多轨道模式的等值面计算）
+        state.pointOrbitalIndices[state.pointCount] = point.orbitalIndex >= 0 ? point.orbitalIndex : 0;
         
         // 记录轨道点映射（用于比照模式开关）
         if (point.orbitalIndex >= 0) {
@@ -246,6 +254,11 @@ window.ElectronCloud.Sampling.updatePoints = function() {
         state.points.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
         return state.points.geometry.getAttribute('color');
     })();
+    
+    // 确保 pointOrbitalIndices 数组存在（用于多轨道模式的等值面计算）
+    if (!state.pointOrbitalIndices || state.pointOrbitalIndices.length < state.MAX_POINTS) {
+        state.pointOrbitalIndices = new Int16Array(state.MAX_POINTS);
+    }
     
     const paramsList = state.currentOrbitals.map(k => Hydrogen.orbitalParamsFromKey(k)).filter(Boolean);
     if (!paramsList.length) return;
@@ -397,6 +410,11 @@ window.ElectronCloud.Sampling.processIndependentModePoint = function(x, y, z, r,
         }
         state.orbitalPointsMap[orbitalKey].push(state.pointCount);
         
+        // 存储轨道索引（用于多轨道模式的等值面计算）
+        if (state.pointOrbitalIndices) {
+            state.pointOrbitalIndices[state.pointCount] = randomOrbitalIndex;
+        }
+        
         // 记录采样数据（用于图表绘制）
         if (!state.orbitalSamplesMap[orbitalKey]) {
             state.orbitalSamplesMap[orbitalKey] = [];
@@ -477,6 +495,11 @@ window.ElectronCloud.Sampling.processNormalModePoint = function(x, y, z, r, thet
             state.baseColors[i3 + 2] = b_color;
             // 更新计数器（pointCount还没有增加，所以是 pointCount + 1）
             state.baseColorsCount = state.pointCount + 1;
+        }
+        
+        // 存储轨道索引（正常模式为 0，表示叠加模式/单轨道）
+        if (state.pointOrbitalIndices) {
+            state.pointOrbitalIndices[state.pointCount] = 0;
         }
         
         state.pointCount++;

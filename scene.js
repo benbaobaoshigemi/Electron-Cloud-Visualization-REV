@@ -731,12 +731,16 @@ window.ElectronCloud.Scene.animate = function() {
                         state.baseColorsCount = pointCount;
                     }
                     
-                    // 获取当前轨道参数计算概率密度
-                    const orbitalKey = state.currentOrbital || '1s';
                     const Hydrogen = window.Hydrogen;
-                    let orbitalParams = null;
-                    if (Hydrogen && Hydrogen.orbitalParamsFromKey) {
-                        orbitalParams = Hydrogen.orbitalParamsFromKey(orbitalKey);
+                    const ui = window.ElectronCloud.ui;
+                    
+                    // 检查是否为比照模式（多轨道独立显示）
+                    const isCompareMode = ui.compareModeToggle && ui.compareModeToggle.checked;
+                    const orbitals = state.currentOrbitals || [state.currentOrbital || '1s'];
+                    
+                    // 缓存所有轨道的参数
+                    if (!state.waveOrbitalParams) {
+                        state.waveOrbitalParams = [];
                     }
                     
                     // 初始化数组
@@ -744,46 +748,99 @@ window.ElectronCloud.Scene.animate = function() {
                         state.waveRanks = new Float32Array(maxPoints); // 每个点的等值面排名(0-1)
                         state.waveDensities = new Float32Array(maxPoints);
                         state.waveRanksComputed = false;
+                        state.waveRanksPointCount = 0;
                     }
                     
                     const colorArray = colors.array;
                     const processCount = Math.min(pointCount, state.baseColorsCount);
                     
+                    // 当点数变化时，重新计算等值面排名
+                    // 每隔 5000 点重新计算一次，避免频繁更新影响性能
+                    const shouldRecompute = !state.waveRanksComputed || 
+                        (processCount >= 5000 && Math.floor(processCount / 5000) > Math.floor(state.waveRanksPointCount / 5000));
+                    
                     // 计算等值面排名：基于密度值排序，得到每个点属于哪个等值面
-                    if (!state.waveRanksComputed && orbitalParams && Hydrogen.density3D_real) {
-                        // 第一步：计算每个点的密度
-                        for (let i = 0; i < processCount; i++) {
-                            const i3 = i * 3;
-                            const x = positions.array[i3];
-                            const y = positions.array[i3 + 1];
-                            const z = positions.array[i3 + 2];
-                            const r = Math.sqrt(x * x + y * y + z * z);
-                            const theta = r > 0 ? Math.acos(z / r) : 0;
-                            const phi = Math.atan2(y, x);
+                    if (shouldRecompute && Hydrogen && Hydrogen.density3D_real && Hydrogen.orbitalParamsFromKey) {
+                        // 更新轨道参数缓存
+                        state.waveOrbitalParams = orbitals.map(key => Hydrogen.orbitalParamsFromKey(key)).filter(Boolean);
+                        
+                        if (state.waveOrbitalParams.length > 0) {
+                            const usePerPointOrbital = isCompareMode && state.pointOrbitalIndices && state.waveOrbitalParams.length > 1;
                             
-                            const density = Hydrogen.density3D_real(
-                                orbitalParams.angKey,
-                                orbitalParams.n,
-                                orbitalParams.l,
-                                r, theta, phi
-                            );
-                            state.waveDensities[i] = density;
+                            // 第一步：计算每个点的密度
+                            for (let i = 0; i < processCount; i++) {
+                                const i3 = i * 3;
+                                const x = positions.array[i3];
+                                const y = positions.array[i3 + 1];
+                                const z = positions.array[i3 + 2];
+                                const r = Math.sqrt(x * x + y * y + z * z);
+                                const theta = r > 0 ? Math.acos(z / r) : 0;
+                                const phi = Math.atan2(y, x);
+                                
+                                // 根据模式选择轨道参数
+                                let orbitalParams;
+                                if (usePerPointOrbital) {
+                                    // 比照模式：使用每个点实际所属的轨道
+                                    const orbitalIndex = state.pointOrbitalIndices[i] || 0;
+                                    orbitalParams = state.waveOrbitalParams[orbitalIndex] || state.waveOrbitalParams[0];
+                                } else {
+                                    // 正常模式/多选叠加模式：使用第一个轨道
+                                    orbitalParams = state.waveOrbitalParams[0];
+                                }
+                                
+                                const density = Hydrogen.density3D_real(
+                                    orbitalParams.angKey,
+                                    orbitalParams.n,
+                                    orbitalParams.l,
+                                    r, theta, phi
+                                );
+                                state.waveDensities[i] = density;
+                            }
+                            
+                            if (usePerPointOrbital) {
+                                // 比照模式：对每个轨道的点分别排序
+                                // 这样每个轨道的等值面是独立计算的
+                                const orbitalPointGroups = {};
+                                
+                                // 按轨道分组
+                                for (let i = 0; i < processCount; i++) {
+                                    const orbitalIndex = state.pointOrbitalIndices[i] || 0;
+                                    if (!orbitalPointGroups[orbitalIndex]) {
+                                        orbitalPointGroups[orbitalIndex] = [];
+                                    }
+                                    orbitalPointGroups[orbitalIndex].push(i);
+                                }
+                                
+                                // 对每个轨道组内部按密度排序
+                                for (const groupKey of Object.keys(orbitalPointGroups)) {
+                                    const groupIndices = orbitalPointGroups[groupKey];
+                                    groupIndices.sort((a, b) => state.waveDensities[b] - state.waveDensities[a]);
+                                    
+                                    // 计算组内排名
+                                    const groupSize = groupIndices.length;
+                                    for (let rank = 0; rank < groupSize; rank++) {
+                                        const pointIndex = groupIndices[rank];
+                                        state.waveRanks[pointIndex] = rank / (groupSize - 1 || 1);
+                                    }
+                                }
+                            } else {
+                                // 正常模式：所有点一起排序
+                                const indices = new Array(processCount);
+                                for (let i = 0; i < processCount; i++) indices[i] = i;
+                                indices.sort((a, b) => state.waveDensities[b] - state.waveDensities[a]);
+                                
+                                // 计算每个点的等值面排名
+                                // 排名 0 = 最高密度（最内层等值面，约0%）
+                                // 排名 1 = 最低密度（最外层等值面，约99%）
+                                for (let rank = 0; rank < processCount; rank++) {
+                                    const pointIndex = indices[rank];
+                                    state.waveRanks[pointIndex] = rank / (processCount - 1 || 1);
+                                }
+                            }
+                            
+                            state.waveRanksComputed = true;
+                            state.waveRanksPointCount = processCount;
                         }
-                        
-                        // 第二步：创建索引数组并按密度排序（从高到低）
-                        const indices = new Array(processCount);
-                        for (let i = 0; i < processCount; i++) indices[i] = i;
-                        indices.sort((a, b) => state.waveDensities[b] - state.waveDensities[a]);
-                        
-                        // 第三步：计算每个点的等值面排名
-                        // 排名 0 = 最高密度（最内层等值面，约0%）
-                        // 排名 1 = 最低密度（最外层等值面，约99%）
-                        for (let rank = 0; rank < processCount; rank++) {
-                            const pointIndex = indices[rank];
-                            state.waveRanks[pointIndex] = rank / (processCount - 1 || 1);
-                        }
-                        
-                        state.waveRanksComputed = true;
                     }
                     
                     // 波浪位置：从内层(0)向外层(1)扩散，循环平滑

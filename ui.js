@@ -388,6 +388,7 @@ window.ElectronCloud.UI.init = function() {
             // 这解决了"第一次启用是旧样式"的问题
             state.diffuseDensitiesComputed = false;
             state.waveRanksComputed = false;
+            state.waveRanksPointCount = 0;
             
             console.log('闪烁模式切换:', previousMode, '->', e.target.value);
         });

@@ -207,6 +207,7 @@ window.ElectronCloud.Orbital.clearDrawing = function() {
     // 重置所有闪烁模式的密度缓存
     state.diffuseDensitiesComputed = false;
     state.waveRanksComputed = false;
+    state.waveRanksPointCount = 0;
     state.waveRanks = null;
     
     // 重置轨道选项UI状态 - 清除所有可见性相关的类和样式

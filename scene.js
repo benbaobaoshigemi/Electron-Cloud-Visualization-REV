@@ -87,8 +87,8 @@ window.ElectronCloud.Scene.init = function() {
         phase: 0,
         baseStrength: 0,
         maxBrightness: 200,
-        mode: 'starry', // 'starry'(默认), 'heartbeat', 'breath', 'diffuse'(扩散), 'wave'(波浪)
-        frequency: 70,     // 0-100，默认70%
+        mode: 'starry', // 'starry'(默认), 'breath', 'diffuse'(扩散), 'wave'(波浪)
+        frequency: 50,     // 0-100，默认50%（中间值）
         starryPhases: null, // 星空模式的随机相位数组
         weightMode: false   // 权重模式：密集区域闪烁更亮
     };
@@ -390,108 +390,9 @@ window.ElectronCloud.Scene.animate = function() {
     if (state.heartbeat && state.heartbeat.enabled && state.bloomPass) {
         const frequencyScale = 0.3 + (state.heartbeat.frequency / 100) * 1.4; // 0.3-1.7
         
-        if (state.heartbeat.mode === 'heartbeat') {
-            // 心跳模式：所有点同时闪烁
-            state.heartbeat.phase += 0.016 * frequencyScale; // 稍慢一点，更舒适
-            if (state.heartbeat.phase > Math.PI * 2) {
-                state.heartbeat.phase -= Math.PI * 2;
-            }
-            
-            // 优化的心跳波形：模拟真实心跳的lub-dub节奏，但没有完全平直的部分
-            const t = state.heartbeat.phase;
-            const cycle = t / (Math.PI * 2); // 0-1 周期归一化
-            
-            // 第一个峰（主峰 lub）：使用高斯函数，位于周期的 15% 处
-            const peak1Center = 0.15;
-            const peak1Width = 0.08;
-            const peak1 = Math.exp(-Math.pow((cycle - peak1Center) / peak1Width, 2));
-            
-            // 第二个峰（次峰 dub）：位于周期的 30% 处，稍矮稍窄
-            const peak2Center = 0.30;
-            const peak2Width = 0.06;
-            const peak2 = Math.exp(-Math.pow((cycle - peak2Center) / peak2Width, 2)) * 0.7;
-            
-            // 【关键修改】添加基底脉动波，避免完全平直
-            // 使用残余的正弦波来表示心跳间隙的微小脉动
-            const restPhase = cycle > 0.4 ? (cycle - 0.4) / 0.6 : 0; // 在峰后的部分
-            const baseWave = 0.08 + 0.06 * Math.sin(cycle * Math.PI * 6); // 微小的波动
-            
-            // 合并波形 (0-1)，确保没有完全平直的部分
-            const heartbeatWave = Math.max(baseWave, peak1 + peak2);
-            const normalizedWave = Math.min(1, heartbeatWave); // 限制在 0-1
-            
-            // 应用到bloom强度
-            const maxStrength = (state.heartbeat.maxBrightness || 200) / 100 * 1.5;
-            state.bloomPass.strength = normalizedWave * maxStrength;
-            
-            // 【权重模式】如果启用，根据概率密度调整每个点的亮度
-            if (state.heartbeat.weightMode && state.points && state.points.geometry) {
-                const colors = state.points.geometry.attributes.color;
-                const positions = state.points.geometry.attributes.position;
-                if (colors && positions) {
-                    const pointCount = state.pointCount || 0;
-                    
-                    // 确保有基础颜色数组
-                    const maxPoints = state.MAX_POINTS || 100000;
-                    if (!state.baseColors || state.baseColors.length < maxPoints * 3) {
-                        state.baseColors = new Float32Array(maxPoints * 3);
-                        state.baseColorsCount = 0;
-                    }
-                    if (state.baseColorsCount === 0 && pointCount > 0) {
-                        const colorArray = colors.array;
-                        for (let i = 0; i < pointCount * 3; i++) {
-                            state.baseColors[i] = colorArray[i];
-                        }
-                        state.baseColorsCount = pointCount;
-                    }
-                    
-                    // 确保有概率密度权重数组
-                    if (!state.densityWeights || state.densityWeights.length < maxPoints) {
-                        state.densityWeights = new Float32Array(maxPoints);
-                        // 根据距离原点的位置估算密度权重
-                        for (let i = 0; i < pointCount; i++) {
-                            const i3 = i * 3;
-                            const x = positions.array[i3];
-                            const y = positions.array[i3 + 1];
-                            const z = positions.array[i3 + 2];
-                            const r = Math.sqrt(x * x + y * y + z * z);
-                            // 距离越近权重越高（简化的概率密度近似）
-                            state.densityWeights[i] = Math.exp(-r / 10) * 0.7 + 0.3;
-                        }
-                    }
-                    
-                    // 根据权重调整颜色亮度
-                    const colorArray = colors.array;
-                    const processCount = Math.min(pointCount, state.baseColorsCount);
-                    
-                    for (let i = 0; i < processCount; i++) {
-                        const weight = state.densityWeights[i] || 0.5;
-                        // 权重影响峰值亮度：密集区域亮度更高
-                        const brightness = 0.3 + normalizedWave * 0.7 * weight * 1.5;
-                        
-                        const i3 = i * 3;
-                        colorArray[i3] = Math.min(1.0, state.baseColors[i3] * brightness);
-                        colorArray[i3 + 1] = Math.min(1.0, state.baseColors[i3 + 1] * brightness);
-                        colorArray[i3 + 2] = Math.min(1.0, state.baseColors[i3 + 2] * brightness);
-                    }
-                    colors.needsUpdate = true;
-                }
-                
-                // 权重模式下不统一设置透明度
-            } else {
-                // 非权重模式：统一透明度
-                // 【关键】暗时设置透明度30%，亮时100%
-                const minOpacity = 0.3;
-                const targetOpacity = minOpacity + normalizedWave * (1.0 - minOpacity);
-                
-                if (state.points && state.points.material) {
-                    state.points.material.opacity = targetOpacity;
-                    state.points.material.needsUpdate = true;
-                }
-            }
-        } else if (state.heartbeat.mode === 'starry') {
+        if (state.heartbeat.mode === 'starry') {
             // 星空模式：每个点独立随机闪烁，像星海一样
-            state.heartbeat.phase += 0.02 * frequencyScale;
+            state.heartbeat.phase += 0.06 * frequencyScale; // 原来0.02，现在翻3倍
             
             // 基础bloom强度 - 使用心跳模式的值的较高倍数，降低到原来的80%
             const maxStrength = (state.heartbeat.maxBrightness || 200) / 100 * 1.5 * 2.5 * 0.8;
@@ -706,7 +607,7 @@ window.ElectronCloud.Scene.animate = function() {
         } else if (state.heartbeat.mode === 'wave') {
             // 波浪模式：沿等值面扩散 - 点亮等值面轮廓，从内向外扩散
             // 等值面是包含特定百分比点的表面，比如P轨道的哑铃形
-            state.heartbeat.phase += 0.015 * frequencyScale;
+            state.heartbeat.phase += 0.00375 * frequencyScale; // 原来0.015，现在缩小到1/4
             
             const maxStrength = (state.heartbeat.maxBrightness || 200) / 100 * 1.5;
             state.bloomPass.strength = maxStrength * 0.9;
@@ -735,7 +636,7 @@ window.ElectronCloud.Scene.animate = function() {
                     const ui = window.ElectronCloud.ui;
                     
                     // 检查是否为比照模式（多轨道独立显示）
-                    const isCompareMode = ui.compareModeToggle && ui.compareModeToggle.checked;
+                    const isCompareMode = ui.compareToggle && ui.compareToggle.checked;
                     const orbitals = state.currentOrbitals || [state.currentOrbital || '1s'];
                     
                     // 缓存所有轨道的参数
@@ -843,27 +744,46 @@ window.ElectronCloud.Scene.animate = function() {
                         }
                     }
                     
-                    // 波浪位置：从内层(0)向外层(1)扩散，循环平滑
-                    // 使用三角函数实现平滑循环，避免首尾跳变
-                    const cycleTime = time % (Math.PI * 2);
-                    // 用 (1 - cos) / 2 实现 0->1->0 的平滑循环
-                    const pulsePosition = (1 - Math.cos(cycleTime)) / 2; // 0 -> 1 -> 0 平滑循环
-                    const pulseWidth = 0.06; // 脉冲宽度（表面厚度）
+                    // 波浪扩散：单向从核心向外扩散
+                    // 使用 smoothstep 曲线让周期衔接自然
+                    const cycleProgress = time % 1.0; // 周期为1
+                    
+                    // smoothstep: 3t² - 2t³
+                    // 开始时慢（等值面从-0.05缓慢启动，此时全黑）
+                    // 中间快（快速穿过可见区域 0~1）
+                    // 结束时慢（等值面缓慢到达1.05，此时全黑）
+                    const t = cycleProgress;
+                    const smoothT = t * t * (3 - 2 * t);
+                    
+                    // 等值面位置：从 -0.05 到 1.05
+                    // 起点和终点都超出范围，确保开始和结束时全黑
+                    const pulsePosition = -0.05 + smoothT * 1.1;
+                    
+                    // 等值面薄层发光
+                    const pulseWidth = 0.025;
                     
                     for (let i = 0; i < processCount; i++) {
                         const i3 = i * 3;
                         
-                        // 点的等值面排名 (0=内层/0%, 1=外层/99%)
+                        // 点的等值面排名 (0=最高密度/内层, 1=最低密度/外层)
                         const rank = state.waveRanks[i] || 0;
                         
-                        // 计算该点到波浪前沿的"距离"（在等值面排名空间中）
+                        // 计算距离等值面的距离
                         const distToPulse = Math.abs(rank - pulsePosition);
                         
-                        // 高斯衰减：只有等值面上的点才亮，内部和外部都暗
-                        const pulseEffect = Math.exp(-(distToPulse * distToPulse) / (2 * pulseWidth * pulseWidth));
-                        
-                        // 基础亮度非常低 + 脉冲效果
-                        const brightness = 0.1 + pulseEffect * 2.0;
+                        // 薄层发光：只有非常接近等值面的点才亮，其他全黑
+                        let brightness;
+                        if (distToPulse < pulseWidth) {
+                            // 核心区域：最亮
+                            brightness = 2.5;
+                        } else if (distToPulse < pulseWidth * 2) {
+                            // 边缘区域：平滑衰减
+                            const fadeT = (distToPulse - pulseWidth) / pulseWidth;
+                            brightness = 2.5 * (1 - fadeT * fadeT);
+                        } else {
+                            // 远离等值面：全黑
+                            brightness = 0;
+                        }
                         
                         colorArray[i3] = Math.min(1.0, state.baseColors[i3] * brightness);
                         colorArray[i3 + 1] = Math.min(1.0, state.baseColors[i3 + 1] * brightness);

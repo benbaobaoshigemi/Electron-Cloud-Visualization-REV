@@ -38,6 +38,7 @@ window.ElectronCloud.state = {
     orbitalPointsMap: {},
     originalPositions: null,
     orbitalSamplesMap: {},
+    pointOrbitalIndices: null, // 每个点的轨道索引（Int16Array）
     
     // 3D 相关
     angularUpdated: false,
@@ -170,10 +171,15 @@ window.ElectronCloud.resetState = function() {
     state.orbitalPointsMap = {};
     state.originalPositions = null;
     state.orbitalSamplesMap = {};
+    state.pointOrbitalIndices = null;
     
     // 重置星空闪烁的基础颜色
     state.baseColors = null;
     state.baseColorsCount = 0;
+    
+    // 重置波浪模式缓存
+    state.waveRanksComputed = false;
+    state.waveRanksPointCount = 0;
     
     // 重置自动旋转状态
     if (state.autoRotate) {
@@ -246,10 +252,15 @@ window.ElectronCloud.resetSamplingState = function() {
     state.orbitalPointsMap = {};
     state.originalPositions = null;
     state.orbitalSamplesMap = {};
+    state.pointOrbitalIndices = null;
     
     // 重置星空闪烁的基础颜色
     state.baseColors = null;
     state.baseColorsCount = 0;
+    
+    // 重置波浪模式缓存
+    state.waveRanksComputed = false;
+    state.waveRanksPointCount = 0;
     
     // 重置图表数据
     state.backgroundChartData = {

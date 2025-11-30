@@ -365,21 +365,31 @@ window.ElectronCloud.UI.init = function() {
             state.heartbeat.mode = e.target.value;
             state.heartbeat.phase = 0;
             
-            // 如果从星空模式切换出去，恢复原始颜色
-            if (previousMode === 'starry' && state.heartbeat.originalColors && state.points && state.points.geometry) {
+            // 【重要】切换模式时，先恢复原始颜色，避免颜色污染
+            if (state.baseColors && state.points && state.points.geometry) {
                 const colors = state.points.geometry.attributes.color;
                 if (colors) {
-                    const originalColors = state.heartbeat.originalColors;
-                    for (let i = 0; i < colors.array.length && i < originalColors.length; i++) {
-                        colors.array[i] = originalColors[i];
+                    const pointCount = state.pointCount || 0;
+                    for (let i = 0; i < pointCount * 3 && i < state.baseColors.length; i++) {
+                        colors.array[i] = state.baseColors[i];
                     }
                     colors.needsUpdate = true;
                 }
-                // 清除星空模式的缓存数据
+            }
+            
+            // 如果从星空模式切换出去，清除星空缓存
+            if (previousMode === 'starry') {
                 state.heartbeat.starryPhases = null;
                 state.heartbeat.starryFrequencies = null;
                 state.heartbeat.originalColors = null;
             }
+            
+            // 切换到新模式时，重置该模式的缓存（强制重新计算）
+            // 这解决了"第一次启用是旧样式"的问题
+            state.diffuseDensitiesComputed = false;
+            state.waveRanksComputed = false;
+            
+            console.log('闪烁模式切换:', previousMode, '->', e.target.value);
         });
     }
     
@@ -399,10 +409,36 @@ window.ElectronCloud.UI.init = function() {
         });
     }
     
+    // 权重模式开关 - change 事件处理
+    // 注意：点击事件由 setupModeToggleBoxes 统一处理，这里只处理 change 事件
+    const weightModeToggle = document.getElementById('weight-mode-toggle');
+    const weightModeBox = document.getElementById('weight-mode-box');
+    
+    if (weightModeToggle) {
+        weightModeToggle.addEventListener('change', (e) => {
+            const state = window.ElectronCloud.state;
+            state.heartbeat.weightMode = e.target.checked;
+            
+            // 更新框的激活状态
+            if (weightModeBox) {
+                weightModeBox.classList.toggle('active', e.target.checked);
+            }
+            
+            // 切换权重模式时，清除缓存的密度权重，以便重新计算
+            if (!e.target.checked) {
+                state.densityWeights = null;
+            }
+            
+            console.log('权重模式:', e.target.checked ? '开启' : '关闭');
+        });
+    }
+    
+    // 删除了重复的点击事件绑定，统一由 setupModeToggleBoxes 处理
+    
     // 导出设置二级面板
     const exportSettingsBtn = document.getElementById('export-settings-btn');
     const exportSubmenu = document.getElementById('export-submenu');
-    const exportImageBtn = document.getElementById('export-image-btn');
+    const exportFeatureBox = document.getElementById('export-feature-box');
     
     if (exportSettingsBtn && exportSubmenu) {
         exportSettingsBtn.addEventListener('click', (e) => {
@@ -431,26 +467,18 @@ window.ElectronCloud.UI.init = function() {
         });
     }
     
-    // 导出图片按钮
-    if (exportImageBtn) {
-        exportImageBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // 防止事件冒泡
-            console.log('导出按钮被点击');
-            console.log('检查 Visualization 对象:', window.ElectronCloud.Visualization);
-            console.log('检查 exportImage 函数:', typeof window.ElectronCloud.Visualization?.exportImage);
-            
+    // 点击导出功能框直接导出图片
+    if (exportFeatureBox) {
+        exportFeatureBox.addEventListener('click', (e) => {
+            console.log('导出功能框被点击');
             if (window.ElectronCloud.Visualization && typeof window.ElectronCloud.Visualization.exportImage === 'function') {
                 window.ElectronCloud.Visualization.exportImage();
             } else {
                 console.error('导出函数不可用');
-                console.error('ElectronCloud:', window.ElectronCloud);
-                console.error('Visualization:', window.ElectronCloud?.Visualization);
                 alert('导出功能暂时不可用，请刷新页面后重试');
             }
         });
-        console.log('导出按钮事件已绑定');
-    } else {
-        console.error('导出按钮元素未找到');
+        console.log('导出功能框点击事件已绑定');
     }
     
     // 旋转设置二级面板
@@ -1300,6 +1328,23 @@ window.ElectronCloud.UI.onCenterLockChange = function() {
         state.controls.target.set(0, 0, 0);
         state.controls.update();
     }
+    
+    console.log('[UI] centerLock 状态变更:', locked ? '锁定' : '解锁', ', enablePan:', state.controls.enablePan);
+};
+
+// 辅助函数：检查并同步 centerLock 状态
+// 用于其他模块恢复状态时调用
+window.ElectronCloud.UI.syncCenterLockState = function() {
+    const state = window.ElectronCloud.state;
+    if (!state.controls) return;
+    
+    const centerLock = document.getElementById('center-lock');
+    const locked = centerLock && centerLock.checked;
+    
+    state.controls.enablePan = !locked;
+    if (locked) {
+        state.controls.target.set(0, 0, 0);
+    }
 };
 
 // 渲染相位切换
@@ -1315,10 +1360,12 @@ window.ElectronCloud.UI.onPhaseToggleChange = function() {
 // 为所有 mode-toggle-box 添加点击切换逻辑
 window.ElectronCloud.UI.setupModeToggleBoxes = function() {
     const boxes = document.querySelectorAll('.mode-toggle-box');
-    boxes.forEach(box => {
+    boxes.forEach((box, index) => {
         box.addEventListener('click', function(e) {
             // 如果点击的是 checkbox 本身，不需要额外处理
-            if (e.target.tagName === 'INPUT') return;
+            if (e.target.tagName === 'INPUT') {
+                return;
+            }
             
             const checkbox = box.querySelector('input[type="checkbox"]');
             if (checkbox && !checkbox.disabled) {
@@ -1966,15 +2013,10 @@ window.ElectronCloud.UI.onGestureButtonClick = function() {
     window.ElectronCloud.UI.clearLockedAxisRotation(); // 清除自定义旋转处理
     if (state.controls) {
         state.controls.enabled = true;
-        state.controls.enableRotate = true; // 恢复旋转功能
+        // 注意：不设置 enableRotate，因为使用自定义轨迹球旋转
         state.lockedAxis = null;
         // 恢复默认up向量
         if (state.camera) state.camera.up.set(0, 1, 0);
-        // 恢复无限制的旋转角度
-        state.controls.minAzimuthAngle = -Infinity;
-        state.controls.maxAzimuthAngle = Infinity;
-        state.controls.minPolarAngle = 0;
-        state.controls.maxPolarAngle = Math.PI;
     }
     
     // 3.2 停止自动旋转
@@ -2108,7 +2150,10 @@ window.ElectronCloud.UI.startRotationRecording = function() {
         return;
     }
     
+    // 【全屏画布方案】画布已经是全屏尺寸，直接录制即可
     const canvas = state.renderer.domElement;
+    
+    console.log('录制画布尺寸 (全屏):', canvas.width, 'x', canvas.height);
     
     // 尝试获取支持的 MIME 类型
     let mimeType = 'video/webm;codecs=vp9';
@@ -2211,6 +2256,8 @@ window.ElectronCloud.UI.stopRotationRecording = function() {
     
     state.isRecordingRotation = false;
     state.autoRotate.totalAngle = 0;
+    
+    // 【全屏画布方案】不需要恢复尺寸，画布始终是全屏尺寸
     
     // 更新按钮状态
     if (recordBtn) {

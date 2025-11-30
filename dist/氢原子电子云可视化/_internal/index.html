@@ -22,7 +22,7 @@
     <!-- 当前点数显示 -->
     <div id="point-count-display">当前点数 <span id="point-count">0</span></div>
 
-    <div id="gesture-status-popup" class="gesture-popup" style="display: none; position: fixed; top: 20px; right: 60px; left: auto; transform: none;">
+    <div id="gesture-status-popup" class="gesture-popup" style="display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);">
         <div class="status-indicator"></div>
         <span id="gesture-status-text">等待手势...</span>
     </div>
@@ -47,12 +47,11 @@
                         <input type="checkbox" id="heartbeat-toggle" style="display:none" />
                     </div>
                 </div>
-                <!-- 导出图片：左设置图标 | 右功能框(名称+执行按钮) -->
+                <!-- 导出图片：左设置图标 | 右功能框(点击导出) -->
                 <div class="feature-row">
                     <button id="export-settings-btn" class="feature-settings-btn" title="导出设置">⚙</button>
-                    <div id="export-feature-box" class="feature-box">
+                    <div id="export-feature-box" class="feature-box clickable">
                         <span class="feature-name">导出图片</span>
-                        <button id="export-image-btn" class="feature-action-btn" title="导出">导出</button>
                     </div>
                 </div>
                 <div class="control-group action-buttons">
@@ -77,8 +76,11 @@
             <div class="control-group">
                 <label>闪烁类型</label>
                 <select id="flicker-mode-select">
-                    <option value="heartbeat" selected>心跳</option>
-                    <option value="starry">星空</option>
+                    <option value="starry" selected>星空</option>
+                    <option value="heartbeat">心跳</option>
+                    <option value="breath">呼吸</option>
+                    <option value="diffuse">扩散</option>
+                    <option value="wave">波浪</option>
                 </select>
             </div>
             <div class="control-group">
@@ -88,6 +90,15 @@
             <div class="control-group">
                 <label for="heartbeat-max-brightness">最大亮度</label>
                 <input id="heartbeat-max-brightness" type="range" min="100" max="300" step="10" value="200">
+            </div>
+            <div class="mode-toggle-row single">
+                <div class="mode-toggle-box" id="weight-mode-box">
+                    <span class="mode-name">权重模式</span>
+                    <input type="checkbox" id="weight-mode-toggle" />
+                </div>
+            </div>
+            <div class="control-group hint-text">
+                <span>权重模式：密集区域闪烁更亮</span>
             </div>
         </div>
     </div>
@@ -318,10 +329,10 @@
     <script src="physics.js"></script>
     <script src="data_panel.js"></script>
     <!-- 模块化脚本文件 -->
-    <script src="core.js?v=11"></script>
-    <script src="scene.js?v=11"></script>
-    <script src="orbital.js?v=11"></script>
-    <script src="sampling.js?v=11"></script>
+    <script src="core.js?v=12"></script>
+    <script src="scene.js?v=12"></script>
+    <script src="orbital.js?v=13"></script>
+    <script src="sampling.js?v=14"></script>
     <script src="visualization.js?v=12"></script>
     <script src="ui.js?v=11"></script>
     <!-- gesture_v2.js v4.0: 捏合旋转模式 - 更稳定的手势控制 -->

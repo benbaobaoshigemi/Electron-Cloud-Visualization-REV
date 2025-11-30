@@ -1369,6 +1369,17 @@ select[multiple] option.orbital-visible {
     padding: 6px 0;
 }
 
+/* 单个开关框（用于二级菜单） */
+.mode-toggle-row.single {
+    margin-bottom: 6px;
+    padding: 4px 0;
+}
+
+.mode-toggle-row.single .mode-toggle-box {
+    flex: none;
+    width: 100%;
+}
+
 .mode-toggle-box {
     flex: 1;
     display: flex;
@@ -1573,4 +1584,81 @@ button.view-lock-btn.active * {
     border-radius: 4px;
     font-size: 12px;
     text-align: center;
+}
+
+/* 开关行样式（用于二级菜单中的开关） */
+.control-group.toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.control-group.toggle-row label:first-child {
+    margin-bottom: 0;
+}
+
+/* 通用开关样式 */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 22px;
+    transition: all 0.3s ease;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: rgba(80, 200, 120, 0.4);
+    border-color: rgba(80, 200, 120, 0.6);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(18px);
+    background-color: rgba(120, 220, 150, 1);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+    box-shadow: 0 0 3px rgba(80, 200, 120, 0.5);
+}
+
+/* 提示文本样式 */
+.control-group.hint-text {
+    padding-top: 0;
+    margin-top: -4px;
+}
+
+.control-group.hint-text span {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.45);
+    font-style: italic;
 }

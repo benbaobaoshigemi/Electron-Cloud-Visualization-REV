@@ -236,6 +236,7 @@ window.ElectronCloud.Visualization.createAngularOverlayFromSamples = function() 
 };
 
 // 导出截图（高质量，带辉光效果）
+// 【全屏画布方案】画布已经是全屏尺寸，直接捕捉即可
 window.ElectronCloud.Visualization.exportImage = function() {
     console.log('exportImage 函数被调用');
     const state = window.ElectronCloud.state;
@@ -250,7 +251,7 @@ window.ElectronCloud.Visualization.exportImage = function() {
     const backgroundSelect = document.getElementById('export-background-select');
     const background = backgroundSelect ? backgroundSelect.value : 'black';
     
-    // 【简单方案】直接捕捉当前渲染画布
+    // 【简单方案】直接捕捉当前渲染画布（已经是全屏尺寸）
     const canvas = state.renderer.domElement;
     
     console.log('直接捕捉画布尺寸:', canvas.width, 'x', canvas.height);
@@ -308,8 +309,20 @@ window.ElectronCloud.Visualization.exportImage = function() {
             }, 'image/png');
             
         } else {
-            // 黑色背景：直接导出当前画布
-            canvas.toBlob(function(blob) {
+            // 黑色背景：创建临时画布，先填充黑色背景，再绘制WebGL内容
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const ctx = tempCanvas.getContext('2d');
+            
+            // 先填充黑色背景
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // 再绘制WebGL画布内容（覆盖在黑色背景上）
+            ctx.drawImage(canvas, 0, 0);
+            
+            tempCanvas.toBlob(function(blob) {
                 if (!blob) {
                     alert('导出失败：生成的图片数据无效');
                     return;

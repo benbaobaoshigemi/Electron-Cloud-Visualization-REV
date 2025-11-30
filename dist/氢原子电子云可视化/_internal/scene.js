@@ -27,12 +27,28 @@ window.ElectronCloud.Scene.init = function() {
         alpha: true,
         preserveDrawingBuffer: true 
     });
-    state.renderer.setSize(window.innerWidth, window.innerHeight);
-    // 使用更高的像素比以提高画质，最小2倍，最大不超过3倍
+    
+    // 【全屏画布方案】画布像素尺寸始终使用屏幕全屏尺寸
+    // CSS 显示尺寸为窗口大小，这样导出时直接捕捉全屏画布
     const pixelRatio = Math.max(2, Math.min(window.devicePixelRatio, 3));
+    state.fullscreenPixelRatio = pixelRatio; // 保存以便后续使用
+    
+    // 画布像素尺寸 = 屏幕全屏尺寸 * 像素比
+    const canvasWidth = Math.floor(window.screen.width * pixelRatio);
+    const canvasHeight = Math.floor(window.screen.height * pixelRatio);
+    
+    // 设置渲染器：第一个参数是CSS尺寸，setPixelRatio之后会乘以像素比
+    // 为了得到全屏像素尺寸，我们先设置size为屏幕尺寸，再设置pixelRatio
+    state.renderer.setSize(window.screen.width, window.screen.height);
     state.renderer.setPixelRatio(pixelRatio);
-    console.log('渲染器像素比:', pixelRatio, '画布分辨率:', 
-        Math.round(window.innerWidth * pixelRatio), 'x', Math.round(window.innerHeight * pixelRatio));
+    
+    // 然后通过CSS将显示尺寸限制为窗口大小
+    state.renderer.domElement.style.width = '100%';
+    state.renderer.domElement.style.height = '100%';
+    
+    console.log('渲染器像素比:', pixelRatio);
+    console.log('画布像素尺寸 (全屏):', canvasWidth, 'x', canvasHeight);
+    console.log('CSS显示尺寸 (窗口):', window.innerWidth, 'x', window.innerHeight);
     container.appendChild(state.renderer.domElement);
 
     // 初始化后期处理（Bloom辉光效果）
@@ -42,6 +58,11 @@ window.ElectronCloud.Scene.init = function() {
     state.controls = new THREE.OrbitControls(state.camera, state.renderer.domElement);
     state.controls.enableDamping = true;
     state.controls.dampingFactor = 0.05;
+    // 禁用 OrbitControls 的内置旋转，使用自定义轨迹球旋转
+    state.controls.enableRotate = false;
+    
+    // 初始化自定义轨迹球鼠标控制（完全自由旋转，无极点限制）
+    window.ElectronCloud.Scene.initTrackballMouseControl();
     
     // 自动旋转状态
     state.autoRotate = {
@@ -66,9 +87,10 @@ window.ElectronCloud.Scene.init = function() {
         phase: 0,
         baseStrength: 0,
         maxBrightness: 200,
-        mode: 'heartbeat', // 'heartbeat' 或 'starry'
+        mode: 'starry', // 'starry'(默认), 'heartbeat', 'breath', 'diffuse'(扩散), 'wave'(波浪)
         frequency: 70,     // 0-100，默认70%
-        starryPhases: null // 星空模式的随机相位数组
+        starryPhases: null, // 星空模式的随机相位数组
+        weightMode: false   // 权重模式：密集区域闪烁更亮
     };
 
     // 监听窗口大小变化
@@ -80,7 +102,18 @@ window.ElectronCloud.Scene.init = function() {
 // 创建自定义坐标轴
 window.ElectronCloud.Scene.createCustomAxes = function(size) {
     const axes = new THREE.Group();
-    const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+    
+    // 使用 Line2 实现粗线条并启用抗锯齿效果
+    // 但如果 Line2 不可用，回退到 LineBasicMaterial
+    const useThickLines = typeof THREE.LineMaterial !== 'undefined' && 
+                          typeof THREE.LineGeometry !== 'undefined' &&
+                          typeof THREE.Line2 !== 'undefined';
+    
+    // 基本白色材质（用于粗线或回退）
+    const lineMaterial = new THREE.LineBasicMaterial({ 
+        color: 0xffffff,
+        linewidth: 2  // 注意：WebGL 中大多数浏览器忽略此属性
+    });
 
     // 为每个轴创建独立的组，以便单独控制可见性
     const xAxisGroup = new THREE.Group();
@@ -95,12 +128,12 @@ window.ElectronCloud.Scene.createCustomAxes = function(size) {
     const pointsY = [new THREE.Vector3(0, -size, 0), new THREE.Vector3(0, size, 0)];
     const pointsZ = [new THREE.Vector3(0, 0, -size), new THREE.Vector3(0, 0, size)];
     
-    xAxisGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsX), material));
-    yAxisGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsY), material));
-    zAxisGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsZ), material));
+    xAxisGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsX), lineMaterial));
+    yAxisGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsY), lineMaterial));
+    zAxisGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pointsZ), lineMaterial));
 
-    // 箭头
-    const arrowGeom = new THREE.ConeGeometry(0.5, 2, 8);
+    // 箭头 - 使用更多细分来减少锯齿
+    const arrowGeom = new THREE.ConeGeometry(0.5, 2, 16); // 增加细分数从8到16
     const arrowMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
     const arrowX = new THREE.Mesh(arrowGeom, arrowMat);
@@ -184,21 +217,16 @@ window.ElectronCloud.Scene.resetAxesVisibility = function() {
 window.ElectronCloud.Scene.onWindowResize = function() {
     const state = window.ElectronCloud.state;
     
+    // 【全屏画布方案】只更新相机宽高比，不改变画布像素尺寸
+    // 画布始终保持屏幕全屏尺寸，CSS自动缩放显示
     state.camera.aspect = window.innerWidth / window.innerHeight;
     state.camera.updateProjectionMatrix();
-    state.renderer.setSize(window.innerWidth, window.innerHeight);
     
-    // 【关键】使用实际像素分辨率更新后期处理
-    const pixelRatio = state.renderer.getPixelRatio();
-    const width = Math.floor(window.innerWidth * pixelRatio);
-    const height = Math.floor(window.innerHeight * pixelRatio);
+    // 不需要调用 renderer.setSize，因为 CSS style 已经设置为 100%
+    // 画布像素尺寸保持不变（全屏尺寸）
     
-    if (state.composer) {
-        state.composer.setSize(width, height);
-    }
-    if (state.bloomPass) {
-        state.bloomPass.resolution.set(width, height);
-    }
+    console.log('窗口调整，显示尺寸:', window.innerWidth, 'x', window.innerHeight,
+                '画布像素尺寸保持:', state.renderer.domElement.width, 'x', state.renderer.domElement.height);
 };
 
 // 初始化Bloom辉光效果
@@ -218,10 +246,12 @@ window.ElectronCloud.Scene.initBloom = function() {
             return;
         }
         
-        // 【关键】使用实际像素分辨率，而不是 CSS 尺寸
-        const pixelRatio = state.renderer.getPixelRatio();
-        const width = Math.floor(window.innerWidth * pixelRatio);
-        const height = Math.floor(window.innerHeight * pixelRatio);
+        // 【全屏画布方案】使用画布的实际像素尺寸（已经是全屏尺寸）
+        const canvas = state.renderer.domElement;
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        console.log('Bloom初始化使用全屏画布尺寸:', width, 'x', height);
         
         // 创建支持 alpha 通道的 RenderTarget（这是支持透明背景导出的关键）
         const renderTarget = new THREE.WebGLRenderTarget(width, height, {
@@ -266,7 +296,13 @@ window.ElectronCloud.Scene.animate = function() {
     // 如果正在绘制，则更新点
     if (state.isDrawing) {
         if (state.pointCount < state.MAX_POINTS) {
-            window.ElectronCloud.Sampling.updatePoints();
+            // 优先使用 Web Worker 并行采样（如果可用）
+            if (window.ElectronCloud.Sampling.isUsingWorkers && window.ElectronCloud.Sampling.isUsingWorkers()) {
+                window.ElectronCloud.Sampling.submitSamplingTask();
+            } else {
+                // 降级到主线程采样
+                window.ElectronCloud.Sampling.updatePoints();
+            }
             
             // 图表刷新：每秒刷新一次（1000ms），跳过第一秒
             const now = performance.now();
@@ -361,7 +397,7 @@ window.ElectronCloud.Scene.animate = function() {
                 state.heartbeat.phase -= Math.PI * 2;
             }
             
-            // 优化的心跳波形：模拟真实心跳的lub-dub节奏
+            // 优化的心跳波形：模拟真实心跳的lub-dub节奏，但没有完全平直的部分
             const t = state.heartbeat.phase;
             const cycle = t / (Math.PI * 2); // 0-1 周期归一化
             
@@ -375,22 +411,83 @@ window.ElectronCloud.Scene.animate = function() {
             const peak2Width = 0.06;
             const peak2 = Math.exp(-Math.pow((cycle - peak2Center) / peak2Width, 2)) * 0.7;
             
-            // 合并波形 (0-1)
-            const heartbeatWave = peak1 + peak2;
+            // 【关键修改】添加基底脉动波，避免完全平直
+            // 使用残余的正弦波来表示心跳间隙的微小脉动
+            const restPhase = cycle > 0.4 ? (cycle - 0.4) / 0.6 : 0; // 在峰后的部分
+            const baseWave = 0.08 + 0.06 * Math.sin(cycle * Math.PI * 6); // 微小的波动
+            
+            // 合并波形 (0-1)，确保没有完全平直的部分
+            const heartbeatWave = Math.max(baseWave, peak1 + peak2);
             const normalizedWave = Math.min(1, heartbeatWave); // 限制在 0-1
             
             // 应用到bloom强度
             const maxStrength = (state.heartbeat.maxBrightness || 200) / 100 * 1.5;
             state.bloomPass.strength = normalizedWave * maxStrength;
             
-            // 【关键】暗时设置透明度30%，亮时100%
-            // 透明度范围：0.3 (暗) 到 1.0 (亮)
-            const minOpacity = 0.3;
-            const targetOpacity = minOpacity + normalizedWave * (1.0 - minOpacity);
-            
-            if (state.points && state.points.material) {
-                state.points.material.opacity = targetOpacity;
-                state.points.material.needsUpdate = true;
+            // 【权重模式】如果启用，根据概率密度调整每个点的亮度
+            if (state.heartbeat.weightMode && state.points && state.points.geometry) {
+                const colors = state.points.geometry.attributes.color;
+                const positions = state.points.geometry.attributes.position;
+                if (colors && positions) {
+                    const pointCount = state.pointCount || 0;
+                    
+                    // 确保有基础颜色数组
+                    const maxPoints = state.MAX_POINTS || 100000;
+                    if (!state.baseColors || state.baseColors.length < maxPoints * 3) {
+                        state.baseColors = new Float32Array(maxPoints * 3);
+                        state.baseColorsCount = 0;
+                    }
+                    if (state.baseColorsCount === 0 && pointCount > 0) {
+                        const colorArray = colors.array;
+                        for (let i = 0; i < pointCount * 3; i++) {
+                            state.baseColors[i] = colorArray[i];
+                        }
+                        state.baseColorsCount = pointCount;
+                    }
+                    
+                    // 确保有概率密度权重数组
+                    if (!state.densityWeights || state.densityWeights.length < maxPoints) {
+                        state.densityWeights = new Float32Array(maxPoints);
+                        // 根据距离原点的位置估算密度权重
+                        for (let i = 0; i < pointCount; i++) {
+                            const i3 = i * 3;
+                            const x = positions.array[i3];
+                            const y = positions.array[i3 + 1];
+                            const z = positions.array[i3 + 2];
+                            const r = Math.sqrt(x * x + y * y + z * z);
+                            // 距离越近权重越高（简化的概率密度近似）
+                            state.densityWeights[i] = Math.exp(-r / 10) * 0.7 + 0.3;
+                        }
+                    }
+                    
+                    // 根据权重调整颜色亮度
+                    const colorArray = colors.array;
+                    const processCount = Math.min(pointCount, state.baseColorsCount);
+                    
+                    for (let i = 0; i < processCount; i++) {
+                        const weight = state.densityWeights[i] || 0.5;
+                        // 权重影响峰值亮度：密集区域亮度更高
+                        const brightness = 0.3 + normalizedWave * 0.7 * weight * 1.5;
+                        
+                        const i3 = i * 3;
+                        colorArray[i3] = Math.min(1.0, state.baseColors[i3] * brightness);
+                        colorArray[i3 + 1] = Math.min(1.0, state.baseColors[i3 + 1] * brightness);
+                        colorArray[i3 + 2] = Math.min(1.0, state.baseColors[i3 + 2] * brightness);
+                    }
+                    colors.needsUpdate = true;
+                }
+                
+                // 权重模式下不统一设置透明度
+            } else {
+                // 非权重模式：统一透明度
+                // 【关键】暗时设置透明度30%，亮时100%
+                const minOpacity = 0.3;
+                const targetOpacity = minOpacity + normalizedWave * (1.0 - minOpacity);
+                
+                if (state.points && state.points.material) {
+                    state.points.material.opacity = targetOpacity;
+                    state.points.material.needsUpdate = true;
+                }
             }
         } else if (state.heartbeat.mode === 'starry') {
             // 星空模式：每个点独立随机闪烁，像星海一样
@@ -441,6 +538,22 @@ window.ElectronCloud.Scene.animate = function() {
                     const minBrightness = 0.05;
                     const maxBrightnessMultiplier = 2.0;
                     
+                    // 【权重模式】确保有概率密度权重数组
+                    const positions = state.points.geometry.attributes.position;
+                    if (state.heartbeat.weightMode && positions) {
+                        if (!state.densityWeights || state.densityWeights.length < maxPoints) {
+                            state.densityWeights = new Float32Array(maxPoints);
+                            for (let i = 0; i < pointCount; i++) {
+                                const i3 = i * 3;
+                                const x = positions.array[i3];
+                                const y = positions.array[i3 + 1];
+                                const z = positions.array[i3 + 2];
+                                const r = Math.sqrt(x * x + y * y + z * z);
+                                state.densityWeights[i] = Math.exp(-r / 10) * 0.7 + 0.3;
+                            }
+                        }
+                    }
+                    
                     // 更新每个点的颜色亮度
                     const colorArray = colors.array;
                     
@@ -456,11 +569,245 @@ window.ElectronCloud.Scene.animate = function() {
                         // 添加一些随机闪烁（偶尔变亮）
                         const sparkle = Math.random() < 0.002 ? 1.3 : 1.0;
                         
-                        // 亮度范围从 minBrightness 到 maxBrightnessMultiplier
-                        const brightness = (minBrightness + individualWave * (maxBrightnessMultiplier - minBrightness)) * sparkle;
+                        // 【权重模式】密集区域峰值亮度更高
+                        let brightnessMultiplier = maxBrightnessMultiplier;
+                        if (state.heartbeat.weightMode && state.densityWeights) {
+                            const weight = state.densityWeights[i] || 0.5;
+                            brightnessMultiplier = maxBrightnessMultiplier * weight * 1.5;
+                        }
+                        
+                        // 亮度范围从 minBrightness 到 brightnessMultiplier
+                        const brightness = (minBrightness + individualWave * (brightnessMultiplier - minBrightness)) * sparkle;
                         
                         const i3 = i * 3;
                         // 基于原始颜色应用亮度调整
+                        colorArray[i3] = Math.min(1.0, state.baseColors[i3] * brightness);
+                        colorArray[i3 + 1] = Math.min(1.0, state.baseColors[i3 + 1] * brightness);
+                        colorArray[i3 + 2] = Math.min(1.0, state.baseColors[i3 + 2] * brightness);
+                    }
+                    colors.needsUpdate = true;
+                }
+            }
+        } else if (state.heartbeat.mode === 'breath') {
+            // 呼吸模式：平滑的正弦波呼吸效果
+            state.heartbeat.phase += 0.012 * frequencyScale;
+            if (state.heartbeat.phase > Math.PI * 2) {
+                state.heartbeat.phase -= Math.PI * 2;
+            }
+            
+            // 平滑的呼吸波形 (使用 cos 使得从亮开始)
+            const breathWave = 0.5 + 0.5 * Math.cos(state.heartbeat.phase);
+            
+            const maxStrength = (state.heartbeat.maxBrightness || 200) / 100 * 1.5;
+            state.bloomPass.strength = breathWave * maxStrength;
+            
+            const minOpacity = 0.25;
+            const targetOpacity = minOpacity + breathWave * (1.0 - minOpacity);
+            
+            if (state.points && state.points.material) {
+                state.points.material.opacity = targetOpacity;
+                state.points.material.needsUpdate = true;
+            }
+        } else if (state.heartbeat.mode === 'diffuse') {
+            // 扩散模式：从高密度区域向低密度区域扩散的波纹
+            state.heartbeat.phase += 0.02 * frequencyScale;
+            
+            const maxStrength = (state.heartbeat.maxBrightness || 200) / 100 * 1.5;
+            state.bloomPass.strength = maxStrength * 0.7;
+            
+            if (state.points && state.points.geometry) {
+                const colors = state.points.geometry.attributes.color;
+                const positions = state.points.geometry.attributes.position;
+                if (colors && positions) {
+                    const pointCount = state.pointCount || 0;
+                    const time = state.heartbeat.phase;
+                    
+                    const maxPoints = state.MAX_POINTS || 100000;
+                    if (!state.baseColors || state.baseColors.length < maxPoints * 3) {
+                        state.baseColors = new Float32Array(maxPoints * 3);
+                        state.baseColorsCount = 0;
+                    }
+                    if (state.baseColorsCount === 0 && pointCount > 0) {
+                        const colorArray = colors.array;
+                        for (let i = 0; i < pointCount * 3; i++) {
+                            state.baseColors[i] = colorArray[i];
+                        }
+                        state.baseColorsCount = pointCount;
+                    }
+                    
+                    // 计算概率密度用于扩散效果
+                    const orbitalKey = state.currentOrbital || '1s';
+                    const Hydrogen = window.Hydrogen;
+                    let orbitalParams = null;
+                    if (Hydrogen && Hydrogen.orbitalParamsFromKey) {
+                        orbitalParams = Hydrogen.orbitalParamsFromKey(orbitalKey);
+                    }
+                    
+                    // 初始化密度数组
+                    if (!state.diffuseDensities || state.diffuseDensities.length < maxPoints) {
+                        state.diffuseDensities = new Float32Array(maxPoints);
+                        state.diffuseDensitiesComputed = false;
+                    }
+                    
+                    const colorArray = colors.array;
+                    const processCount = Math.min(pointCount, state.baseColorsCount);
+                    
+                    // 如果密度未计算，先计算一次
+                    if (!state.diffuseDensitiesComputed && orbitalParams && Hydrogen.density3D_real) {
+                        let maxDensity = 0;
+                        for (let i = 0; i < processCount; i++) {
+                            const i3 = i * 3;
+                            const x = positions.array[i3];
+                            const y = positions.array[i3 + 1];
+                            const z = positions.array[i3 + 2];
+                            const r = Math.sqrt(x * x + y * y + z * z);
+                            const theta = r > 0 ? Math.acos(z / r) : 0;
+                            const phi = Math.atan2(y, x);
+                            
+                            const density = Hydrogen.density3D_real(
+                                orbitalParams.angKey,
+                                orbitalParams.n,
+                                orbitalParams.l,
+                                r, theta, phi
+                            );
+                            state.diffuseDensities[i] = density;
+                            if (density > maxDensity) maxDensity = density;
+                        }
+                        // 归一化密度到 0-1 范围
+                        if (maxDensity > 0) {
+                            for (let i = 0; i < processCount; i++) {
+                                state.diffuseDensities[i] = state.diffuseDensities[i] / maxDensity;
+                            }
+                        }
+                        state.diffuseDensitiesComputed = true;
+                    }
+                    
+                    for (let i = 0; i < processCount; i++) {
+                        const i3 = i * 3;
+                        
+                        // 使用密度值作为扩散相位基准
+                        // 密度高的点先亮，然后波浪向密度低的区域扩散
+                        const density = state.diffuseDensities[i] || 0;
+                        // 用 log 压缩使效果更明显
+                        const logDensity = Math.log(density * 99 + 1) / Math.log(100);
+                        
+                        // 波浪从高密度向低密度传播
+                        const wavePhase = (1 - logDensity) * 6 - time * 3;
+                        const wave = 0.5 + 0.5 * Math.sin(wavePhase);
+                        const brightness = 0.3 + wave * 1.2;
+                        
+                        colorArray[i3] = Math.min(1.0, state.baseColors[i3] * brightness);
+                        colorArray[i3 + 1] = Math.min(1.0, state.baseColors[i3 + 1] * brightness);
+                        colorArray[i3 + 2] = Math.min(1.0, state.baseColors[i3 + 2] * brightness);
+                    }
+                    colors.needsUpdate = true;
+                }
+            }
+        } else if (state.heartbeat.mode === 'wave') {
+            // 波浪模式：沿等值面扩散 - 点亮等值面轮廓，从内向外扩散
+            // 等值面是包含特定百分比点的表面，比如P轨道的哑铃形
+            state.heartbeat.phase += 0.015 * frequencyScale;
+            
+            const maxStrength = (state.heartbeat.maxBrightness || 200) / 100 * 1.5;
+            state.bloomPass.strength = maxStrength * 0.9;
+            
+            if (state.points && state.points.geometry) {
+                const colors = state.points.geometry.attributes.color;
+                const positions = state.points.geometry.attributes.position;
+                if (colors && positions) {
+                    const pointCount = state.pointCount || 0;
+                    const time = state.heartbeat.phase;
+                    
+                    const maxPoints = state.MAX_POINTS || 100000;
+                    if (!state.baseColors || state.baseColors.length < maxPoints * 3) {
+                        state.baseColors = new Float32Array(maxPoints * 3);
+                        state.baseColorsCount = 0;
+                    }
+                    if (state.baseColorsCount === 0 && pointCount > 0) {
+                        const colorArray = colors.array;
+                        for (let i = 0; i < pointCount * 3; i++) {
+                            state.baseColors[i] = colorArray[i];
+                        }
+                        state.baseColorsCount = pointCount;
+                    }
+                    
+                    // 获取当前轨道参数计算概率密度
+                    const orbitalKey = state.currentOrbital || '1s';
+                    const Hydrogen = window.Hydrogen;
+                    let orbitalParams = null;
+                    if (Hydrogen && Hydrogen.orbitalParamsFromKey) {
+                        orbitalParams = Hydrogen.orbitalParamsFromKey(orbitalKey);
+                    }
+                    
+                    // 初始化数组
+                    if (!state.waveRanks || state.waveRanks.length < maxPoints) {
+                        state.waveRanks = new Float32Array(maxPoints); // 每个点的等值面排名(0-1)
+                        state.waveDensities = new Float32Array(maxPoints);
+                        state.waveRanksComputed = false;
+                    }
+                    
+                    const colorArray = colors.array;
+                    const processCount = Math.min(pointCount, state.baseColorsCount);
+                    
+                    // 计算等值面排名：基于密度值排序，得到每个点属于哪个等值面
+                    if (!state.waveRanksComputed && orbitalParams && Hydrogen.density3D_real) {
+                        // 第一步：计算每个点的密度
+                        for (let i = 0; i < processCount; i++) {
+                            const i3 = i * 3;
+                            const x = positions.array[i3];
+                            const y = positions.array[i3 + 1];
+                            const z = positions.array[i3 + 2];
+                            const r = Math.sqrt(x * x + y * y + z * z);
+                            const theta = r > 0 ? Math.acos(z / r) : 0;
+                            const phi = Math.atan2(y, x);
+                            
+                            const density = Hydrogen.density3D_real(
+                                orbitalParams.angKey,
+                                orbitalParams.n,
+                                orbitalParams.l,
+                                r, theta, phi
+                            );
+                            state.waveDensities[i] = density;
+                        }
+                        
+                        // 第二步：创建索引数组并按密度排序（从高到低）
+                        const indices = new Array(processCount);
+                        for (let i = 0; i < processCount; i++) indices[i] = i;
+                        indices.sort((a, b) => state.waveDensities[b] - state.waveDensities[a]);
+                        
+                        // 第三步：计算每个点的等值面排名
+                        // 排名 0 = 最高密度（最内层等值面，约0%）
+                        // 排名 1 = 最低密度（最外层等值面，约99%）
+                        for (let rank = 0; rank < processCount; rank++) {
+                            const pointIndex = indices[rank];
+                            state.waveRanks[pointIndex] = rank / (processCount - 1 || 1);
+                        }
+                        
+                        state.waveRanksComputed = true;
+                    }
+                    
+                    // 波浪位置：从内层(0)向外层(1)扩散，循环平滑
+                    // 使用三角函数实现平滑循环，避免首尾跳变
+                    const cycleTime = time % (Math.PI * 2);
+                    // 用 (1 - cos) / 2 实现 0->1->0 的平滑循环
+                    const pulsePosition = (1 - Math.cos(cycleTime)) / 2; // 0 -> 1 -> 0 平滑循环
+                    const pulseWidth = 0.06; // 脉冲宽度（表面厚度）
+                    
+                    for (let i = 0; i < processCount; i++) {
+                        const i3 = i * 3;
+                        
+                        // 点的等值面排名 (0=内层/0%, 1=外层/99%)
+                        const rank = state.waveRanks[i] || 0;
+                        
+                        // 计算该点到波浪前沿的"距离"（在等值面排名空间中）
+                        const distToPulse = Math.abs(rank - pulsePosition);
+                        
+                        // 高斯衰减：只有等值面上的点才亮，内部和外部都暗
+                        const pulseEffect = Math.exp(-(distToPulse * distToPulse) / (2 * pulseWidth * pulseWidth));
+                        
+                        // 基础亮度非常低 + 脉冲效果
+                        const brightness = 0.1 + pulseEffect * 2.0;
+                        
                         colorArray[i3] = Math.min(1.0, state.baseColors[i3] * brightness);
                         colorArray[i3 + 1] = Math.min(1.0, state.baseColors[i3 + 1] * brightness);
                         colorArray[i3 + 2] = Math.min(1.0, state.baseColors[i3 + 2] * brightness);
@@ -646,16 +993,14 @@ window.ElectronCloud.Scene.resetAllSceneObjectsRotation = function() {
     // 如果有锁定视角，清除锁定状态
     if (state.lockedAxis) {
         state.lockedAxis = null;
-        // 恢复OrbitControls
+        // 恢复OrbitControls（但保持 enableRotate = false，使用自定义轨迹球）
         if (state.controls) {
             state.controls.enabled = true;
-            state.controls.enableRotate = true;
+            // 注意：不恢复 enableRotate，因为使用自定义轨迹球旋转
             state.controls.enableZoom = true;
-            state.controls.enablePan = true;
-            state.controls.minAzimuthAngle = -Infinity;
-            state.controls.maxAzimuthAngle = Infinity;
-            state.controls.minPolarAngle = 0;
-            state.controls.maxPolarAngle = Math.PI;
+            // 检查 centerLock 状态，决定是否启用平移
+            const centerLock = document.getElementById('center-lock');
+            state.controls.enablePan = !(centerLock && centerLock.checked);
         }
         // 恢复相机默认up向量
         if (state.camera) {
@@ -759,4 +1104,277 @@ window.ElectronCloud.Scene.showRotationAxisHelper = function(axis) {
             state.autoRotate.axisHelper = null;
         }
     }, 1000);
+};
+
+// ========================================
+// 自定义轨迹球鼠标控制（完全自由旋转，无极点限制，带惯性）
+// ========================================
+window.ElectronCloud.Scene.initTrackballMouseControl = function() {
+    const state = window.ElectronCloud.state;
+    const canvas = state.renderer.domElement;
+    
+    // 配置参数 - 优化手感，更接近原 OrbitControls
+    const CONFIG = {
+        rotationSpeed: 0.005,      // 旋转灵敏度（稍微降低，更精细）
+        friction: 0.92,            // 惯性摩擦系数 (0-1，降低使惯性衰减更快)
+        minVelocity: 0.0001,       // 停止惯性的最小速度（提高阈值，更快停止）
+        velocitySamples: 3,        // 用于计算释放速度的样本数（减少延迟感）
+        inertiaMultiplier: 0.8,    // 惯性放大倍数（降低，惯性更自然）
+    };
+    
+    // 状态变量
+    let isDragging = false;
+    let previousMouseX = 0;
+    let previousMouseY = 0;
+    let activePointerId = null;
+    
+    // 惯性相关
+    let velocityX = 0;
+    let velocityY = 0;
+    let velocityHistory = [];      // 记录最近几帧的速度
+    let lastMoveTime = 0;
+    let inertiaAnimationId = null;
+    
+    // 轨迹球旋转实现
+    function applyTrackballRotation(deltaX, deltaY) {
+        // 如果视角被锁定或手势控制正在运行，不处理
+        if (state.lockedAxis) return;
+        if (window.ElectronCloud.Gesture && window.ElectronCloud.Gesture.isRunning && window.ElectronCloud.Gesture.isRunning()) return;
+        
+        const camera = state.camera;
+        const controls = state.controls;
+        const target = controls.target;
+
+        // 计算相机相对于目标点的偏移
+        const offset = new THREE.Vector3().subVectors(camera.position, target);
+        
+        // 获取当前相机的坐标系
+        const cameraDirection = new THREE.Vector3();
+        camera.getWorldDirection(cameraDirection);
+        
+        // 计算相机的右轴和上轴（基于当前相机姿态）
+        const cameraRight = new THREE.Vector3();
+        cameraRight.crossVectors(cameraDirection, camera.up).normalize();
+        
+        // 如果 cameraRight 接近零（相机 up 与观察方向平行），使用备用方案
+        if (cameraRight.lengthSq() < 0.0001) {
+            if (Math.abs(cameraDirection.x) < 0.9) {
+                cameraRight.crossVectors(new THREE.Vector3(1, 0, 0), cameraDirection).normalize();
+            } else {
+                cameraRight.crossVectors(new THREE.Vector3(0, 1, 0), cameraDirection).normalize();
+            }
+        }
+        
+        // 相机的实际上轴（与观察方向正交）
+        const cameraUp = new THREE.Vector3();
+        cameraUp.crossVectors(cameraRight, cameraDirection).normalize();
+        
+        // 创建旋转四元数
+        const qHorizontal = new THREE.Quaternion().setFromAxisAngle(cameraUp, -deltaX);
+        const qVertical = new THREE.Quaternion().setFromAxisAngle(cameraRight, -deltaY);
+        
+        // 合并旋转
+        const quaternion = new THREE.Quaternion();
+        quaternion.multiplyQuaternions(qHorizontal, qVertical);
+        
+        // 应用旋转到偏移向量
+        offset.applyQuaternion(quaternion);
+        
+        // 更新相机位置
+        camera.position.copy(target).add(offset);
+        
+        // 同时旋转 camera.up 向量，实现完全自由旋转
+        camera.up.applyQuaternion(quaternion).normalize();
+        
+        // 防止 up 向量数值漂移（正交化校正）
+        const newDirection = new THREE.Vector3().subVectors(target, camera.position).normalize();
+        const dotProduct = camera.up.dot(newDirection);
+        if (Math.abs(dotProduct) > 0.0001) {
+            camera.up.sub(newDirection.clone().multiplyScalar(dotProduct)).normalize();
+        }
+        
+        // 让相机看向目标点
+        camera.lookAt(target);
+        
+        // 更新控制器目标
+        controls.target.copy(target);
+    }
+    
+    // 惯性动画循环
+    function inertiaLoop() {
+        // 如果正在拖动或视角被锁定，停止惯性
+        if (isDragging || state.lockedAxis) {
+            velocityX = 0;
+            velocityY = 0;
+            return;
+        }
+        
+        // 如果手势控制正在运行，停止惯性
+        if (window.ElectronCloud.Gesture && window.ElectronCloud.Gesture.isRunning && window.ElectronCloud.Gesture.isRunning()) {
+            velocityX = 0;
+            velocityY = 0;
+            return;
+        }
+        
+        // 检查速度是否足够小可以停止
+        const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+        if (speed < CONFIG.minVelocity) {
+            velocityX = 0;
+            velocityY = 0;
+            return;
+        }
+        
+        // 应用旋转
+        applyTrackballRotation(velocityX, velocityY);
+        
+        // 应用摩擦力衰减
+        velocityX *= CONFIG.friction;
+        velocityY *= CONFIG.friction;
+        
+        // 继续动画
+        inertiaAnimationId = requestAnimationFrame(inertiaLoop);
+    }
+    
+    // 指针按下
+    function onPointerDown(e) {
+        // 只响应左键（鼠标）
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        
+        // 如果视角被锁定，不处理
+        if (state.lockedAxis) return;
+        
+        // 如果手势控制正在运行，不处理
+        if (window.ElectronCloud.Gesture && window.ElectronCloud.Gesture.isRunning && window.ElectronCloud.Gesture.isRunning()) return;
+        
+        // 只处理鼠标左键的旋转
+        if (e.pointerType === 'mouse' && e.button === 0) {
+            isDragging = true;
+            activePointerId = e.pointerId;
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+            lastMoveTime = performance.now();
+            
+            // 停止惯性
+            velocityX = 0;
+            velocityY = 0;
+            velocityHistory = [];
+            if (inertiaAnimationId) {
+                cancelAnimationFrame(inertiaAnimationId);
+                inertiaAnimationId = null;
+            }
+            
+            // 捕获指针
+            canvas.setPointerCapture(e.pointerId);
+        }
+    }
+    
+    // 指针移动
+    function onPointerMove(e) {
+        if (!isDragging || e.pointerId !== activePointerId) return;
+        
+        const currentTime = performance.now();
+        const dt = currentTime - lastMoveTime;
+        
+        const deltaX = (e.clientX - previousMouseX) * CONFIG.rotationSpeed;
+        const deltaY = (e.clientY - previousMouseY) * CONFIG.rotationSpeed;
+        
+        previousMouseX = e.clientX;
+        previousMouseY = e.clientY;
+        lastMoveTime = currentTime;
+        
+        // 记录速度历史（用于计算释放时的惯性）
+        if (dt > 0) {
+            velocityHistory.push({ vx: deltaX, vy: deltaY, dt: dt });
+            // 只保留最近几个样本
+            if (velocityHistory.length > CONFIG.velocitySamples) {
+                velocityHistory.shift();
+            }
+        }
+        
+        applyTrackballRotation(deltaX, deltaY);
+    }
+    
+    // 指针释放
+    function onPointerUp(e) {
+        if (e.pointerId === activePointerId) {
+            isDragging = false;
+            activePointerId = null;
+            
+            try {
+                canvas.releasePointerCapture(e.pointerId);
+            } catch (err) {
+                // 忽略
+            }
+            
+            // 计算释放时的速度（基于最近几帧的平均值）
+            if (velocityHistory.length > 0) {
+                let totalVx = 0;
+                let totalVy = 0;
+                let totalWeight = 0;
+                
+                // 加权平均，最近的帧权重更大
+                velocityHistory.forEach((sample, index) => {
+                    const weight = index + 1;  // 越新的样本权重越大
+                    totalVx += sample.vx * weight;
+                    totalVy += sample.vy * weight;
+                    totalWeight += weight;
+                });
+                
+                if (totalWeight > 0) {
+                    velocityX = (totalVx / totalWeight) * CONFIG.inertiaMultiplier;
+                    velocityY = (totalVy / totalWeight) * CONFIG.inertiaMultiplier;
+                    
+                    // 启动惯性动画
+                    if (Math.abs(velocityX) > CONFIG.minVelocity || Math.abs(velocityY) > CONFIG.minVelocity) {
+                        inertiaAnimationId = requestAnimationFrame(inertiaLoop);
+                    }
+                }
+            }
+            
+            velocityHistory = [];
+        }
+    }
+    
+    // 绑定事件 - 使用捕获阶段
+    canvas.addEventListener('pointerdown', onPointerDown, true);
+    canvas.addEventListener('pointermove', onPointerMove, true);
+    canvas.addEventListener('pointerup', onPointerUp, true);
+    canvas.addEventListener('pointercancel', onPointerUp, true);
+    
+    // 保存引用
+    state.trackballMouseControl = {
+        enabled: true,
+        handlers: {
+            pointerdown: onPointerDown,
+            pointermove: onPointerMove,
+            pointerup: onPointerUp
+        },
+        // 暴露停止惯性的方法
+        stopInertia: function() {
+            velocityX = 0;
+            velocityY = 0;
+            if (inertiaAnimationId) {
+                cancelAnimationFrame(inertiaAnimationId);
+                inertiaAnimationId = null;
+            }
+        }
+    };
+    
+    console.log('[Scene] 轨迹球鼠标控制已初始化（完全自由旋转 + 惯性）');
+};
+
+// 暂时禁用轨迹球鼠标控制
+window.ElectronCloud.Scene.disableTrackballMouseControl = function() {
+    const state = window.ElectronCloud.state;
+    if (state.trackballMouseControl) {
+        state.trackballMouseControl.enabled = false;
+    }
+};
+
+// 恢复轨迹球鼠标控制
+window.ElectronCloud.Scene.enableTrackballMouseControl = function() {
+    const state = window.ElectronCloud.state;
+    if (state.trackballMouseControl) {
+        state.trackballMouseControl.enabled = true;
+    }
 };

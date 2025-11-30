@@ -25,31 +25,35 @@ window.ElectronCloud.Gesture = window.ElectronCloud.Gesture || {};
 // ========================================
 const CONFIG = {
     // 捏合检测（相对距离 = 手指距离/手部大小）
-    // 优化：调整阈值以获得更好的操作手感
     pinchStartThreshold: 0.22,    // 开始捏合（需要捏得比较紧，约22%手掌宽度）
-    pinchEndThreshold: 0.32,      // 结束捏合（稍微降低，配合意图识别）
-    pinchReleaseVelocity: 0.04,   // 手指分开速度阈值（降低阈值，让轻快张开也能触发）
+    pinchEndThreshold: 0.35,      // 结束捏合（适度放宽，减少误触发）
+    pinchReleaseVelocity: 0.035,  // 手指分开速度阈值
     
     // 旋转控制
-    rotationSensitivity: 3.5,     // 降低灵敏度，提高精确度
-    deadzone: 0.001,              // 死区
-    maxDelta: 0.15,               // 单帧最大位移限幅
+    rotationSensitivity: 4.0,     // 旋转灵敏度
+    deadzone: 0.0008,             // 死区（更小的死区让响应更灵敏）
+    maxDelta: 0.12,               // 单帧最大位移限幅
     
-    // 平滑
-    smoothingFactor: 0.15,        // 降低平滑系数，减少抖动，使移动更平滑
-    pinchDistanceSmoothing: 0.4,  // 捏合距离平滑系数
+    // 平滑 - 使用双重指数平滑
+    positionSmoothing: 0.25,      // 位置平滑系数（越小越平滑，但延迟越大）
+    velocitySmoothing: 0.3,       // 速度平滑系数
+    pinchDistanceSmoothing: 0.35, // 捏合距离平滑系数
+    
+    // 防抖
+    jitterThreshold: 0.002,       // 抖动阈值（小于此值视为抖动）
+    jitterFrames: 3,              // 连续几帧小位移视为静止
     
     // 惯性
-    friction: 0.94,               // 增加阻尼（停得更快，更有掌控感）
-    minVelocity: 0.0001,          // 惯性停止阈值
-    inertiaBoost: 1.0,            // 惯性初始速度放大
+    friction: 0.92,               // 惯性摩擦系数
+    minVelocity: 0.00008,         // 惯性停止阈值
+    inertiaBoost: 1.2,            // 惯性初始速度放大
     
     // 缩放
-    zoomSensitivity: 2.5,         // 降低缩放灵敏度
+    zoomSensitivity: 2.5,         // 缩放灵敏度
     minHandSeparation: 0.15,      // 双手最小间距（防止误检）
     
     // 释放缓冲
-    releaseBufferFrames: 4,       // 松开后忽略的帧数
+    releaseBufferFrames: 3,       // 松开后忽略的帧数
 };
 
 // ========================================
@@ -75,8 +79,13 @@ let currentState = STATE.IDLE;
 let isPinching = false;          // 当前是否捏合
 let lastPinchPosition = null;    // 上一帧捏合位置
 let smoothedPosition = null;     // 平滑后的位置
+let smoothedVelocity = null;     // 平滑后的速度
 let lastPinchDist = null;        // 上一帧捏合距离（用于意图识别）
 let smoothedPinchDist = null;    // 平滑后的捏合距离
+
+// 防抖相关
+let jitterCounter = 0;           // 抖动计数器
+let lastSignificantMove = null;  // 上一次有效移动的位置
 
 // 惯性
 let rotationVelocity = { x: 0, y: 0 };
@@ -295,7 +304,8 @@ function areHandsSeparated(hand1, hand2) {
 }
 
 // ========================================
-// 四元数旋转实现
+// 轨迹球旋转实现（完全自由旋转）
+// 无极点限制，可以翻转到任意角度
 // ========================================
 function applyRotation(deltaX, deltaY) {
     const state = window.ElectronCloud.state;
@@ -305,26 +315,64 @@ function applyRotation(deltaX, deltaY) {
     const controls = state.controls;
     const target = controls.target;
 
+    // 计算相机相对于目标点的偏移
     const offset = new THREE.Vector3().subVectors(camera.position, target);
     
-    // 获取相机坐标系
-    const cameraUp = camera.up.clone().normalize();
+    // 获取当前相机的坐标系
+    const cameraDirection = new THREE.Vector3();
+    camera.getWorldDirection(cameraDirection);
+    
+    // 计算相机的右轴和上轴（基于当前相机姿态）
     const cameraRight = new THREE.Vector3();
-    cameraRight.crossVectors(camera.getWorldDirection(new THREE.Vector3()), cameraUp).normalize();
+    cameraRight.crossVectors(cameraDirection, camera.up).normalize();
+    
+    // 如果 cameraRight 接近零（相机 up 与观察方向平行），使用备用方案
+    if (cameraRight.lengthSq() < 0.0001) {
+        // 选择一个与 cameraDirection 正交的向量
+        if (Math.abs(cameraDirection.x) < 0.9) {
+            cameraRight.crossVectors(new THREE.Vector3(1, 0, 0), cameraDirection).normalize();
+        } else {
+            cameraRight.crossVectors(new THREE.Vector3(0, 1, 0), cameraDirection).normalize();
+        }
+    }
+    
+    // 相机的实际上轴（与观察方向正交）
+    const cameraUp = new THREE.Vector3();
+    cameraUp.crossVectors(cameraRight, cameraDirection).normalize();
     
     // 创建旋转四元数
+    // 水平拖动：绕相机的上轴旋转
     const qHorizontal = new THREE.Quaternion().setFromAxisAngle(cameraUp, -deltaX);
+    // 垂直拖动：绕相机的右轴旋转
     const qVertical = new THREE.Quaternion().setFromAxisAngle(cameraRight, -deltaY);
     
+    // 合并旋转（先垂直后水平）
     const quaternion = new THREE.Quaternion();
-    quaternion.multiplyQuaternions(qVertical, qHorizontal);
+    quaternion.multiplyQuaternions(qHorizontal, qVertical);
     
-    // 应用旋转
+    // 应用旋转到偏移向量
     offset.applyQuaternion(quaternion);
+    
+    // 更新相机位置
     camera.position.copy(target).add(offset);
+    
+    // 关键：同时旋转 camera.up 向量，实现完全自由旋转
     camera.up.applyQuaternion(quaternion).normalize();
+    
+    // 防止 up 向量数值漂移（定期重新正交化）
+    // 确保 up 向量与观察方向正交
+    const newDirection = new THREE.Vector3().subVectors(target, camera.position).normalize();
+    const dotProduct = camera.up.dot(newDirection);
+    if (Math.abs(dotProduct) > 0.0001) {
+        // up 向量与观察方向不完全正交，进行校正
+        camera.up.sub(newDirection.clone().multiplyScalar(dotProduct)).normalize();
+    }
+    
+    // 让相机看向目标点
     camera.lookAt(target);
-    controls.update();
+    
+    // 更新控制器（但不让它重置我们的相机姿态）
+    controls.target.copy(target);
 }
 
 // ========================================
@@ -492,22 +540,39 @@ function processHands(results) {
             currentState = STATE.ROTATING;
             lastPinchPosition = pinchPos;
             smoothedPosition = { x: pinchPos.x, y: pinchPos.y };
+            smoothedVelocity = { x: 0, y: 0 };
+            lastSignificantMove = { x: pinchPos.x, y: pinchPos.y };
+            jitterCounter = 0;
             rotationVelocity = { x: 0, y: 0 };  // 清除惯性
             
             console.log('[Gesture] 开始捏合旋转');
             updateStatus("🤏 捏合旋转中...\n移动手部旋转视角", 'active');
         } else {
-            // 继续捏合 - 计算移动
+            // 继续捏合 - 使用双重指数平滑
             
-            // EMA 平滑当前位置
-            const smoothX = CONFIG.smoothingFactor * pinchPos.x + 
-                           (1 - CONFIG.smoothingFactor) * smoothedPosition.x;
-            const smoothY = CONFIG.smoothingFactor * pinchPos.y + 
-                           (1 - CONFIG.smoothingFactor) * smoothedPosition.y;
+            // 第一层：位置平滑 (EMA)
+            const smoothX = CONFIG.positionSmoothing * pinchPos.x + 
+                           (1 - CONFIG.positionSmoothing) * smoothedPosition.x;
+            const smoothY = CONFIG.positionSmoothing * pinchPos.y + 
+                           (1 - CONFIG.positionSmoothing) * smoothedPosition.y;
             
-            // 计算位移（相对于上一帧平滑位置）
-            const deltaX = smoothX - smoothedPosition.x;
-            const deltaY = smoothY - smoothedPosition.y;
+            // 计算原始速度（位移）
+            const rawDeltaX = smoothX - smoothedPosition.x;
+            const rawDeltaY = smoothY - smoothedPosition.y;
+            
+            // 第二层：速度平滑 (减少突变)
+            if (smoothedVelocity === null) {
+                smoothedVelocity = { x: rawDeltaX, y: rawDeltaY };
+            } else {
+                smoothedVelocity.x = CONFIG.velocitySmoothing * rawDeltaX + 
+                                     (1 - CONFIG.velocitySmoothing) * smoothedVelocity.x;
+                smoothedVelocity.y = CONFIG.velocitySmoothing * rawDeltaY + 
+                                     (1 - CONFIG.velocitySmoothing) * smoothedVelocity.y;
+            }
+            
+            // 使用平滑后的速度
+            const deltaX = smoothedVelocity.x;
+            const deltaY = smoothedVelocity.y;
             
             // 更新平滑位置
             smoothedPosition.x = smoothX;
@@ -516,9 +581,24 @@ function processHands(results) {
             // 计算位移大小
             const deltaMag = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
             
-            // 简化逻辑：只要有位移就应用旋转（移除复杂的运动状态判断）
-            // 死区过滤只用于决定是否更新惯性速度，不阻止旋转
-            if (deltaMag > 0.0001) {  // 极小阈值，几乎总是应用
+            // 防抖：检测是否为抖动
+            if (deltaMag < CONFIG.jitterThreshold) {
+                jitterCounter++;
+                if (jitterCounter >= CONFIG.jitterFrames) {
+                    // 连续多帧小位移，视为静止，不应用旋转
+                    updateStatus("🤏 捏合中（静止）", 'active');
+                    // 惯性缓慢衰减
+                    rotationVelocity.x *= 0.9;
+                    rotationVelocity.y *= 0.9;
+                    return;
+                }
+            } else {
+                jitterCounter = 0;
+                lastSignificantMove = { x: smoothX, y: smoothY };
+            }
+            
+            // 应用旋转
+            if (deltaMag > CONFIG.deadzone * 0.5) {
                 // 限幅
                 const clampedX = Math.max(-CONFIG.maxDelta, Math.min(CONFIG.maxDelta, deltaX));
                 const clampedY = Math.max(-CONFIG.maxDelta, Math.min(CONFIG.maxDelta, deltaY));
@@ -529,19 +609,16 @@ function processHands(results) {
                 
                 applyRotation(rotX, rotY);
                 
-                // 只有位移足够大才更新惯性速度（避免抖动时惯性被清零）
+                // 更新惯性速度
                 if (deltaMag > CONFIG.deadzone) {
                     rotationVelocity.x = rotX * CONFIG.inertiaBoost;
                     rotationVelocity.y = rotY * CONFIG.inertiaBoost;
                     updateStatus("🤏 旋转中...", 'active');
                 } else {
-                    // 位移小但仍在旋转，保持惯性衰减
-                    rotationVelocity.x *= 0.95;
-                    rotationVelocity.y *= 0.95;
                     updateStatus("🤏 捏合中", 'active');
                 }
             } else {
-                updateStatus("🤏 捏合中（静止）", 'active');
+                updateStatus("🤏 捏合中", 'active');
             }
         }
     } else {
@@ -554,6 +631,9 @@ function processHands(results) {
             currentState = STATE.IDLE;
             lastPinchPosition = null;
             smoothedPosition = null;
+            smoothedVelocity = null;
+            lastSignificantMove = null;
+            jitterCounter = 0;
             lastPinchDist = null;        // 重置意图识别
             smoothedPinchDist = null;
             
@@ -790,7 +870,63 @@ window.ElectronCloud.Gesture.stop = function() {
         btn.title = '手势控制';
     }
     
-    console.log('[Gesture v4] 手势控制已停止');
+    // 【关键修复】恢复 OrbitControls 的兼容性
+    // 由于手势控制使用自由旋转（会改变 camera.up），需要特殊处理
+    const state = window.ElectronCloud.state;
+    if (state && state.controls && state.camera) {
+        // 方案：将当前相机姿态转换为 OrbitControls 兼容的状态
+        // OrbitControls 期望 camera.up 接近 (0, 1, 0)
+        
+        const camera = state.camera;
+        const controls = state.controls;
+        const target = controls.target.clone();
+        
+        // 获取当前相机到目标的距离
+        const distance = camera.position.distanceTo(target);
+        
+        // 获取当前观察方向（从相机指向目标）
+        const direction = new THREE.Vector3().subVectors(target, camera.position).normalize();
+        
+        // 计算当前相机位置在"标准坐标系"中的球坐标
+        // 这样可以保持观察角度，但重置 up 向量
+        const offset = new THREE.Vector3().subVectors(camera.position, target);
+        
+        // 如果相机不是正好从上/下方看，可以安全地重置 up
+        const verticalAlignment = Math.abs(direction.y);
+        
+        if (verticalAlignment < 0.99) {
+            // 相机不在极点位置，可以安全重置 up 向量
+            camera.up.set(0, 1, 0);
+            camera.lookAt(target);
+        } else {
+            // 相机接近极点（从正上方或正下方看）
+            // 保持当前 up 向量，但确保它与观察方向正交
+            const dot = camera.up.dot(direction);
+            camera.up.sub(direction.clone().multiplyScalar(dot)).normalize();
+            
+            // 如果 up 向量太小，选择一个合理的默认值
+            if (camera.up.lengthSq() < 0.01) {
+                camera.up.set(0, 0, direction.y > 0 ? 1 : -1);
+            }
+            camera.lookAt(target);
+        }
+        
+        // 恢复 OrbitControls 的状态（但不设置 enableRotate，因为使用自定义轨迹球）
+        controls.enabled = true;
+        // 注意：不设置 enableRotate = true，鼠标旋转由自定义轨迹球处理
+        controls.enableZoom = true;
+        // 检查 centerLock 状态，决定是否启用平移
+        const centerLock = document.getElementById('center-lock');
+        const isCenterLocked = centerLock && centerLock.checked;
+        controls.enablePan = !isCenterLocked;
+        // 如果 centerLock 启用，确保 target 在原点
+        if (isCenterLocked) {
+            controls.target.set(0, 0, 0);
+        }
+        controls.update();
+    }
+    
+    console.log('[Gesture v4] 手势控制已停止，相机状态已恢复');
 };
 
 /**

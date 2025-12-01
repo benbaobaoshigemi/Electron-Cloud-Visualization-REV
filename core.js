@@ -198,9 +198,11 @@ window.ElectronCloud.resetState = function() {
     state.baseColors = null;
     state.baseColorsCount = 0;
     
-    // 重置波浪模式缓存
+    // 重置闪烁模式缓存（扩散模式和波浪模式）
+    state.diffuseDensitiesComputed = false;
     state.waveRanksComputed = false;
     state.waveRanksPointCount = 0;
+    state.waveRanks = null;
     
     // 重置自动旋转状态
     if (state.autoRotate) {
@@ -287,9 +289,11 @@ window.ElectronCloud.resetSamplingState = function() {
     state.baseColors = null;
     state.baseColorsCount = 0;
     
-    // 重置波浪模式缓存
+    // 重置闪烁模式缓存（扩散模式和波浪模式）
+    state.diffuseDensitiesComputed = false;
     state.waveRanksComputed = false;
     state.waveRanksPointCount = 0;
+    state.waveRanks = null;
     
     // 重置图表数据
     state.backgroundChartData = {

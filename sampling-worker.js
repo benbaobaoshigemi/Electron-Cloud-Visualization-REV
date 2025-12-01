@@ -206,6 +206,89 @@ function orbitalParamsFromKey(key) {
 
 // ==================== 重要性采样函数 ====================
 
+// ==================== 精确逆CDF采样 ====================
+
+// 径向概率密度函数 P(r) = r² |R_nl(r)|²
+function radialPDF(n, l, r, Z = 1, a0 = A0) {
+    const R = radialR(n, l, r, Z, a0);
+    return r * r * R * R;
+}
+
+// CDF 表缓存
+const _cdfCache = {};
+
+/**
+ * 构建径向分布的累积分布函数表
+ */
+function buildRadialCDF(n, l, numPoints = 2000) {
+    const key = `${n}_${l}`;
+    if (_cdfCache[key]) {
+        return _cdfCache[key];
+    }
+
+    const rMax = Math.max(4 * n * n * A0, 50 * A0);
+    const dr = rMax / numPoints;
+    
+    const r = new Float64Array(numPoints + 1);
+    const cdf = new Float64Array(numPoints + 1);
+    
+    r[0] = 0;
+    cdf[0] = 0;
+    let cumulative = 0;
+    
+    for (let i = 1; i <= numPoints; i++) {
+        r[i] = i * dr;
+        const P_prev = radialPDF(n, l, r[i - 1]);
+        const P_curr = radialPDF(n, l, r[i]);
+        cumulative += (P_prev + P_curr) * dr / 2;
+        cdf[i] = cumulative;
+    }
+    
+    const totalProb = cdf[numPoints];
+    if (totalProb > 0) {
+        for (let i = 0; i <= numPoints; i++) {
+            cdf[i] /= totalProb;
+        }
+    }
+    
+    const result = { r, cdf, rMax, dr, numPoints, totalProb };
+    _cdfCache[key] = result;
+    return result;
+}
+
+/**
+ * 精确逆CDF采样：从径向分布 P(r) 精确采样
+ */
+function sampleRadialExact(n, l) {
+    const { r, cdf, numPoints } = buildRadialCDF(n, l);
+    
+    const u = Math.random();
+    
+    // 二分查找
+    let lo = 0, hi = numPoints;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (cdf[mid] < u) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    
+    // 线性插值
+    const i = Math.max(0, lo - 1);
+    const j = Math.min(numPoints, lo);
+    
+    if (i === j || cdf[j] === cdf[i]) {
+        return r[i];
+    }
+    
+    const t = (u - cdf[i]) / (cdf[j] - cdf[i]);
+    return r[i] + t * (r[j] - r[i]);
+}
+
+// ==================== 保留旧的重要性采样代码（兼容性）====================
+
 /**
  * 计算轨道的所有径向峰位置（数值方法）
  */
@@ -244,6 +327,9 @@ function getCachedPeaks(n, l) {
 
 /**
  * 多峰混合提议分布参数
+ * 
+ * 【物理优化】使用积分贡献估计权重，而非峰高度
+ * 这样可以确保每个峰按其实际概率贡献获得采样机会
  */
 function getMultiPeakMixtureParams(n, l, a0 = A0) {
     const peaks = getCachedPeaks(n, l);
@@ -253,14 +339,19 @@ function getMultiPeakMixtureParams(n, l, a0 = A0) {
         return { components: [{ alpha: 2.0 / r_peak, weight: 1.0 }] };
     }
     
+    // 【改进】计算每个峰的权重（基于估计的积分贡献）
+    // 积分贡献 ≈ 峰高 × 峰宽，峰宽与 r_peak 成正比
     let totalWeight = 0;
     const components = [];
     
     for (const peak of peaks) {
-        const weight = Math.sqrt(peak.pdf);
+        // 使用 pdf × r_peak 作为积分贡献的估计（更接近真实积分）
+        const estimatedIntegral = peak.pdf * peak.r;
+        const weight = estimatedIntegral;
         totalWeight += weight;
+        
         const alpha = 2.0 / peak.r;
-        components.push({ alpha, weight, r_peak: peak.r });
+        components.push({ alpha, weight, r_peak: peak.r, pdf: peak.pdf });
     }
     
     for (const comp of components) {
@@ -328,39 +419,75 @@ function sampleUniformSphere() {
     return { theta, phi };
 }
 
+// 缓存权重上界计算结果
+const _maxWeightCache = {};
+
 /**
  * 计算径向权重的理论上界
+ * 【物理优化】使用数值搜索找到精确的最大权重
  */
 function getMaxRadialWeight(n, l) {
-    return 4.0 + 0.5 * n;
+    const key = `${n}_${l}`;
+    if (_maxWeightCache[key]) {
+        return _maxWeightCache[key];
+    }
+    
+    const peaks = getCachedPeaks(n, l);
+    let maxWeight = 1.0;
+    
+    // 在每个峰附近搜索最大权重
+    for (const peak of peaks) {
+        const rPeak = peak.r;
+        const rMin = Math.max(0.1, rPeak * 0.3);
+        const rMax = rPeak * 2.5;
+        const numSamples = 200;
+        const dr = (rMax - rMin) / numSamples;
+        
+        for (let i = 0; i <= numSamples; i++) {
+            const r = rMin + i * dr;
+            const R = radialR(n, l, r);
+            const P_radial = r * r * R * R;
+            const q_r = radialProposalPDF(r, n, l);
+            
+            if (q_r > 1e-300) {
+                const w = P_radial / q_r;
+                if (w > maxWeight) {
+                    maxWeight = w;
+                }
+            }
+        }
+    }
+    
+    // 添加 20% 安全边际
+    const result = maxWeight * 1.2;
+    _maxWeightCache[key] = result;
+    
+    return result;
 }
 
 /**
  * 重要性采样：生成一个采样点
+ * 
+ * 【物理准确性保证】
+ * 采用"分离变量"策略：
+ * - 径向：使用精确逆CDF采样（100%接受率，无偏差）
+ * - 角向：均匀球面采样 + |Y|² 权重接受-拒绝
  */
 function importanceSample(n, l, angKey, samplingBoundary) {
-    let r = sampleRadialProposal(n, l);
+    // ==================== 第一步：径向采样（精确逆CDF） ====================
+    let r = sampleRadialExact(n, l);
     
     if (r > samplingBoundary * 2) {
         return null;
     }
     
-    const R = radialR(n, l, r);
-    const P_radial = r * r * R * R;
-    const q_r = radialProposalPDF(r, n, l);
-    
-    const w_radial = (q_r > 1e-300) ? P_radial / q_r : 0;
-    const maxRadialWeight = getMaxRadialWeight(n, l);
-    
-    if (Math.random() * maxRadialWeight > w_radial) {
-        return { x: 0, y: 0, z: 0, r, theta: 0, phi: 0, weight: w_radial, accepted: false };
-    }
-    
+    // ==================== 第二步：角向采样 ====================
     const { theta, phi } = sampleUniformSphere();
     
     const Y2 = realYlm_abs2(angKey.l, angKey.m, angKey.t, theta, phi);
     const w_angular = 4 * PI * Y2;
-    const maxAngularWeight = 2 * angKey.l + 1.5;
+    // 【物理修正】角向权重上界的精确计算
+    const maxAngularWeight = (angKey.m === 0) ? (2 * angKey.l + 1.2) : (2 * (2 * angKey.l + 1) + 0.5);
     
     if (Math.random() * maxAngularWeight > w_angular) {
         return { x: 0, y: 0, z: 0, r, theta, phi, weight: w_angular, accepted: false };

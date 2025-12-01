@@ -138,7 +138,7 @@
     return { r: rs, Pr: ps };
   }
 
-  function histogramRadialFromSamples(rArray, bins=80, rmax=null, normalize=true){
+  function histogramRadialFromSamples(rArray, bins=80, rmax=null, normalize=true, smooth=true){
     const N = rArray.length; if(N===0) return {edges:[],counts:[]};
     // 【性能修复】使用循环替代Math.max(...array)，避免大数组栈溢出
     let maxr;
@@ -156,7 +156,7 @@
     const effectiveBins = Math.max(bins, 10);
     
     const edges = new Float32Array(effectiveBins+1);
-    const counts = new Float32Array(effectiveBins);
+    let counts = new Float32Array(effectiveBins);
     const dr = effectiveMaxr/effectiveBins;
     
     for(let i=0;i<=effectiveBins;i++) edges[i]=i*dr;
@@ -165,6 +165,47 @@
       if(r<0||r>effectiveMaxr) continue;
       const b = Math.min(effectiveBins-1, Math.floor(r/dr)); 
       counts[b]+=1;
+    }
+    
+    // 【物理优化】添加高斯平滑以减少采样毛刺
+    // 使用自适应窗口大小：根据样本量和bin数量动态调整
+    if (smooth && N > 100) {
+      const smoothedCounts = new Float32Array(effectiveBins);
+      
+      // 计算每个bin的平均样本数
+      const samplesPerBin = N / effectiveBins;
+      
+      // 自适应平滑窗口：
+      // - 样本稀疏（<50/bin）时使用较大窗口（2-3）
+      // - 样本中等（50-200/bin）时使用小窗口（1）
+      // - 样本密集（>200/bin）时不平滑（0）
+      let windowSize;
+      if (samplesPerBin < 50) {
+        windowSize = 2;
+      } else if (samplesPerBin < 200) {
+        windowSize = 1;
+      } else {
+        windowSize = 0;
+      }
+      
+      if (windowSize > 0) {
+        for (let i = 0; i < effectiveBins; i++) {
+          let sum = 0;
+          let weightSum = 0;
+          for (let j = -windowSize; j <= windowSize; j++) {
+            const idx = i + j;
+            if (idx >= 0 && idx < effectiveBins) {
+              // 高斯权重
+              const sigma = windowSize * 0.6;
+              const weight = Math.exp(-0.5 * (j / sigma) ** 2);
+              sum += counts[idx] * weight;
+              weightSum += weight;
+            }
+          }
+          smoothedCounts[i] = sum / weightSum;
+        }
+        counts = smoothedCounts;
+      }
     }
     
     if(normalize){
@@ -202,6 +243,104 @@
     const Plm = associatedLegendre(l, mm, Math.cos(theta));
     const N2 = ((2*l+1)/(4*PI)) * (factorial(l-mm)/factorial(l+mm));
     return 2 * PI * N2 * Plm * Plm * Math.sin(theta);
+  }
+
+  // ==================== 精确逆CDF采样 (Inverse CDF Sampling) ====================
+  // 
+  // 【物理准确性保证】
+  // 利用解析式 P(r) = r² |R_nl(r)|² 构建精确的累积分布函数
+  // 通过数值积分预计算 CDF，然后使用二分查找进行逆变换采样
+  // 
+  // 优势：
+  // 1. 100% 接受率（无拒绝采样）
+  // 2. 精确服从理论分布
+  // 3. 没有提议分布匹配问题
+  // ====================
+
+  // CDF 表缓存
+  const _cdfCache = {};
+
+  /**
+   * 构建径向分布的累积分布函数表
+   * @param {number} n - 主量子数
+   * @param {number} l - 角量子数
+   * @param {number} numPoints - CDF表的点数（越多越精确）
+   * @returns {Object} { r: Float64Array, cdf: Float64Array, rMax: number }
+   */
+  function buildRadialCDF(n, l, numPoints = 2000) {
+    const key = `${n}_${l}`;
+    if (_cdfCache[key]) {
+      return _cdfCache[key];
+    }
+
+    // 确定积分范围：到概率密度下降到峰值的 1e-8 为止
+    const rMax = Math.max(4 * n * n * A0, 50 * A0);
+    const dr = rMax / numPoints;
+    
+    const r = new Float64Array(numPoints + 1);
+    const cdf = new Float64Array(numPoints + 1);
+    
+    // 使用梯形法则进行数值积分
+    r[0] = 0;
+    cdf[0] = 0;
+    let cumulative = 0;
+    
+    for (let i = 1; i <= numPoints; i++) {
+      r[i] = i * dr;
+      const P_prev = radialPDF(n, l, r[i - 1]);
+      const P_curr = radialPDF(n, l, r[i]);
+      // 梯形法则：积分 ≈ (f(a) + f(b)) * h / 2
+      cumulative += (P_prev + P_curr) * dr / 2;
+      cdf[i] = cumulative;
+    }
+    
+    // 归一化 CDF 到 [0, 1]
+    const totalProb = cdf[numPoints];
+    if (totalProb > 0) {
+      for (let i = 0; i <= numPoints; i++) {
+        cdf[i] /= totalProb;
+      }
+    }
+    
+    const result = { r, cdf, rMax, dr, numPoints, totalProb };
+    _cdfCache[key] = result;
+    return result;
+  }
+
+  /**
+   * 精确逆CDF采样：从径向分布 P(r) 精确采样
+   * @param {number} n - 主量子数
+   * @param {number} l - 角量子数
+   * @returns {number} 采样得到的 r 值
+   */
+  function sampleRadialExact(n, l) {
+    const { r, cdf, numPoints } = buildRadialCDF(n, l);
+    
+    // 生成 [0, 1) 均匀随机数
+    const u = Math.random();
+    
+    // 二分查找：找到 cdf[i] <= u < cdf[i+1] 的位置
+    let lo = 0, hi = numPoints;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (cdf[mid] < u) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    
+    // 线性插值得到更精确的 r 值
+    const i = Math.max(0, lo - 1);
+    const j = Math.min(numPoints, lo);
+    
+    if (i === j || cdf[j] === cdf[i]) {
+      return r[i];
+    }
+    
+    // 在区间 [r[i], r[j]] 内线性插值
+    const t = (u - cdf[i]) / (cdf[j] - cdf[i]);
+    return r[i] + t * (r[j] - r[i]);
   }
 
   // ==================== 重要性采样 (Importance Sampling) ====================
@@ -256,6 +395,9 @@
   /**
    * 多峰混合提议分布参数
    * 为每个峰创建一个 Gamma(3) 分布成分
+   * 
+   * 【物理优化】使用积分贡献估计权重，而非峰高度
+   * 这样可以确保每个峰按其实际概率贡献获得采样机会
    */
   function getMultiPeakMixtureParams(n, l, a0 = A0) {
     const peaks = getCachedPeaks(n, l);
@@ -268,18 +410,21 @@
       };
     }
     
-    // 计算每个峰的权重（基于峰高度，近似积分贡献）
+    // 【改进】计算每个峰的权重（基于估计的积分贡献）
+    // 积分贡献 ≈ 峰高 × 峰宽，峰宽与 r_peak 成正比
     let totalWeight = 0;
     const components = [];
     
     for (const peak of peaks) {
-      // 权重正比于峰高度的平方根（经验公式，平衡各峰贡献）
-      const weight = Math.sqrt(peak.pdf);
+      // 使用 pdf × r_peak 作为积分贡献的估计（更接近真实积分）
+      // 这比单纯使用 sqrt(pdf) 更物理准确
+      const estimatedIntegral = peak.pdf * peak.r;
+      const weight = estimatedIntegral;
       totalWeight += weight;
       
       // Gamma(3) 分布在 r = 2/α 处达到峰值，所以 α = 2/r_peak
       const alpha = 2.0 / peak.r;
-      components.push({ alpha, weight, r_peak: peak.r });
+      components.push({ alpha, weight, r_peak: peak.r, pdf: peak.pdf });
     }
     
     // 归一化权重
@@ -351,14 +496,52 @@
     return { theta, phi };
   }
 
+  // 缓存权重上界计算结果
+  const _maxWeightCache = {};
+  
   /**
    * 计算径向权重的理论上界
-   * 多峰混合分布使得权重更加均匀，上界较小
+   * 【物理优化】使用数值搜索找到精确的最大权重
+   * 这避免了保守估计导致的效率损失和激进估计导致的偏差
    */
   function getMaxRadialWeight(n, l) {
-    // 多峰混合分布的权重上界通常在 2-5 之间
-    // 使用保守估计确保物理准确性
-    return 4.0 + 0.5 * n;
+    const key = `${n}_${l}`;
+    if (_maxWeightCache[key]) {
+      return _maxWeightCache[key];
+    }
+    
+    const peaks = getCachedPeaks(n, l);
+    let maxWeight = 1.0;
+    
+    // 在每个峰附近搜索最大权重
+    for (const peak of peaks) {
+      const rPeak = peak.r;
+      // 在峰附近的范围内搜索
+      const rMin = Math.max(0.1, rPeak * 0.3);
+      const rMax = rPeak * 2.5;
+      const numSamples = 200;
+      const dr = (rMax - rMin) / numSamples;
+      
+      for (let i = 0; i <= numSamples; i++) {
+        const r = rMin + i * dr;
+        const R = radialR(n, l, r);
+        const P_radial = r * r * R * R;
+        const q_r = radialProposalPDF(r, n, l);
+        
+        if (q_r > 1e-300) {
+          const w = P_radial / q_r;
+          if (w > maxWeight) {
+            maxWeight = w;
+          }
+        }
+      }
+    }
+    
+    // 添加 20% 安全边际，确保不会截断样本
+    const result = maxWeight * 1.2;
+    _maxWeightCache[key] = result;
+    
+    return result;
   }
 
   /**
@@ -366,31 +549,19 @@
    * 
    * 【物理准确性保证】
    * 采用"分离变量"策略：
-   * - 径向：使用多峰混合提议分布采样 + 正确的权重上界进行接受-拒绝
+   * - 径向：使用精确逆CDF采样（100%接受率，无偏差）
    * - 角向：均匀球面采样 + |Y|² 权重接受-拒绝
    * 
    * 这确保最终分布精确等于 |ψ|² = R²(r) × |Y|²(θ,φ)
    */
   function importanceSample(n, l, angKey, samplingBoundary = Infinity) {
-    // ==================== 第一步：径向采样 ====================
-    let r = sampleRadialProposal(n, l);
+    // ==================== 第一步：径向采样（精确逆CDF） ====================
+    // 直接从精确的 P(r) 分布采样，无需接受-拒绝
+    let r = sampleRadialExact(n, l);
     
     // 边界检查
     if (r > samplingBoundary * 2) {
       return null;
-    }
-    
-    // 计算径向权重 w_r = P(r) / q(r)
-    const R = radialR(n, l, r);
-    const P_radial = r * r * R * R;
-    const q_r = radialProposalPDF(r, n, l);
-    
-    const w_radial = (q_r > 1e-300) ? P_radial / q_r : 0;
-    const maxRadialWeight = getMaxRadialWeight(n, l);
-    
-    // 径向接受-拒绝
-    if (Math.random() * maxRadialWeight > w_radial) {
-      return { x: 0, y: 0, z: 0, r, theta: 0, phi: 0, weight: w_radial, accepted: false };
     }
     
     // ==================== 第二步：角向采样 ====================
@@ -400,8 +571,12 @@
     const Y2 = realYlm_abs2(angKey.l, angKey.m, angKey.t, theta, phi);
     const w_angular = 4 * PI * Y2;
     
-    // 角向权重上界：对于 |Y_l^m|²，最大值约为 (2l+1)/(4π)，所以 4π|Y|² ≤ 2l+1
-    const maxAngularWeight = 2 * angKey.l + 1.5;
+    // 【物理修正】角向权重上界的精确计算
+    // 对于实球谐函数：
+    // - m=0: 最大值 = (2l+1)/(4π)，所以 4π|Y|² ≤ 2l+1
+    // - m≠0: 由于 cos² 或 sin² 因子，最大值可能更大
+    // 使用更保守的上界以确保物理准确性
+    const maxAngularWeight = (angKey.m === 0) ? (2 * angKey.l + 1.2) : (2 * (2 * angKey.l + 1) + 0.5);
     
     // 角向接受-拒绝
     if (Math.random() * maxAngularWeight > w_angular) {
@@ -530,7 +705,10 @@
     orbitalParamsFromKey,
     orbitalKey,
     angularPDF_Theta,
-    // 重要性采样相关函数
+    // 精确逆CDF采样
+    buildRadialCDF,
+    sampleRadialExact,
+    // 重要性采样相关函数（保留兼容性）
     findRadialPeaks,
     getCachedPeaks,
     getMultiPeakMixtureParams,

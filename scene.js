@@ -303,22 +303,32 @@ window.ElectronCloud.Scene.animate = function() {
                 // 降级到主线程采样
                 window.ElectronCloud.Sampling.updatePoints();
             }
+        }
+        
+        // 图表刷新：每秒刷新一次（1000ms），跳过第一秒
+        // 【修复】将图表刷新移出 pointCount < MAX_POINTS 条件，确保采样全程都能刷新
+        const now = performance.now();
+        if (!state.lastChartUpdateTime) state.lastChartUpdateTime = 0;
+        
+        // 检查是否已过1秒延迟期（只跳过第一次刷新）
+        const isDelayPassed = state.samplingStartTime && (now - state.samplingStartTime > 1000);
+        
+        // 【修复】放宽条件：只要有采样数据或点数增加，就尝试刷新图表
+        // 这确保即使在高点数模式下，图表也能持续每秒刷新一次直到采样完成
+        const hasData = state.radialSamples.length > 0 || state.pointCount > 0;
+        
+        if (isDelayPassed && hasData && (now - state.lastChartUpdateTime) >= 1000) {
+            state.lastChartUpdateTime = now;
             
-            // 图表刷新：每秒刷新一次（1000ms），跳过第一秒
-            const now = performance.now();
-            if (!state.lastChartUpdateTime) state.lastChartUpdateTime = 0;
-            
-            // 检查是否已过1秒延迟期（只跳过第一次刷新）
-            const isDelayPassed = state.samplingStartTime && (now - state.samplingStartTime > 1000);
-            
-            if (isDelayPassed && state.radialSamples.length > 0 && (now - state.lastChartUpdateTime) >= 1000) {
-                state.lastChartUpdateTime = now;
+            // 只有当有径向数据时才更新图表数据
+            if (state.radialSamples.length > 0) {
                 window.ElectronCloud.Orbital.updateBackgroundChartData();
-                // 如果数据面板可见，实时刷新图表
-                const dataPanel = document.getElementById('data-panel');
-                if (dataPanel && !dataPanel.classList.contains('collapsed')) {
-                    window.ElectronCloud.Orbital.drawProbabilityChart(false);
-                }
+            }
+            
+            // 如果数据面板可见，实时刷新图表
+            const dataPanel = document.getElementById('data-panel');
+            if (dataPanel && !dataPanel.classList.contains('collapsed')) {
+                window.ElectronCloud.Orbital.drawProbabilityChart(false);
             }
         }
         
@@ -678,23 +688,33 @@ window.ElectronCloud.Scene.animate = function() {
                                 const theta = r > 0 ? Math.acos(z / r) : 0;
                                 const phi = Math.atan2(y, x);
                                 
-                                // 根据模式选择轨道参数
-                                let orbitalParams;
+                                // 根据模式选择轨道参数和密度计算方式
+                                let density = 0;
                                 if (usePerPointOrbital) {
                                     // 比照模式：使用每个点实际所属的轨道
                                     const orbitalIndex = state.pointOrbitalIndices[i] || 0;
-                                    orbitalParams = state.waveOrbitalParams[orbitalIndex] || state.waveOrbitalParams[0];
+                                    const orbitalParams = state.waveOrbitalParams[orbitalIndex] || state.waveOrbitalParams[0];
+                                    density = Hydrogen.density3D_real(
+                                        orbitalParams.angKey,
+                                        orbitalParams.n,
+                                        orbitalParams.l,
+                                        r, theta, phi
+                                    );
                                 } else {
-                                    // 正常模式/多选叠加模式：使用第一个轨道
-                                    orbitalParams = state.waveOrbitalParams[0];
+                                    // 【关键修复】多选叠加模式：使用所有轨道的混合密度
+                                    // 等值面应该基于叠加后的概率密度分布
+                                    for (const orbitalParams of state.waveOrbitalParams) {
+                                        density += Hydrogen.density3D_real(
+                                            orbitalParams.angKey,
+                                            orbitalParams.n,
+                                            orbitalParams.l,
+                                            r, theta, phi
+                                        );
+                                    }
+                                    // 取平均（与采样和理论曲线计算一致）
+                                    density /= state.waveOrbitalParams.length;
                                 }
                                 
-                                const density = Hydrogen.density3D_real(
-                                    orbitalParams.angKey,
-                                    orbitalParams.n,
-                                    orbitalParams.l,
-                                    r, theta, phi
-                                );
                                 state.waveDensities[i] = density;
                             }
                             
@@ -998,6 +1018,7 @@ window.ElectronCloud.Scene.resetAllSceneObjectsRotation = function() {
 };
 
 // 生成圆形点的 sprite 纹理（带缓存）
+// 【优化】使用更锐利的边缘，减少摩尔纹干涉
 let _circleSpriteCached = null;
 window.ElectronCloud.Scene.generateCircleSprite = function() {
     // 如果已有缓存，直接返回
@@ -1012,10 +1033,13 @@ window.ElectronCloud.Scene.generateCircleSprite = function() {
     // 背景透明
     ctx.clearRect(0, 0, size, size);
 
-    // 白色圆形
+    // 【柔和边缘】使用平滑的高斯型边缘过渡，减少视觉干扰
     const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
     grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.6, 'rgba(255,255,255,0.9)');
+    grad.addColorStop(0.2, 'rgba(255,255,255,0.9)');
+    grad.addColorStop(0.4, 'rgba(255,255,255,0.6)');
+    grad.addColorStop(0.6, 'rgba(255,255,255,0.3)');
+    grad.addColorStop(0.8, 'rgba(255,255,255,0.1)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = grad;
     ctx.beginPath();

@@ -645,8 +645,12 @@
       if (!samples || samples.length === 0) continue;
       totalSamples += samples.length;
       if (type === 'radial') {
-        const maxR = Math.max(...samples.map(s => s.r));
-        maxDistance = Math.max(maxDistance, maxR);
+        // 【性能修复】使用循环替代Math.max(...array)，避免大数组栈溢出
+        for (let i = 0; i < samples.length; i++) {
+          if (samples[i].r > maxDistance) {
+            maxDistance = samples[i].r;
+          }
+        }
       }
     }
     

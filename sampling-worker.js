@@ -135,15 +135,18 @@ function density3D_real(angKey, n, l, r, theta, phi, Z = 1, a0 = A0) {
     return (R * R) * Y2;
 }
 
-// 轨道参数映射
+// 轨道参数映射 - 包含 n=1 到 n=5 的所有轨道
 function orbitalParamsFromKey(key) {
     const R = (n, l, m, t) => ({ n, l, angKey: { l, m, t } });
     switch (key) {
+        // n=1
         case '1s': return R(1, 0, 0, 'c');
+        // n=2
         case '2s': return R(2, 0, 0, 'c');
         case '2pz': return R(2, 1, 0, 'c');
         case '2px': return R(2, 1, 1, 'c');
         case '2py': return R(2, 1, 1, 's');
+        // n=3
         case '3s': return R(3, 0, 0, 'c');
         case '3pz': return R(3, 1, 0, 'c');
         case '3px': return R(3, 1, 1, 'c');
@@ -153,6 +156,7 @@ function orbitalParamsFromKey(key) {
         case '3d_yz': return R(3, 2, 1, 's');
         case '3d_xy': return R(3, 2, 2, 's');
         case '3d_x2-y2': return R(3, 2, 2, 'c');
+        // n=4
         case '4s': return R(4, 0, 0, 'c');
         case '4pz': return R(4, 1, 0, 'c');
         case '4px': return R(4, 1, 1, 'c');
@@ -169,14 +173,226 @@ function orbitalParamsFromKey(key) {
         case '4f_xyz': return R(4, 3, 2, 's');
         case '4f_x(x2-3y2)': return R(4, 3, 3, 'c');
         case '4f_y(3x2-y2)': return R(4, 3, 3, 's');
+        // n=5 轨道
+        case '5s': return R(5, 0, 0, 'c');
+        case '5pz': return R(5, 1, 0, 'c');
+        case '5px': return R(5, 1, 1, 'c');
+        case '5py': return R(5, 1, 1, 's');
+        case '5d_z2': return R(5, 2, 0, 'c');
+        case '5d_xz': return R(5, 2, 1, 'c');
+        case '5d_yz': return R(5, 2, 1, 's');
+        case '5d_xy': return R(5, 2, 2, 's');
+        case '5d_x2-y2': return R(5, 2, 2, 'c');
+        case '5f_z3': return R(5, 3, 0, 'c');
+        case '5f_xz2': return R(5, 3, 1, 'c');
+        case '5f_yz2': return R(5, 3, 1, 's');
+        case '5f_z(x2-y2)': return R(5, 3, 2, 'c');
+        case '5f_xyz': return R(5, 3, 2, 's');
+        case '5f_x(x2-3y2)': return R(5, 3, 3, 'c');
+        case '5f_y(3x2-y2)': return R(5, 3, 3, 's');
+        // 5g 轨道
+        case '5g_z4': return R(5, 4, 0, 'c');
+        case '5g_z3x': return R(5, 4, 1, 'c');
+        case '5g_z3y': return R(5, 4, 1, 's');
+        case '5g_z2xy': return R(5, 4, 2, 's');
+        case '5g_z2(x2-y2)': return R(5, 4, 2, 'c');
+        case '5g_zx(x2-3y2)': return R(5, 4, 3, 'c');
+        case '5g_zy(3x2-y2)': return R(5, 4, 3, 's');
+        case '5g_xy(x2-y2)': return R(5, 4, 4, 's');
+        case '5g_x4-6x2y2+y4': return R(5, 4, 4, 'c');
         default: return R(1, 0, 0, 'c');
     }
 }
 
+// ==================== 重要性采样函数 ====================
+
+/**
+ * 计算轨道的所有径向峰位置（数值方法）
+ */
+function findRadialPeaks(n, l, a0 = A0) {
+    const peaks = [];
+    const rmax = n * n * 3 * a0;
+    const dr = 0.1 * a0;
+    
+    let prevVal = 0;
+    let prevPrevVal = 0;
+    
+    for (let r = dr; r < rmax; r += dr) {
+        const R = radialR(n, l, r);
+        const val = r * r * R * R;
+        
+        if (r > 2 * dr && prevVal > prevPrevVal && prevVal > val) {
+            peaks.push({ r: r - dr, pdf: prevVal });
+        }
+        
+        prevPrevVal = prevVal;
+        prevVal = val;
+    }
+    
+    return peaks;
+}
+
+// 缓存峰位置
+const _peakCache = {};
+function getCachedPeaks(n, l) {
+    const key = `${n}_${l}`;
+    if (!_peakCache[key]) {
+        _peakCache[key] = findRadialPeaks(n, l);
+    }
+    return _peakCache[key];
+}
+
+/**
+ * 多峰混合提议分布参数
+ */
+function getMultiPeakMixtureParams(n, l, a0 = A0) {
+    const peaks = getCachedPeaks(n, l);
+    
+    if (peaks.length === 0) {
+        const r_peak = n * n * a0;
+        return { components: [{ alpha: 2.0 / r_peak, weight: 1.0 }] };
+    }
+    
+    let totalWeight = 0;
+    const components = [];
+    
+    for (const peak of peaks) {
+        const weight = Math.sqrt(peak.pdf);
+        totalWeight += weight;
+        const alpha = 2.0 / peak.r;
+        components.push({ alpha, weight, r_peak: peak.r });
+    }
+    
+    for (const comp of components) {
+        comp.weight /= totalWeight;
+    }
+    
+    return { components };
+}
+
+/**
+ * 计算多峰混合提议分布的 PDF
+ */
+function radialProposalPDF(r, n, l) {
+    if (r <= 0) return 0;
+    
+    const params = getMultiPeakMixtureParams(n, l);
+    let pdf = 0;
+    
+    for (const comp of params.components) {
+        const alpha = comp.alpha;
+        const norm = alpha * alpha * alpha / 2.0;
+        pdf += comp.weight * norm * r * r * Math.exp(-alpha * r);
+    }
+    
+    return pdf;
+}
+
+/**
+ * 从 Gamma(3) 分布采样
+ */
+function sampleGamma3(alpha) {
+    let sum = 0;
+    for (let i = 0; i < 3; i++) {
+        sum -= Math.log(Math.random()) / alpha;
+    }
+    return sum;
+}
+
+/**
+ * 从多峰混合提议分布采样
+ */
+function sampleRadialProposal(n, l) {
+    const params = getMultiPeakMixtureParams(n, l);
+    
+    const u = Math.random();
+    let cumWeight = 0;
+    
+    for (const comp of params.components) {
+        cumWeight += comp.weight;
+        if (u < cumWeight) {
+            return sampleGamma3(comp.alpha);
+        }
+    }
+    
+    return sampleGamma3(params.components[params.components.length - 1].alpha);
+}
+
+/**
+ * 从均匀球面分布采样角度
+ */
+function sampleUniformSphere() {
+    const phi = 2 * PI * Math.random();
+    const cosTheta = 2 * Math.random() - 1;
+    const theta = Math.acos(cosTheta);
+    return { theta, phi };
+}
+
+/**
+ * 计算径向权重的理论上界
+ */
+function getMaxRadialWeight(n, l) {
+    return 4.0 + 0.5 * n;
+}
+
+/**
+ * 重要性采样：生成一个采样点
+ */
+function importanceSample(n, l, angKey, samplingBoundary) {
+    let r = sampleRadialProposal(n, l);
+    
+    if (r > samplingBoundary * 2) {
+        return null;
+    }
+    
+    const R = radialR(n, l, r);
+    const P_radial = r * r * R * R;
+    const q_r = radialProposalPDF(r, n, l);
+    
+    const w_radial = (q_r > 1e-300) ? P_radial / q_r : 0;
+    const maxRadialWeight = getMaxRadialWeight(n, l);
+    
+    if (Math.random() * maxRadialWeight > w_radial) {
+        return { x: 0, y: 0, z: 0, r, theta: 0, phi: 0, weight: w_radial, accepted: false };
+    }
+    
+    const { theta, phi } = sampleUniformSphere();
+    
+    const Y2 = realYlm_abs2(angKey.l, angKey.m, angKey.t, theta, phi);
+    const w_angular = 4 * PI * Y2;
+    const maxAngularWeight = 2 * angKey.l + 1.5;
+    
+    if (Math.random() * maxAngularWeight > w_angular) {
+        return { x: 0, y: 0, z: 0, r, theta, phi, weight: w_angular, accepted: false };
+    }
+    
+    const sinTheta = Math.sin(theta);
+    const x = r * sinTheta * Math.cos(phi);
+    const y = r * sinTheta * Math.sin(phi);
+    const z = r * Math.cos(theta);
+    
+    // 摩尔纹抑制
+    const dither = 0.01;
+    const dx = (Math.random() - 0.5) * dither;
+    const dy = (Math.random() - 0.5) * dither;
+    const dz = (Math.random() - 0.5) * dither;
+    
+    return { x: x + dx, y: y + dy, z: z + dz, r, theta, phi, weight: 1, accepted: true };
+}
+
 // ==================== 采样逻辑 ====================
+
+// 是否启用重要性采样
+let useImportanceSampling = true;
 
 /**
  * 批量采样函数 - 在 Worker 中执行
+ * 
+ * 【重要修复】多选/比照模式使用轮流采样（Round-Robin）策略：
+ * - 为每个轨道平均分配采样名额
+ * - 每个轨道使用自己的重要性采样提议分布
+ * - 避免了随机选择轨道导致的密度偏差
+ * 
  * @param {Object} config - 采样配置
  * @returns {Object} - 采样结果
  */
@@ -202,89 +418,111 @@ function performSampling(config) {
     const samples = [];      // 用于图表的样本数据 [{r,theta,orbitalKey}]
     let farthestDistance = 0;
     let attempts = 0;
+    
+    // 【关键修复】多轨道模式下，确保每个轨道获得相同数量的最终采样点
+    // 而不是相同数量的尝试次数（因为不同轨道的接受率不同）
+    const numOrbitals = paramsList.length;
+    const orbitalPointCounts = new Array(numOrbitals).fill(0); // 每个轨道已采样的点数
+    const targetPointsPerOrbital = Math.ceil(targetPoints / numOrbitals); // 每个轨道的目标点数
+    
+    // 找到当前点数最少的轨道进行采样
+    function getOrbitalWithFewestPoints() {
+        let minIdx = 0;
+        let minCount = orbitalPointCounts[0];
+        for (let i = 1; i < numOrbitals; i++) {
+            if (orbitalPointCounts[i] < minCount) {
+                minCount = orbitalPointCounts[i];
+                minIdx = i;
+            }
+        }
+        return minIdx;
+    }
 
     while (attempts < maxAttempts && points.length < targetPoints) {
         attempts++;
-
-        const x = (Math.random() - 0.5) * samplingVolumeSize;
-        const y = (Math.random() - 0.5) * samplingVolumeSize;
-        const z = (Math.random() - 0.5) * samplingVolumeSize;
-        const r = Math.sqrt(x * x + y * y + z * z);
-
-        if (r === 0) continue;
-
-        const theta = Math.acos(z / r);
-        const phi = Math.atan2(y, x);
-
+        
         let accepted = false;
         let point = null;
-
-        if (isIndependentMode) {
-            // 独立模式：随机选择一个轨道
-            const randomOrbitalIndex = Math.floor(Math.random() * paramsList.length);
-            const p = paramsList[randomOrbitalIndex];
-            const density = density3D_real(p.angKey, p.n, p.l, r, theta, phi);
-            const scaleFactor = Math.min(200, 3.0 * Math.pow(p.n, 3));
-
-            if (Math.random() < density * scaleFactor) {
+        let x, y, z, r, theta, phi;
+        let orbitalIndex = 0;
+        
+        // 【关键修复】选择当前点数最少的轨道进行采样，确保各轨道点数均衡
+        if (isIndependentMode && numOrbitals > 1) {
+            orbitalIndex = getOrbitalWithFewestPoints();
+        }
+        const p = paramsList[orbitalIndex];
+        
+        // 使用重要性采样（针对当前轨道优化）
+        if (useImportanceSampling) {
+            const result = importanceSample(p.n, p.l, p.angKey, samplingBoundary);
+            
+            if (result && result.accepted) {
+                x = result.x;
+                y = result.y;
+                z = result.z;
+                r = result.r;
+                theta = result.theta;
+                phi = result.phi;
                 accepted = true;
-                let r_color, g_color, b_color;
-
-                if (isMultiselectMode) {
-                    // 多选模式：支持相位
-                    if (phaseOn) {
-                        const R = radialR(p.n, p.l, r);
-                        const Y = realYlm_value(p.angKey.l, p.angKey.m, p.angKey.t, theta, phi);
-                        const psi = R * Y;
-                        if (psi > 0) {
-                            r_color = 1; g_color = 0.2; b_color = 0.2;
-                        } else if (psi < 0) {
-                            r_color = 0.2; g_color = 0.2; b_color = 1;
-                        } else {
-                            r_color = 1; g_color = 1; b_color = 1;
-                        }
-                    } else {
-                        r_color = 1; g_color = 1; b_color = 1;
-                    }
-                } else {
-                    // 比照模式：固定颜色
-                    if (compareColors && randomOrbitalIndex < compareColors.length) {
-                        const color = compareColors[randomOrbitalIndex];
-                        r_color = color[0];
-                        g_color = color[1];
-                        b_color = color[2];
-                    } else {
-                        r_color = 1; g_color = 1; b_color = 1;
-                    }
-                }
-
-                point = { x, y, z, r: r_color, g: g_color, b: b_color, orbitalIndex: randomOrbitalIndex };
-                samples.push({ r, theta, orbitalKey: orbitals[randomOrbitalIndex] });
             }
         } else {
-            // 正常模式：概率叠加
-            let probability = 0;
-            let minN = paramsList[0].n;
+            // 传统拒绝采样（降级方案）
+            x = (Math.random() - 0.5) * samplingVolumeSize;
+            y = (Math.random() - 0.5) * samplingVolumeSize;
+            z = (Math.random() - 0.5) * samplingVolumeSize;
+            r = Math.sqrt(x * x + y * y + z * z);
 
-            for (let i = 0; i < paramsList.length; i++) {
-                const p = paramsList[i];
+            if (r === 0) continue;
+
+            theta = Math.acos(z / r);
+            phi = Math.atan2(y, x);
+            
+            if (isIndependentMode) {
                 const density = density3D_real(p.angKey, p.n, p.l, r, theta, phi);
-                probability += density;
-                if (p.n < minN) minN = p.n;
+                const scaleFactor = Math.min(200, 3.0 * Math.pow(p.n, 3));
+                accepted = Math.random() < density * scaleFactor;
+            } else {
+                let probability = 0;
+                let minN = paramsList[0].n;
+                for (let i = 0; i < paramsList.length; i++) {
+                    const params = paramsList[i];
+                    probability += density3D_real(params.angKey, params.n, params.l, r, theta, phi);
+                    if (params.n < minN) minN = params.n;
+                }
+                const scaleFactor = Math.min(200, 3.0 * Math.pow(minN, 3) / Math.sqrt(paramsList.length));
+                accepted = Math.random() < probability * scaleFactor;
             }
+        }
+        
+        if (accepted) {
+            let r_color, g_color, b_color;
 
-            const scaleFactor = Math.min(200, 3.0 * Math.pow(minN, 3) / Math.sqrt(paramsList.length));
-
-            if (Math.random() < probability * scaleFactor) {
-                accepted = true;
-                let r_color, g_color, b_color;
-
+            if (isIndependentMode && !isMultiselectMode) {
+                // 比照模式：固定颜色
+                if (compareColors && orbitalIndex < compareColors.length) {
+                    const color = compareColors[orbitalIndex];
+                    r_color = color[0];
+                    g_color = color[1];
+                    b_color = color[2];
+                } else {
+                    r_color = 1; g_color = 1; b_color = 1;
+                }
+            } else {
+                // 单选模式或多选模式：支持相位
                 if (phaseOn) {
                     let psi = 0;
-                    for (const p of paramsList) {
+                    if (isMultiselectMode) {
+                        // 多选模式：只计算当前轨道的相位
                         const R = radialR(p.n, p.l, r);
                         const Y = realYlm_value(p.angKey.l, p.angKey.m, p.angKey.t, theta, phi);
-                        psi += R * Y;
+                        psi = R * Y;
+                    } else {
+                        // 单选模式：计算所有轨道的叠加相位
+                        for (const params of paramsList) {
+                            const R = radialR(params.n, params.l, r);
+                            const Y = realYlm_value(params.angKey.l, params.angKey.m, params.angKey.t, theta, phi);
+                            psi += R * Y;
+                        }
                     }
                     if (psi > 0) {
                         r_color = 1; g_color = 0.2; b_color = 0.2;
@@ -296,14 +534,17 @@ function performSampling(config) {
                 } else {
                     r_color = 1; g_color = 1; b_color = 1;
                 }
-
-                point = { x, y, z, r: r_color, g: g_color, b: b_color, orbitalIndex: -1 };
-                samples.push({ r, theta, orbitalKey: null });
             }
-        }
 
-        if (accepted && point) {
+            point = { x, y, z, r: r_color, g: g_color, b: b_color, orbitalIndex: isIndependentMode ? orbitalIndex : -1 };
+            samples.push({ r, theta, orbitalKey: isIndependentMode ? orbitals[orbitalIndex] : null });
             points.push(point);
+            
+            // 【关键】更新该轨道的已采样点数计数
+            if (isIndependentMode && numOrbitals > 1) {
+                orbitalPointCounts[orbitalIndex]++;
+            }
+            
             if (r > farthestDistance) {
                 farthestDistance = r;
             }
@@ -321,7 +562,7 @@ function performSampling(config) {
 // ==================== Worker 消息处理 ====================
 
 self.onmessage = function(e) {
-    const { type, data, taskId } = e.data;
+    const { type, data, taskId, sessionId } = e.data;
 
     switch (type) {
         case 'sample':
@@ -330,6 +571,7 @@ self.onmessage = function(e) {
             self.postMessage({
                 type: 'sample-result',
                 taskId: taskId,
+                sessionId: sessionId, // 返回会话 ID 以便主线程验证
                 result: result
             });
             break;

@@ -1022,69 +1022,63 @@ select:focus {
 }
 
 select option {
-    background-color: rgb(30, 30, 35);
+    background-color: rgba(25, 25, 30, 0.85);
     color: var(--color-text-primary);
     padding: 10px 12px;
     font-weight: bold;
 }
 
 select option:hover {
-    background-color: rgb(45, 45, 50);
+    background-color: rgba(60, 60, 70, 0.9);
     color: #ffffff;
 }
 
 /* 单选模式选中项样式 - 白色高亮（非多选时） */
 select option:checked {
-    background-color: rgb(55, 55, 60) !important;
+    background-color: rgba(70, 70, 80, 0.85) !important;
     color: #ffffff !important;
 }
 
-/* 带 size 属性的 select（列表样式）- 单选模式 */
-.control-group select[size] {
+/* 带 size 属性的 select（列表样式）- 单选模式和多选模式统一样式 */
+.control-group select[size],
+.control-group select[multiple],
+#orbital-select {
     width: 100%;
     max-width: 200px;
-    background-color: var(--color-bg-secondary);
+    background-color: rgba(15, 15, 20, 0.6) !important;
     padding: var(--spacing-sm);
-    height: auto;
+    height: auto !important;
     min-height: 60px;
     max-height: 100px;
     overflow-y: auto;
     text-align: center;
-    appearance: listbox;
-    -webkit-appearance: listbox;
+    appearance: listbox !important;
+    -webkit-appearance: listbox !important;
+    -moz-appearance: listbox !important;
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
-/* 单选模式 select[size] 的选中项 - 灰色高亮，不要绿色 */
-.control-group select[size]:not([multiple]) option:checked {
-    background-color: rgb(60, 60, 65) !important;
-    color: #ffffff !important;
+/* 统一 option 样式 */
+.control-group select[size] option,
+.control-group select[multiple] option,
+#orbital-select option {
+    background-color: transparent !important;
+    color: var(--color-text-primary);
+    padding: 8px 12px;
     font-weight: bold;
 }
 
-/* 多选框样式 */
-.control-group select[multiple] {
-    width: 100%;
-    max-width: 200px;
-    background-color: var(--color-bg-secondary);
-    padding: var(--spacing-sm);
-    height: 100px;
-    overflow-y: auto;
-    text-align: left;
-    appearance: listbox;
-    -webkit-appearance: listbox;
-    border-radius: var(--radius-md);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-}
-
-/* 多选框默认选中样式 - 灰色（无multiselect-active或compare-active时） */
-.control-group select[multiple] option:checked {
-    background-color: rgb(60, 60, 65) !important;
+/* 单选模式和多选模式下的选中项基础样式 */
+.control-group select[size] option:checked,
+.control-group select[multiple] option:checked,
+#orbital-select option:checked {
+    background-color: rgba(80, 200, 120, 0.35) !important;
     color: #ffffff !important;
     font-weight: bold;
+    border-left: 3px solid var(--color-active-border);
 }
 
 /* 多选模式选中项样式 - 只在 multiselect-active 时使用绿色 */

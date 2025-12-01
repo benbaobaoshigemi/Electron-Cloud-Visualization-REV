@@ -52,7 +52,8 @@ window.ElectronCloud.Orbital.startDrawing = function() {
     }
     // 初始边界使用高效公式：4n² + 2n，覆盖约95-99%概率区域
     // 剩余尾部由动态扩展机制自动捕获（采样到远处点时边界自动扩大）
-    // n=1 -> 12, n=2 -> 20, n=3 -> 42, n=4 -> 72
+    // n=1 -> 6, n=2 -> 20, n=3 -> 42, n=4 -> 72, n=5 -> 110
+    // 对于高 n 值轨道，使用重要性采样可以更高效地覆盖弥散区域
     state.samplingBoundary = Math.max(12, 4 * maxN * maxN + 2 * maxN);
     console.log(`根据最大主量子数 n=${maxN} 调整采样边界为: ${state.samplingBoundary}`);
     
@@ -122,20 +123,13 @@ window.ElectronCloud.Orbital.startDrawing = function() {
         btn.classList.remove('active', 'green');
     });
     
-    // 【关键修复】重置所有场景对象的旋转，确保坐标系不歪斜
-    if (state.customAxes) {
-        state.customAxes.rotation.set(0, 0, 0);
-        state.customAxes.updateMatrix();
-    }
-    if (state.angularOverlay) {
-        state.angularOverlay.rotation.set(0, 0, 0);
-        state.angularOverlay.updateMatrix();
-    }
+    // 注意：resetAllSceneObjectsRotation 已经重置了 customAxes 和 angularOverlay
     // 新创建的 points 不需要重置，因为刚创建时旋转就是 (0,0,0)
 
     // 开始绘制
     state.isDrawing = true;
     state.samplingStartTime = performance.now(); // 记录采样开始时间
+    state.lastChartUpdateTime = 0; // 重置图表更新时间，确保新轨道能正常刷新
     
     // 更新坐标轴滑动条状态（渲染中置灰）
     window.ElectronCloud.UI.updateAxesSizeRangeState();
@@ -287,17 +281,15 @@ window.ElectronCloud.Orbital.updateOrbitalVisibility = function() {
         state.originalPositions = new Float32Array(positions);
     }
     
+    // 【性能优化】预先构建点索引到轨道的映射，避免 O(n²) 复杂度
+    // 使用 pointOrbitalIndices 数组（在采样时已经记录）
+    const orbitalKeys = state.currentOrbitals || [];
+    
     // 遍历所有点，决定是否显示
     for (let i = 0; i < state.pointCount; i++) {
-        let isVisible = false;
-        
-        // 检查这个点属于哪个轨道，以及该轨道是否可见
-        for (const orbitalKey of Object.keys(state.orbitalPointsMap)) {
-            if (state.orbitalPointsMap[orbitalKey].includes(i) && state.orbitalVisibility[orbitalKey]) {
-                isVisible = true;
-                break;
-            }
-        }
+        const orbitalIndex = state.pointOrbitalIndices ? state.pointOrbitalIndices[i] : 0;
+        const orbitalKey = orbitalKeys[orbitalIndex];
+        const isVisible = orbitalKey ? (state.orbitalVisibility[orbitalKey] !== false) : true;
         
         const posIdx = i * 3;
         if (isVisible) {
@@ -414,11 +406,23 @@ window.ElectronCloud.Orbital.initTheoryData = function() {
     if (!window.Hydrogen) return;
     
     try {
-        const params = Hydrogen.orbitalParamsFromKey(state.currentOrbital);
+        // 【关键修复】直接使用 state.currentOrbitals，不依赖 UI 状态判断
+        // state.currentOrbitals 在 startDrawing 时已经被正确设置为所有选中的轨道
+        const orbitals = state.currentOrbitals && state.currentOrbitals.length > 0 
+            ? state.currentOrbitals 
+            : [state.currentOrbital || '1s'];
+        
+        // 获取所有轨道的参数
+        const paramsList = orbitals.map(key => Hydrogen.orbitalParamsFromKey(key)).filter(Boolean);
+        if (paramsList.length === 0) return;
+        
+        console.log('initTheoryData: 计算理论曲线，轨道列表:', orbitals);
+        
         const angularBins = 90;
         
-        // 使用预估的最大半径来初始化横轴
-        const estimatedRmax = Hydrogen.recommendRmax(params.n);
+        // 使用最大的 n 来计算预估最大半径
+        const maxN = Math.max(...paramsList.map(p => p.n));
+        const estimatedRmax = Hydrogen.recommendRmax(maxN);
         const radialBins = 240;
         
         // 创建空的径向直方图（零值）
@@ -430,10 +434,21 @@ window.ElectronCloud.Orbital.initTheoryData = function() {
         const radialCenters = new Array(radialBins);
         const radialTheoryValues = new Array(radialBins);
         const radialWave = new Array(radialBins);
+        
+        // 【关键修复】多选模式下，理论曲线是各轨道概率密度的加和
         for (let i = 0; i < radialBins; i++) {
             radialCenters[i] = 0.5 * (radialEdges[i] + radialEdges[i + 1]);
-            radialTheoryValues[i] = Hydrogen.radialPDF(params.n, params.l, radialCenters[i]);
-            radialWave[i] = Math.abs(Hydrogen.radialR(params.n, params.l, radialCenters[i]));
+            
+            // 对所有轨道的概率密度求和
+            let sumPDF = 0;
+            let sumWave = 0;
+            for (const params of paramsList) {
+                sumPDF += Hydrogen.radialPDF(params.n, params.l, radialCenters[i]);
+                sumWave += Math.abs(Hydrogen.radialR(params.n, params.l, radialCenters[i]));
+            }
+            // 多轨道时归一化（除以轨道数，因为采样时各轨道等概率）
+            radialTheoryValues[i] = sumPDF / paramsList.length;
+            radialWave[i] = sumWave / paramsList.length;
         }
         
         state.backgroundChartData.radial = {
@@ -449,9 +464,16 @@ window.ElectronCloud.Orbital.initTheoryData = function() {
         
         const angularCenters = new Array(angularBins);
         const angularTheoryValues = new Array(angularBins);
+        
+        // 【关键修复】多选模式下，角向理论曲线也是各轨道的加和
         for (let i = 0; i < angularBins; i++) {
             angularCenters[i] = 0.5 * (angularEdges[i] + angularEdges[i + 1]);
-            angularTheoryValues[i] = Hydrogen.angularPDF_Theta(params.angKey.l, params.angKey.m, angularCenters[i]);
+            
+            let sumAngularPDF = 0;
+            for (const params of paramsList) {
+                sumAngularPDF += Hydrogen.angularPDF_Theta(params.angKey.l, params.angKey.m, angularCenters[i]);
+            }
+            angularTheoryValues[i] = sumAngularPDF / paramsList.length;
         }
         
         state.backgroundChartData.angular = {
@@ -459,7 +481,7 @@ window.ElectronCloud.Orbital.initTheoryData = function() {
             theory: { centers: angularCenters, values: angularTheoryValues }
         };
         
-        console.log('理论曲线数据初始化完成');
+        console.log('理论曲线数据初始化完成，轨道数:', paramsList.length);
         
     } catch (error) {
         console.error('初始化理论数据失败:', error);
@@ -474,13 +496,25 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function() {
     
     try {
         const angularBins = 90;
+        
+        // 【关键修复】直接使用 state.currentOrbitals，不依赖 UI 状态判断
+        const orbitals = state.currentOrbitals && state.currentOrbitals.length > 0 
+            ? state.currentOrbitals 
+            : [state.currentOrbital || '1s'];
+        
+        // 获取所有轨道的参数
+        const paramsList = orbitals.map(key => Hydrogen.orbitalParamsFromKey(key)).filter(Boolean);
+        if (paramsList.length === 0) return;
 
         // 准备径向数据
         if (state.radialSamples.length > 0) {
-            const params = Hydrogen.orbitalParamsFromKey(state.currentOrbital);
-            
-            // 动态调整横轴宽度：仅略宽于最远采样点距离
-            const maxSampleDistance = Math.max(...state.radialSamples);
+            // 【性能修复】使用循环替代Math.max(...array)，避免大数组栈溢出
+            let maxSampleDistance = 0;
+            for (let i = 0; i < state.radialSamples.length; i++) {
+                if (state.radialSamples[i] > maxSampleDistance) {
+                    maxSampleDistance = state.radialSamples[i];
+                }
+            }
             const dynamicRmax = Math.max(1, maxSampleDistance * 1.08);
             
             // 动态调整箱数
@@ -494,12 +528,18 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function() {
             const centers = new Array(adaptiveBins);
             for (let i = 0; i < adaptiveBins; i++) centers[i] = 0.5 * (radialHist.edges[i] + radialHist.edges[i + 1]);
             
-            // 计算理论值
+            // 计算理论值 - 多轨道时加和后取平均
             const values = new Array(adaptiveBins);
             const wave = new Array(adaptiveBins);
-            for(let i=0; i<adaptiveBins; i++){
-                values[i] = Hydrogen.radialPDF(params.n, params.l, centers[i]);
-                wave[i] = Math.abs(Hydrogen.radialR(params.n, params.l, centers[i]));
+            for (let i = 0; i < adaptiveBins; i++) {
+                let sumPDF = 0;
+                let sumWave = 0;
+                for (const params of paramsList) {
+                    sumPDF += Hydrogen.radialPDF(params.n, params.l, centers[i]);
+                    sumWave += Math.abs(Hydrogen.radialR(params.n, params.l, centers[i]));
+                }
+                values[i] = sumPDF / paramsList.length;
+                wave[i] = sumWave / paramsList.length;
             }
 
             state.backgroundChartData.radial = {
@@ -510,15 +550,19 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function() {
 
         // 准备角向数据
         if (state.angularSamples.length > 0) {
-            const params = Hydrogen.orbitalParamsFromKey(state.currentOrbital);
             const angularHist = Hydrogen.histogramThetaFromSamples(state.angularSamples, angularBins, true);
             
-            // 计算角向理论值
+            // 【关键修复】计算角向理论值 - 多轨道时加和
             const centers = new Array(angularBins);
             const values = new Array(angularBins);
-            for(let i=0; i<angularBins; i++) {
+            for (let i = 0; i < angularBins; i++) {
                 centers[i] = 0.5 * (angularHist.edges[i] + angularHist.edges[i+1]);
-                values[i] = Hydrogen.angularPDF_Theta(params.angKey.l, params.angKey.m, centers[i]);
+                
+                let sumAngularPDF = 0;
+                for (const params of paramsList) {
+                    sumAngularPDF += Hydrogen.angularPDF_Theta(params.angKey.l, params.angKey.m, centers[i]);
+                }
+                values[i] = sumAngularPDF / paramsList.length;
             }
             
             state.backgroundChartData.angular = {
@@ -527,7 +571,7 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function() {
             };
         }
         
-        console.log('后台图表数据已更新，径向数据点:', state.radialSamples.length, '角向数据点:', state.angularSamples.length);
+        console.log('后台图表数据已更新，径向数据点:', state.radialSamples.length, '轨道数:', paramsList.length);
         
     } catch (error) {
         console.error('后台更新图表数据失败:', error);
@@ -574,12 +618,24 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function(final = true) {
     // 如果没有后台数据，则重新计算
     console.log('后台数据不可用，重新计算图表数据');
     const angularBins = 90;
+    
+    // 【关键修复】使用所有选中的轨道计算理论曲线，而不是单个轨道
+    const orbitals = state.currentOrbitals && state.currentOrbitals.length > 0 
+        ? state.currentOrbitals 
+        : [state.currentOrbital || '1s'];
+    const paramsList = orbitals.map(key => Hydrogen.orbitalParamsFromKey(key)).filter(Boolean);
+    
+    if (paramsList.length === 0) return;
 
     if (type === 'radial') {
-        const params = Hydrogen.orbitalParamsFromKey(state.currentOrbital);
-        
         // 动态调整横轴宽度：仅略宽于最远采样点距离
-        const maxSampleDistance = state.radialSamples.length > 0 ? Math.max(...state.radialSamples) : 0;
+        // 【性能修复】使用循环替代Math.max(...array)，避免大数组栈溢出
+        let maxSampleDistance = 0;
+        for (let i = 0; i < state.radialSamples.length; i++) {
+            if (state.radialSamples[i] > maxSampleDistance) {
+                maxSampleDistance = state.radialSamples[i];
+            }
+        }
         const dynamicRmax = Math.max(1, maxSampleDistance * 1.08);
         
         // 动态调整箱数：确保足够细致，根据数据范围和采样点数自适应
@@ -593,26 +649,36 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function(final = true) {
         const centers = new Array(adaptiveBins);
         for (let i = 0; i < adaptiveBins; i++) centers[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
         
-        // 计算理论值
+        // 【关键修复】计算理论值 - 多轨道时加和
         const values = new Array(adaptiveBins);
         const wave = new Array(adaptiveBins);
-        for(let i=0; i<adaptiveBins; i++){
-            values[i] = Hydrogen.radialPDF(params.n, params.l, centers[i]);
-            wave[i] = Math.abs(Hydrogen.radialR(params.n, params.l, centers[i]));
+        for (let i = 0; i < adaptiveBins; i++) {
+            let sumPDF = 0;
+            let sumWave = 0;
+            for (const params of paramsList) {
+                sumPDF += Hydrogen.radialPDF(params.n, params.l, centers[i]);
+                sumWave += Math.abs(Hydrogen.radialR(params.n, params.l, centers[i]));
+            }
+            values[i] = sumPDF / paramsList.length;
+            wave[i] = sumWave / paramsList.length;
         }
 
         // 绘制直方图和理论曲线
         DataPanel.renderChartRadial(hist, { centers, values, wave });
     } else {
-        const params = Hydrogen.orbitalParamsFromKey(state.currentOrbital);
         const hist = Hydrogen.histogramThetaFromSamples(state.angularSamples, angularBins, true);
         
-        // 计算角向理论值
+        // 【关键修复】计算角向理论值 - 多轨道时加和
         const centers = new Array(angularBins);
         const values = new Array(angularBins);
-        for(let i=0; i<angularBins; i++) {
+        for (let i = 0; i < angularBins; i++) {
             centers[i] = 0.5 * (hist.edges[i] + hist.edges[i+1]);
-            values[i] = Hydrogen.angularPDF_Theta(params.angKey.l, params.angKey.m, centers[i]);
+            
+            let sumAngularPDF = 0;
+            for (const params of paramsList) {
+                sumAngularPDF += Hydrogen.angularPDF_Theta(params.angKey.l, params.angKey.m, centers[i]);
+            }
+            values[i] = sumAngularPDF / paramsList.length;
         }
         
         DataPanel.renderChartAngular(hist, { centers, values });

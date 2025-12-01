@@ -14,6 +14,7 @@ let useWorkers = true; // 是否使用 Worker（可降级）
 let workersInitialized = false; // 防止重复初始化
 let activeTasks = 0; // 当前正在执行的任务数
 let lastSubmitTime = 0; // 上次提交时间（节流）
+let samplingSessionId = 0; // 采样会话 ID，用于防止旧 Worker 结果污染新会话
 
 // 初始化 Worker 池
 window.ElectronCloud.Sampling.initWorkers = function() {
@@ -34,7 +35,7 @@ window.ElectronCloud.Sampling.initWorkers = function() {
             const worker = new Worker('sampling-worker.js');
             
             worker.onmessage = function(e) {
-                const { type, taskId, result } = e.data;
+                const { type, taskId, sessionId, result } = e.data;
                 
                 if (type === 'ready') {
                     workerReady++;
@@ -42,7 +43,7 @@ window.ElectronCloud.Sampling.initWorkers = function() {
                     worker.busy = false;
                 } else if (type === 'sample-result') {
                     // 处理采样结果
-                    window.ElectronCloud.Sampling.handleWorkerResult(result, taskId);
+                    window.ElectronCloud.Sampling.handleWorkerResult(result, taskId, sessionId);
                     worker.busy = false;
                     activeTasks--;
                     
@@ -69,9 +70,16 @@ window.ElectronCloud.Sampling.initWorkers = function() {
 };
 
 // 处理 Worker 返回的结果
-window.ElectronCloud.Sampling.handleWorkerResult = function(result, taskId) {
+window.ElectronCloud.Sampling.handleWorkerResult = function(result, taskId, sessionId) {
     const state = window.ElectronCloud.state;
     const ui = window.ElectronCloud.ui;
+    
+    // 检查 session ID，忽略来自旧会话的结果
+    // 注意：sessionId 可能是 undefined（旧 Worker 或首次初始化），此时允许通过
+    if (sessionId !== undefined && sessionId !== samplingSessionId) {
+        console.log(`忽略旧会话的 Worker 结果 (session ${sessionId} vs current ${samplingSessionId})`);
+        return;
+    }
     
     if (!state.points || !result.points.length) return;
     
@@ -181,9 +189,25 @@ window.ElectronCloud.Sampling.submitSamplingTask = function() {
     
     if (state.pointCount >= state.MAX_POINTS) return;
     
+    // 检查是否有轨道可采样
+    if (!state.currentOrbitals || state.currentOrbitals.length === 0) return;
+    
     // 检查是否有空闲 Worker
     const availableWorkers = workerPool.filter(w => !w.busy);
     if (availableWorkers.length === 0) return;
+    
+    // 【节流机制】根据速度滑条控制提交频率
+    // 滑条范围 20000-800000，值越大，提交越频繁
+    const now = performance.now();
+    const speedValue = window.ElectronCloud.Sampling.getAttemptsPerFrame();
+    // 将速度值映射到提交间隔：低速 = 长间隔，高速 = 短间隔
+    // 速度 20000 → 间隔 50ms，速度 800000 → 间隔 0ms（无限制）
+    const minInterval = Math.max(0, 50 * (1 - (speedValue - 20000) / (800000 - 20000)));
+    
+    if (now - lastSubmitTime < minInterval) {
+        return; // 节流：跳过此次提交
+    }
+    lastSubmitTime = now;
     
     const isCompareMode = ui.compareToggle && ui.compareToggle.checked;
     const isMultiselectMode = ui.multiselectToggle && ui.multiselectToggle.checked;
@@ -194,8 +218,8 @@ window.ElectronCloud.Sampling.submitSamplingTask = function() {
         constants.compareColors.map(c => c.value) : [];
     
     const taskId = ++taskIdCounter;
-    // 每个 Worker 处理更多的尝试次数，充分利用 CPU
-    const totalAttempts = window.ElectronCloud.Sampling.getAttemptsPerFrame();
+    // 根据速度滑条调整每个 Worker 的工作量
+    const totalAttempts = speedValue;
     const attemptsPerWorker = Math.ceil(totalAttempts / availableWorkers.length);
     const pointsPerWorker = Math.ceil(state.pointsPerFrame / availableWorkers.length);
     
@@ -205,6 +229,7 @@ window.ElectronCloud.Sampling.submitSamplingTask = function() {
         const task = {
             type: 'sample',
             taskId: taskId + i,
+            sessionId: samplingSessionId, // 添加会话 ID
             data: {
                 orbitals: state.currentOrbitals,
                 samplingBoundary: state.samplingBoundary,
@@ -233,6 +258,13 @@ window.ElectronCloud.Sampling.terminateWorkers = function() {
     activeTasks = 0;
 };
 
+// 重置采样会话（使旧的 Worker 结果无效）
+window.ElectronCloud.Sampling.resetSamplingSession = function() {
+    samplingSessionId++;
+    pendingTasks = []; // 清空待处理队列
+    console.log(`采样会话重置为 ${samplingSessionId}`);
+};
+
 // 检查是否使用 Worker
 window.ElectronCloud.Sampling.isUsingWorkers = function() {
     return useWorkers && workerReady > 0;
@@ -240,7 +272,16 @@ window.ElectronCloud.Sampling.isUsingWorkers = function() {
 
 // ==================== 原有采样逻辑（作为降级方案）====================
 
-// 更新点的位置（主要采样逻辑）
+// 是否启用重要性采样（性能优化模式）
+let useImportanceSampling = true;
+
+// 检查并设置采样模式
+window.ElectronCloud.Sampling.setImportanceSamplingMode = function(enabled) {
+    useImportanceSampling = enabled;
+    console.log(`采样模式: ${enabled ? '重要性采样' : '传统拒绝采样'}`);
+};
+
+// 更新点的位置（主要采样逻辑 - 支持重要性采样）
 window.ElectronCloud.Sampling.updatePoints = function() {
     const state = window.ElectronCloud.state;
     const ui = window.ElectronCloud.ui;
@@ -271,6 +312,11 @@ window.ElectronCloud.Sampling.updatePoints = function() {
     const startTime = performance.now();
     const maxTimePerFrame = 15; // 毫秒（60fps下每帧约16.67ms）
 
+    // 判断是否使用独立模式（多选/比照）
+    const isIndependentMode = (ui.compareToggle && ui.compareToggle.checked) || 
+                              (ui.multiselectToggle && ui.multiselectToggle.checked);
+    const isMultiselectMode = ui.multiselectToggle && ui.multiselectToggle.checked;
+
     let attempts = 0;
     while (attempts < attemptPerFrame && newPoints < state.pointsPerFrame && state.pointCount < state.MAX_POINTS) {
         // 每1000次尝试检查一次时间（减少开销）
@@ -278,34 +324,42 @@ window.ElectronCloud.Sampling.updatePoints = function() {
             break;
         }
         attempts++;
-        const x = (Math.random() - 0.5) * samplingVolumeSize;
-        const y = (Math.random() - 0.5) * samplingVolumeSize;
-        const z = (Math.random() - 0.5) * samplingVolumeSize;
-        const r = Math.sqrt(x * x + y * y + z * z);
-
-        if (r === 0) continue;
-
-        const theta = Math.acos(z / r);
-        const phi = Math.atan2(y, x);
-
-        // 【重要修复】多选模式和比照模式都使用独立采样策略
-        // 确保各轨道电子云渲染完全独立，互不干扰
-        if ((ui.compareToggle && ui.compareToggle.checked) || 
-            (ui.multiselectToggle && ui.multiselectToggle.checked)) {
-            const success = window.ElectronCloud.Sampling.processIndependentModePoint(
-                x, y, z, r, theta, phi, paramsList, positions, colorsAttr.array,
-                ui.multiselectToggle && ui.multiselectToggle.checked // 是否为多选模式（用于决定颜色）
+        
+        // 根据采样模式选择不同的策略
+        if (useImportanceSampling && window.Hydrogen.importanceSample) {
+            // 重要性采样模式
+            const success = window.ElectronCloud.Sampling.processImportanceSamplingPoint(
+                paramsList, positions, colorsAttr.array, isIndependentMode, isMultiselectMode
             );
             if (success) {
                 newPoints++;
             }
         } else {
-            // 单选模式：使用原有的逻辑（单轨道无需独立处理）
-            const success = window.ElectronCloud.Sampling.processNormalModePoint(
-                x, y, z, r, theta, phi, paramsList, positions, colorsAttr.array
-            );
-            if (success) {
-                newPoints++;
+            // 传统拒绝采样模式（降级方案）
+            const x = (Math.random() - 0.5) * samplingVolumeSize;
+            const y = (Math.random() - 0.5) * samplingVolumeSize;
+            const z = (Math.random() - 0.5) * samplingVolumeSize;
+            const r = Math.sqrt(x * x + y * y + z * z);
+
+            if (r === 0) continue;
+
+            const theta = Math.acos(z / r);
+            const phi = Math.atan2(y, x);
+
+            if (isIndependentMode) {
+                const success = window.ElectronCloud.Sampling.processIndependentModePoint(
+                    x, y, z, r, theta, phi, paramsList, positions, colorsAttr.array, isMultiselectMode
+                );
+                if (success) {
+                    newPoints++;
+                }
+            } else {
+                const success = window.ElectronCloud.Sampling.processNormalModePoint(
+                    x, y, z, r, theta, phi, paramsList, positions, colorsAttr.array
+                );
+                if (success) {
+                    newPoints++;
+                }
             }
         }
     }
@@ -334,15 +388,17 @@ window.ElectronCloud.Sampling.updatePoints = function() {
 };
 
 // 处理独立模式下的点采样（多选模式和比照模式共用）
+// 【重要修复】使用轮流采样（Round-Robin）替代随机选择
 // isMultiselectMode: 是否为多选模式，用于决定颜色方案
 window.ElectronCloud.Sampling.processIndependentModePoint = function(x, y, z, r, theta, phi, paramsList, positions, colors, isMultiselectMode) {
     const state = window.ElectronCloud.state;
     const constants = window.ElectronCloud.constants;
     const ui = window.ElectronCloud.ui;
     
-    // 随机选择一个轨道进行采样尝试
-    const randomOrbitalIndex = Math.floor(Math.random() * paramsList.length);
-    const p = paramsList[randomOrbitalIndex];
+    // 【修复】使用轮流选择而不是随机选择，确保每个轨道获得公平的采样机会
+    const orbitalIndex = state.roundRobinIndex % paramsList.length;
+    state.roundRobinIndex++;
+    const p = paramsList[orbitalIndex];
     const density = Hydrogen.density3D_real(p.angKey, p.n, p.l, r, theta, phi);
     
     // 【关键】为每个轨道独立计算scaleFactor
@@ -379,8 +435,8 @@ window.ElectronCloud.Sampling.processIndependentModePoint = function(x, y, z, r,
             }
         } else {
             // 比照模式：使用固定颜色区分不同轨道
-            if (randomOrbitalIndex < constants.compareColors.length) {
-                const color = constants.compareColors[randomOrbitalIndex].value;
+            if (orbitalIndex < constants.compareColors.length) {
+                const color = constants.compareColors[orbitalIndex].value;
                 r_color = color[0];
                 g_color = color[1];
                 b_color = color[2];
@@ -404,7 +460,7 @@ window.ElectronCloud.Sampling.processIndependentModePoint = function(x, y, z, r,
         }
         
         // 记录这个点属于哪个轨道（用于后续的显示开关）
-        const orbitalKey = state.currentOrbitals[randomOrbitalIndex];
+        const orbitalKey = state.currentOrbitals[orbitalIndex];
         if (!state.orbitalPointsMap[orbitalKey]) {
             state.orbitalPointsMap[orbitalKey] = [];
         }
@@ -412,7 +468,7 @@ window.ElectronCloud.Sampling.processIndependentModePoint = function(x, y, z, r,
         
         // 存储轨道索引（用于多轨道模式的等值面计算）
         if (state.pointOrbitalIndices) {
-            state.pointOrbitalIndices[state.pointCount] = randomOrbitalIndex;
+            state.pointOrbitalIndices[state.pointCount] = orbitalIndex;
         }
         
         // 记录采样数据（用于图表绘制）
@@ -544,4 +600,147 @@ window.ElectronCloud.Sampling.getAttemptsPerFrame = function() {
     const v = parseInt(ui.speedRange.value, 10);
     if (isNaN(v) || v <= 0) return 20000;
     return v;
+};
+
+// ==================== 重要性采样处理函数 ====================
+
+/**
+ * 使用重要性采样方法处理单个采样点
+ * 
+ * 【重要修复】多选/比照模式使用轮流采样（Round-Robin）策略：
+ * - 每个轨道轮流获得采样机会
+ * - 每个轨道使用自己的重要性采样提议分布
+ * - 避免了随机选择轨道导致的密度偏差
+ * 
+ * @param {Array} paramsList - 轨道参数列表
+ * @param {Float32Array} positions - 位置数组
+ * @param {Float32Array} colors - 颜色数组
+ * @param {boolean} isIndependentMode - 是否为独立模式（多选/比照）
+ * @param {boolean} isMultiselectMode - 是否为多选模式
+ * @returns {boolean} - 是否成功添加了一个点
+ */
+window.ElectronCloud.Sampling.processImportanceSamplingPoint = function(
+    paramsList, positions, colors, isIndependentMode, isMultiselectMode
+) {
+    const state = window.ElectronCloud.state;
+    const constants = window.ElectronCloud.constants;
+    
+    // 【修复】使用轮流选择而不是随机选择，确保每个轨道获得公平的采样机会
+    let orbitalIndex = 0;
+    if (isIndependentMode && paramsList.length > 1) {
+        orbitalIndex = state.roundRobinIndex % paramsList.length;
+        state.roundRobinIndex++;
+    }
+    
+    const p = paramsList[orbitalIndex];
+    
+    // 使用重要性采样生成点（针对当前轨道优化）
+    const result = Hydrogen.importanceSample(p.n, p.l, p.angKey, state.samplingBoundary);
+    
+    if (!result || !result.accepted) {
+        return false;
+    }
+    
+    const { x, y, z, r, theta, phi } = result;
+    
+    // 边界检查
+    if (r > state.samplingBoundary * 2) {
+        return false;
+    }
+    
+    const i3 = state.pointCount * 3;
+    positions[i3] = x;
+    positions[i3 + 1] = y;
+    positions[i3 + 2] = z;
+    
+    // 计算颜色
+    let r_color, g_color, b_color;
+    
+    if (isIndependentMode && !isMultiselectMode) {
+        // 比照模式：使用固定颜色区分不同轨道
+        if (orbitalIndex < constants.compareColors.length) {
+            const color = constants.compareColors[orbitalIndex].value;
+            r_color = color[0];
+            g_color = color[1];
+            b_color = color[2];
+        } else {
+            r_color = 1; g_color = 1; b_color = 1;
+        }
+    } else {
+        // 单选模式或多选模式：支持相位显示
+        const phaseOn = document.getElementById('phase-toggle')?.checked;
+        let sign = 0;
+        
+        if (phaseOn) {
+            let psi = 0;
+            if (isMultiselectMode) {
+                // 多选模式：只计算当前轨道的相位
+                const R = Hydrogen.radialR(p.n, p.l, r);
+                const Y = Hydrogen.realYlm_value(p.angKey.l, p.angKey.m, p.angKey.t, theta, phi);
+                psi = R * Y;
+            } else {
+                // 单选模式：计算所有轨道的叠加相位
+                for (const params of paramsList) {
+                    const R = Hydrogen.radialR(params.n, params.l, r);
+                    const Y = Hydrogen.realYlm_value(params.angKey.l, params.angKey.m, params.angKey.t, theta, phi);
+                    psi += R * Y;
+                }
+            }
+            sign = psi > 0 ? 1 : (psi < 0 ? -1 : 0);
+        }
+        
+        if (sign > 0) {
+            r_color = 1; g_color = 0.2; b_color = 0.2;
+        } else if (sign < 0) {
+            r_color = 0.2; g_color = 0.2; b_color = 1;
+        } else {
+            r_color = 1; g_color = 1; b_color = 1;
+        }
+    }
+    
+    colors[i3] = r_color;
+    colors[i3 + 1] = g_color;
+    colors[i3 + 2] = b_color;
+    
+    // 同步更新 baseColors（用于星空闪烁模式）
+    if (state.baseColors) {
+        state.baseColors[i3] = r_color;
+        state.baseColors[i3 + 1] = g_color;
+        state.baseColors[i3 + 2] = b_color;
+        state.baseColorsCount = state.pointCount + 1;
+    }
+    
+    // 存储轨道索引
+    if (state.pointOrbitalIndices) {
+        state.pointOrbitalIndices[state.pointCount] = isIndependentMode ? orbitalIndex : 0;
+    }
+    
+    // 记录轨道点映射（用于比照模式开关）
+    if (isIndependentMode) {
+        const orbitalKey = state.currentOrbitals[orbitalIndex];
+        if (orbitalKey) {
+            if (!state.orbitalPointsMap[orbitalKey]) {
+                state.orbitalPointsMap[orbitalKey] = [];
+            }
+            state.orbitalPointsMap[orbitalKey].push(state.pointCount);
+            
+            // 记录采样数据
+            if (!state.orbitalSamplesMap[orbitalKey]) {
+                state.orbitalSamplesMap[orbitalKey] = [];
+            }
+            state.orbitalSamplesMap[orbitalKey].push({
+                r: r,
+                theta: theta,
+                probability: 0
+            });
+        }
+    }
+    
+    state.pointCount++;
+    state.radialSamples.push(r);
+    state.angularSamples.push(theta);
+    
+    window.ElectronCloud.Sampling.updateFarthestDistance(r);
+    
+    return true;
 };

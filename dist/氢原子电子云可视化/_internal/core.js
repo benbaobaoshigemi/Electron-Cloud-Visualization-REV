@@ -27,6 +27,7 @@ window.ElectronCloud.state = {
     farthestDistance: 0,
     samplingBoundary: 40,
     samplingCompleted: false,
+    roundRobinIndex: 0, // 【新增】多选模式轮流采样索引
     
     // 采样数据
     radialSamples: [],
@@ -76,7 +77,19 @@ window.ElectronCloud.constants = {
         '4d_x2-y2': '4d(x^2-y^2)', '4d_z2': '4d(z^2)',
         '4f_xyz': '4f(xyz)', '4f_xz2': '4f(xz^2)', '4f_yz2': '4f(yz^2)', 
         '4f_z3': '4f(z^3)', '4f_z(x2-y2)': '4f(z(x^2-y^2))', 
-        '4f_x(x2-3y2)': '4f(x(x^2-3y^2))', '4f_y(3x2-y2)': '4f(y(3x^2-y^2))'
+        '4f_x(x2-3y2)': '4f(x(x^2-3y^2))', '4f_y(3x2-y2)': '4f(y(3x^2-y^2))',
+        // n=5 轨道
+        '5s': '5s', '5px': '5px', '5py': '5py', '5pz': '5pz',
+        '5d_xy': '5d(xy)', '5d_xz': '5d(xz)', '5d_yz': '5d(yz)',
+        '5d_x2-y2': '5d(x^2-y^2)', '5d_z2': '5d(z^2)',
+        '5f_xyz': '5f(xyz)', '5f_xz2': '5f(xz^2)', '5f_yz2': '5f(yz^2)',
+        '5f_z3': '5f(z^3)', '5f_z(x2-y2)': '5f(z(x^2-y^2))',
+        '5f_x(x2-3y2)': '5f(x(x^2-3y^2))', '5f_y(3x2-y2)': '5f(y(3x^2-y^2))',
+        // 5g 轨道
+        '5g_z4': '5g(z^4)', '5g_z3x': '5g(z^3·x)', '5g_z3y': '5g(z^3·y)',
+        '5g_z2xy': '5g(z^2·xy)', '5g_z2(x2-y2)': '5g(z^2(x^2-y^2))',
+        '5g_zx(x2-3y2)': '5g(zx(x^2-3y^2))', '5g_zy(3x2-y2)': '5g(zy(3x^2-y^2))',
+        '5g_xy(x2-y2)': '5g(xy(x^2-y^2))', '5g_x4-6x2y2+y4': '5g(x^4-6x^2y^2+y^4)'
     }
 };
 
@@ -90,7 +103,7 @@ window.ElectronCloud.ui = {
     maxPointsSelect: document.getElementById('max-points-select'),
     speedRange: document.getElementById('speed-range'),
     centerLock: document.getElementById('center-lock'),
-    sizeSelect: document.getElementById('size-select'),
+    sizeRange: document.getElementById('size-range'),
     opacityRange: document.getElementById('opacity-range'),
     pauseButton: document.getElementById('pause-button'),
     clearButton: document.getElementById('clear-button'),
@@ -146,6 +159,11 @@ window.ElectronCloud.getState = function(key) {
 window.ElectronCloud.resetState = function() {
     const state = window.ElectronCloud.state;
     
+    // 重置 Worker 采样会话，使旧的 Worker 结果无效
+    if (window.ElectronCloud.Sampling && window.ElectronCloud.Sampling.resetSamplingSession) {
+        window.ElectronCloud.Sampling.resetSamplingSession();
+    }
+    
     // 停止动画
     if (state.animationFrameId) {
         cancelAnimationFrame(state.animationFrameId);
@@ -160,6 +178,9 @@ window.ElectronCloud.resetState = function() {
     state.samplingBoundary = 40;
     state.angularUpdated = false;
     state.axesScaleFactor = 0;
+    state.roundRobinIndex = 0; // 重置轮流采样索引
+    state.samplingStartTime = null; // 重置采样开始时间
+    state.lastChartUpdateTime = 0; // 重置图表更新时间
     
     // 清空数据数组
     state.radialSamples = [];
@@ -177,9 +198,11 @@ window.ElectronCloud.resetState = function() {
     state.baseColors = null;
     state.baseColorsCount = 0;
     
-    // 重置波浪模式缓存
+    // 重置闪烁模式缓存（扩散模式和波浪模式）
+    state.diffuseDensitiesComputed = false;
     state.waveRanksComputed = false;
     state.waveRanksPointCount = 0;
+    state.waveRanks = null;
     
     // 重置自动旋转状态
     if (state.autoRotate) {
@@ -223,6 +246,11 @@ window.ElectronCloud.resetState = function() {
 window.ElectronCloud.resetSamplingState = function() {
     const state = window.ElectronCloud.state;
     
+    // 重置 Worker 采样会话，使旧的 Worker 结果无效
+    if (window.ElectronCloud.Sampling && window.ElectronCloud.Sampling.resetSamplingSession) {
+        window.ElectronCloud.Sampling.resetSamplingSession();
+    }
+    
     // 停止动画
     if (state.animationFrameId) {
         cancelAnimationFrame(state.animationFrameId);
@@ -236,6 +264,9 @@ window.ElectronCloud.resetSamplingState = function() {
     state.farthestDistance = 0;
     state.samplingBoundary = 40;
     state.angularUpdated = false;
+    state.roundRobinIndex = 0; // 重置轮流采样索引
+    state.samplingStartTime = null; // 重置采样开始时间
+    state.lastChartUpdateTime = 0; // 重置图表更新时间
     // 从滑动条同步axesScaleFactor，保留用户设置
     if (window.ElectronCloud.ui.axesSizeRange) {
         const sliderValue = parseInt(window.ElectronCloud.ui.axesSizeRange.value, 10);
@@ -258,9 +289,11 @@ window.ElectronCloud.resetSamplingState = function() {
     state.baseColors = null;
     state.baseColorsCount = 0;
     
-    // 重置波浪模式缓存
+    // 重置闪烁模式缓存（扩散模式和波浪模式）
+    state.diffuseDensitiesComputed = false;
     state.waveRanksComputed = false;
     state.waveRanksPointCount = 0;
+    state.waveRanks = null;
     
     // 重置图表数据
     state.backgroundChartData = {

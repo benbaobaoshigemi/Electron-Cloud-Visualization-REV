@@ -143,10 +143,12 @@ def build_exe():
         "orbital.js",
         "physics.js",
         "sampling.js",
+        "sampling-worker.js",
         "scene.js",
         "ui.js",
         "visualization.js",
         "data_panel.js",
+        "panel_lighting.js",
         "gesture_v2.js",
         "gesture_config.json",
     ]

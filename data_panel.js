@@ -18,21 +18,24 @@
     const enlargeBtn = document.getElementById('chart-enlarge-btn');
     const resizeHandle = document.getElementById('chart-resize-handle');
     const chartContainer = dataPanel ? dataPanel.querySelector('.chart-container') : null;
-    const panelComputedStyle = dataPanel ? window.getComputedStyle(dataPanel) : null;
-    const chartComputedStyle = chartContainer ? window.getComputedStyle(chartContainer) : null;
-    const panelPaddingBottom = panelComputedStyle ? parseFloat(panelComputedStyle.paddingBottom) || 0 : 0;
-    const chartMarginBottom = chartComputedStyle ? parseFloat(chartComputedStyle.marginBottom) || 0 : 0;
-    const chartTopOffset = (dataPanel && chartContainer)
-      ? chartContainer.getBoundingClientRect().top - dataPanel.getBoundingClientRect().top
-      : 0;
+    
+    // 固定间距常量（与CSS变量--spacing-panel一致）
+    const PANEL_SPACING = 16;
     const MIN_CHART_HEIGHT = 220;
-    const MIN_PANEL_HEIGHT = chartTopOffset
-      ? chartTopOffset + MIN_CHART_HEIGHT + panelPaddingBottom + chartMarginBottom
-      : 400;
-    const minPanelHeight = Math.max(
-      MIN_PANEL_HEIGHT,
-      dataPanel ? dataPanel.getBoundingClientRect().height : MIN_PANEL_HEIGHT
-    );
+    
+    // 计算最小面板高度
+    function calculateMinPanelHeight() {
+        if (!dataPanel || !chartContainer) return 400;
+        const chartTopOffset = chartContainer.getBoundingClientRect().top - dataPanel.getBoundingClientRect().top;
+        // 最小面板高度 = 图表顶部偏移 + 最小图表高度 + 底部padding(16px)
+        return chartTopOffset + MIN_CHART_HEIGHT + PANEL_SPACING;
+    }
+    
+    // 延迟计算以确保CSS已加载
+    let minPanelHeight = 400;
+    requestAnimationFrame(() => {
+        minPanelHeight = Math.max(calculateMinPanelHeight(), dataPanel ? dataPanel.getBoundingClientRect().height : 400);
+    });
     
     if(dataCollapseBtn && dataPanel){
       dataCollapseBtn.addEventListener('click', ()=>{
@@ -72,40 +75,46 @@
         if (!chartContainer || !dataPanel) {
             return;
         }
-        // 重新计算offset，因为面板结构可能已变化
         const panelContent = dataPanel.querySelector('.panel-content');
         const panelBody = dataPanel.querySelector('.panel-body');
         if (!panelContent || !panelBody) return;
         
-        const panelContentStyle = window.getComputedStyle(panelContent);
-        const panelBodyStyle = window.getComputedStyle(panelBody);
-        const chartStyle = window.getComputedStyle(chartContainer);
-        const contentPadding = parseFloat(panelContentStyle.paddingTop) + parseFloat(panelContentStyle.paddingBottom);
-        const bodyMargin = parseFloat(panelBodyStyle.marginTop) + parseFloat(panelBodyStyle.marginBottom);
-        const chartMargin = parseFloat(chartStyle.marginTop) + parseFloat(chartStyle.marginBottom);
+        // 使用固定的16px间距（与CSS变量--spacing-panel一致）
+        const PANEL_SPACING = 16;
         
-        // 计算面板头部占用的高度（包括其margin-bottom）
+        // 获取面板边框
+        const panelStyle = window.getComputedStyle(dataPanel);
+        const panelBorderTop = parseFloat(panelStyle.borderTopWidth) || 0;
+        const panelBorderBottom = parseFloat(panelStyle.borderBottomWidth) || 0;
+        
+        // 计算面板头部占用的高度
         const panelHeader = dataPanel.querySelector('.panel-header');
         let usedHeight = 0;
         
         if (panelHeader) {
-            const headerStyle = window.getComputedStyle(panelHeader);
             usedHeight += panelHeader.getBoundingClientRect().height;
-            usedHeight += parseFloat(headerStyle.marginBottom) || 0;
+            usedHeight += PANEL_SPACING; // header的margin-bottom
         }
         
-        // 计算其他控件占用的高度
+        // 计算其他控件占用的高度（不包含图表容器）
+        // 数据面板中有2个control-group，每个后面有16px间距
         const controlGroups = panelBody.querySelectorAll('.control-group');
-        controlGroups.forEach(group => {
-            if (!group.contains(chartContainer)) {
-                usedHeight += group.getBoundingClientRect().height;
-                const groupStyle = window.getComputedStyle(group);
-                usedHeight += parseFloat(groupStyle.marginBottom) || 0;
-            }
+        const controlGroupCount = controlGroups.length;
+        controlGroups.forEach((group, index) => {
+            usedHeight += group.getBoundingClientRect().height;
+            // 每个control-group后面都有margin-bottom（16px）
+            // 因为图表容器不是control-group，所以最后一个control-group也有margin
+            usedHeight += PANEL_SPACING;
         });
         
+        // 图表容器的margin-top已经包含在上面最后一个control-group的margin-bottom中
+        // 所以不需要再加
+        
         // 计算图表容器可用高度
-        const availableHeight = panelHeight - contentPadding - bodyMargin - usedHeight - chartMargin;
+        // 面板内容区域 = panelHeight - 边框 - 上下padding(各16px)
+        // 图表高度 = 内容区域 - usedHeight
+        const contentAreaHeight = panelHeight - panelBorderTop - panelBorderBottom - PANEL_SPACING * 2;
+        const availableHeight = contentAreaHeight - usedHeight;
         const safeHeight = Math.max(MIN_CHART_HEIGHT, availableHeight);
         chartContainer.style.height = `${safeHeight}px`;
     }

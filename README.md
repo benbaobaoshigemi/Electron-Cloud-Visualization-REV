@@ -1,6 +1,9 @@
-# 🔬 氢原子电子云三维可视化
+# 🔬 氢原子电子云三维可视化 v2.1
 
 > 基于真实量子力学波函数的教学演示工具 —— 让抽象的电子云变得可见、可触、可理解
+
+[![版本](https://img.shields.io/badge/版本-v2.1-green)](https://github.com/benbaobaoshigemi/Hydrogen-Atom-Electron-Cloud-Visualization-main)
+[![更新日期](https://img.shields.io/badge/更新日期-2025--12--02-blue)](./CHANGELOG.md)
 
 ---
 

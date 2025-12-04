@@ -24,7 +24,7 @@
   },
   "ui_behavior": {
     "mode_switcher": {
-      "auto_hide_delay": 5000,
+      "auto_hide_delay": 3000,
       "show_on_hover_top": true
     }
   }

@@ -19,6 +19,11 @@ window.ElectronCloud.UI.debounce = function(func, wait) {
 window.ElectronCloud.UI.init = function() {
     const ui = window.ElectronCloud.ui;
     
+    // 初始化顶部模式切换栏（必须在最开始调用，绑定点击事件）
+    if (window.ElectronCloud.UI.initModeSwitcher) {
+        window.ElectronCloud.UI.initModeSwitcher();
+    }
+    
     // 初始化自定义轨道列表
     if (window.ElectronCloud.UI.initCustomOrbitalList) {
         window.ElectronCloud.UI.initCustomOrbitalList();
@@ -68,10 +73,14 @@ window.ElectronCloud.UI.init = function() {
     
     if (ui.clearButton) {
         ui.clearButton.addEventListener('click', () => {
+            // 重置整个状态（包括pointCount）
+            window.ElectronCloud.resetState();
             window.ElectronCloud.Orbital.clearDrawing();
             if (window.DataPanel && window.DataPanel.reset) {
                 window.DataPanel.reset();
             }
+            // 更新模式切换栏状态
+            window.ElectronCloud.UI.updateModeSwitcherState();
         });
     }
 
@@ -180,6 +189,9 @@ window.ElectronCloud.UI.init = function() {
     
     // 确保初始状态下坐标轴滑动条状态正确
     window.ElectronCloud.UI.updateAxesSizeRangeState();
+    
+    // 确保初始状态下模式切换栏状态正确
+    window.ElectronCloud.UI.updateModeSwitcherState();
     
     // 确保初始状态下自动旋转按钮可用（允许预设）
     window.ElectronCloud.UI.updateAutoRotateButtonState();
@@ -1484,6 +1496,7 @@ window.ElectronCloud.UI.onPauseToggle = function() {
         if (ui.pauseButton) ui.pauseButton.textContent = '暂停';
         window.ElectronCloud.UI.updateAngular3DToggleState();
         window.ElectronCloud.UI.updateAxesSizeRangeState();
+        window.ElectronCloud.UI.updateModeSwitcherState();
         return;
     }
     // 暂停
@@ -1491,6 +1504,7 @@ window.ElectronCloud.UI.onPauseToggle = function() {
     if (ui.pauseButton) ui.pauseButton.textContent = '继续';
     window.ElectronCloud.UI.updateAngular3DToggleState();
     window.ElectronCloud.UI.updateAxesSizeRangeState();
+    window.ElectronCloud.UI.updateModeSwitcherState();
 };
 
 // 多选模式功能
@@ -1933,6 +1947,9 @@ window.ElectronCloud.UI.clearAllSelections = function() {
     
     // 更新选择计数显示
     window.ElectronCloud.UI.updateSelectionCount();
+    
+    // 更新模式切换栏状态（清空后恢复可用）
+    window.ElectronCloud.UI.updateModeSwitcherState();
     
     // 强制刷新样式
     window.ElectronCloud.UI.refreshSelectStyles();
@@ -2651,6 +2668,13 @@ window.ElectronCloud.UI.initModeSwitcher = function() {
 
     items.forEach(item => {
         item.addEventListener('click', () => {
+            // 只要电子云还在屏幕上（有点或正在绘制），就禁止切换模式
+            const state = window.ElectronCloud.state;
+            const hasStarted = state.pointCount > 0 || state.isDrawing;
+            if (hasStarted) {
+                return; // 阻止模式切换
+            }
+
             const mode = item.dataset.mode;
 
             // 更新UI状态
@@ -2707,6 +2731,7 @@ window.ElectronCloud.UI.initModeSwitcherAutoHide = function() {
 
     let hideTimeout;
     let isFullscreen = false;
+    let mouseInTopArea = false;
 
     // 检查是否为全屏模式
     const checkFullscreen = () => {
@@ -2736,7 +2761,8 @@ window.ElectronCloud.UI.initModeSwitcherAutoHide = function() {
             clearTimeout(hideTimeout);
         }
         if (isFullscreen) {
-            const delay = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--mode-switcher-auto-hide-delay')) || 5000;
+            // 使用固定的3秒延迟
+            const delay = 3000;
             hideTimeout = setTimeout(hideSwitcher, delay);
         }
     };
@@ -2745,9 +2771,18 @@ window.ElectronCloud.UI.initModeSwitcherAutoHide = function() {
     const handleMouseMove = (e) => {
         if (!isFullscreen) return;
 
+        const wasInTopArea = mouseInTopArea;
+        mouseInTopArea = e.clientY <= 20;
+
         // 检查鼠标是否在屏幕上缘（前20px区域）
-        if (e.clientY <= 20) {
-            showSwitcher();
+        if (mouseInTopArea) {
+            // 只有当切换栏是隐藏状态时才显示
+            if (switcher.classList.contains('hidden')) {
+                showSwitcher();
+            }
+        } else if (wasInTopArea && !mouseInTopArea) {
+            // 鼠标离开顶部区域，重新开始自动隐藏计时器
+            resetAutoHideTimer();
         }
     };
 
@@ -2758,9 +2793,11 @@ window.ElectronCloud.UI.initModeSwitcherAutoHide = function() {
 
         if (isFullscreen && !wasFullscreen) {
             // 进入全屏模式
+            mouseInTopArea = false; // 重置鼠标位置状态
             resetAutoHideTimer();
         } else if (!isFullscreen && wasFullscreen) {
             // 退出全屏模式
+            mouseInTopArea = false; // 重置鼠标位置状态
             showSwitcher();
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -2779,9 +2816,19 @@ window.ElectronCloud.UI.initModeSwitcherAutoHide = function() {
     handleFullscreenChange();
 };
 
-// 在 DOMContentLoaded 时初始化模式切换栏
-document.addEventListener('DOMContentLoaded', function() {
-    if (window.ElectronCloud.UI.initModeSwitcher) {
-        window.ElectronCloud.UI.initModeSwitcher();
-    }
-});
+// 更新模式切换栏的可用状态（继承轨道点选逻辑）
+window.ElectronCloud.UI.updateModeSwitcherState = function() {
+    const switcher = document.getElementById('mode-switcher');
+    if (!switcher) return;
+
+    const state = window.ElectronCloud.state;
+    // 只要电子云还在屏幕上（有点或正在绘制），就禁用
+    const hasStarted = state.pointCount > 0 || state.isDrawing;
+
+    const items = switcher.querySelectorAll('.mode-switcher-item');
+    items.forEach(item => {
+        item.style.pointerEvents = hasStarted ? 'none' : 'auto';
+        item.style.opacity = hasStarted ? '0.5' : '1';
+        item.title = hasStarted ? '电子云绘制中，暂时无法切换模式' : '';
+    });
+};

@@ -239,6 +239,11 @@ window.ElectronCloud.resetState = function() {
         state.customAxes.visible = false;
     }
     
+    // 更新模式切换栏状态
+    if (window.ElectronCloud.UI && window.ElectronCloud.UI.updateModeSwitcherState) {
+        window.ElectronCloud.UI.updateModeSwitcherState();
+    }
+    
     console.log('ElectronCloud 状态已完全重置');
 };
 

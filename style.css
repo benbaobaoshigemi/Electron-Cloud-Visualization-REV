@@ -95,6 +95,10 @@
     /* UI行为变量 */
     --mode-switcher-auto-hide-delay: 5000ms;
 
+    /* 面板宽度变量 */
+    --panel-width: 256px;
+    --panel-width-sm: 224px;
+
     /* 列表项样式 */
     --item-bg: rgba(255, 255, 255, 0.02);
     --item-hover-bg: rgba(255, 255, 255, 0.08);
@@ -1502,7 +1506,7 @@ input[type="range"]:focus::-moz-range-thumb {
     top: 80px;
     right: 20px;
     bottom: auto;
-    width: var(--panel-width-sm);
+    width: var(--panel-width);
     z-index: calc(var(--z-panel) + 1);
 }
 
@@ -2634,7 +2638,7 @@ input[type=range]::-webkit-slider-thumb:hover {
     position: fixed;
     top: 20px;
     left: 50%;
-    transform: translateX(-50%) scale(0.8);
+    transform: translateX(-50%);
     z-index: var(--z-fixed-ui);
 
     display: flex;
@@ -2649,25 +2653,17 @@ input[type=range]::-webkit-slider-thumb:hover {
     box-shadow: var(--panel-shadow);
 
     /* 进入和离场过渡动画 */
-    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    opacity: 0;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.4s ease,
+                scale 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
     pointer-events: auto;
     transform-origin: center top;
 
-    /* 页面加载时的初始进入动画 */
-    animation: modeSwitcherEnter 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
+    /* 移除加载动画，一开始就显示 */
 }
 
-@keyframes modeSwitcherEnter {
-    0% {
-        opacity: 0;
-        transform: translateX(-50%) scale(0.8);
-    }
-    100% {
-        opacity: 1;
-        transform: translateX(-50%) scale(1);
-    }
-}.mode-switcher-item {
+.mode-switcher-item {
     padding: 10px 20px;
     font-size: 13px;
     font-weight: bold;
@@ -2723,7 +2719,7 @@ input[type=range]::-webkit-slider-thumb:hover {
 
 /* 模式切换栏自动隐藏状态 */
 #mode-switcher.hidden {
-    transform: translateX(-50%) translateY(-120%) scale(0.95);
+    transform: translateX(-50%) translateY(-100px) scale(0.9);
     opacity: 0;
     pointer-events: none;
     transform-origin: center top;

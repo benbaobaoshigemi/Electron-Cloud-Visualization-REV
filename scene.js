@@ -970,6 +970,9 @@ window.ElectronCloud.Scene.onSamplingCompleted = function() {
     // 更新坐标轴滑动条状态（采样完成后可修改）
     window.ElectronCloud.UI.updateAxesSizeRangeState();
     
+    // 更新模式切换栏状态（采样完成后可切换）
+    window.ElectronCloud.UI.updateModeSwitcherState();
+    
     // 更新自动旋转按钮状态（采样完成后可启用）
     if (window.ElectronCloud.UI.updateAutoRotateButtonState) {
         window.ElectronCloud.UI.updateAutoRotateButtonState();

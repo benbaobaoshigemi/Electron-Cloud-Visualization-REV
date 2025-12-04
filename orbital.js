@@ -123,6 +123,9 @@ window.ElectronCloud.Orbital.startDrawing = function() {
     // 更新坐标轴滑动条状态（渲染中置灰）
     window.ElectronCloud.UI.updateAxesSizeRangeState();
     
+    // 更新模式切换栏状态（渲染中禁用）
+    window.ElectronCloud.UI.updateModeSwitcherState();
+    
     console.log('开始采样，初始化实时图表');
     
     // 预计算理论曲线数据（不需要采样数据）
@@ -170,6 +173,9 @@ window.ElectronCloud.Orbital.clearDrawing = function() {
     
     // 更新坐标轴滑动条状态（可修改）
     window.ElectronCloud.UI.updateAxesSizeRangeState();
+    
+    // 更新模式切换栏状态（可切换）
+    window.ElectronCloud.UI.updateModeSwitcherState();
 
     if (state.animationFrameId) {
         cancelAnimationFrame(state.animationFrameId);

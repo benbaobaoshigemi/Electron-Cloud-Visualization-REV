@@ -82,7 +82,7 @@ let filterPinchDist = new OneEuroFilter();
 
 // FPS Control
 let lastPredictionTime = 0;
-const TARGET_FPS = 30;
+const TARGET_FPS = 60;
 const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
 // 捏合状态（带滞后 + 意图识别）

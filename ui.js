@@ -31,7 +31,7 @@ window.ElectronCloud.UI.init = function() {
     
     // 监听UI事件
     if (ui.axesSizeRange) {
-        ui.axesSizeRange.addEventListener('input', window.ElectronCloud.UI.debounce(window.ElectronCloud.UI.onAxesSizeChange, 100));
+        ui.axesSizeRange.addEventListener('input', window.ElectronCloud.UI.onAxesSizeChange);
     }
     
     if (ui.angular3dToggle) {
@@ -47,15 +47,15 @@ window.ElectronCloud.UI.init = function() {
     }
     
     if (ui.speedRange) {
-        ui.speedRange.addEventListener('input', window.ElectronCloud.UI.debounce(window.ElectronCloud.UI.onSpeedChange, 100));
+        ui.speedRange.addEventListener('input', window.ElectronCloud.UI.onSpeedChange);
     }
     
     if (ui.sizeRange) {
-        ui.sizeRange.addEventListener('input', window.ElectronCloud.UI.debounce(window.ElectronCloud.UI.onSizeChange, 100));
+        ui.sizeRange.addEventListener('input', window.ElectronCloud.UI.onSizeChange);
     }
     
     if (ui.opacityRange) {
-        ui.opacityRange.addEventListener('input', window.ElectronCloud.UI.debounce(window.ElectronCloud.UI.onOpacityChange, 100));
+        ui.opacityRange.addEventListener('input', window.ElectronCloud.UI.onOpacityChange);
     }
     
     if (ui.centerLock) {
@@ -233,7 +233,7 @@ window.ElectronCloud.UI.init = function() {
     
     // 旋转速度滑动条（只设置速度，不自动启动）
     if (rotationSpeedRange) {
-        rotationSpeedRange.addEventListener('input', window.ElectronCloud.UI.debounce((e) => {
+        rotationSpeedRange.addEventListener('input', (e) => {
             const state = window.ElectronCloud.state;
             const value = parseFloat(e.target.value);
             state.autoRotate.speed = value;
@@ -242,7 +242,7 @@ window.ElectronCloud.UI.init = function() {
             if (rotationSpeedValue) {
                 rotationSpeedValue.textContent = value.toFixed(2);
             }
-        }, 100));
+        });
     }
     
     // 自动旋转开关
@@ -436,18 +436,18 @@ window.ElectronCloud.UI.init = function() {
     
     // 闪烁频率
     if (flickerFrequencyRange) {
-        flickerFrequencyRange.addEventListener('input', window.ElectronCloud.UI.debounce((e) => {
+        flickerFrequencyRange.addEventListener('input', (e) => {
             const state = window.ElectronCloud.state;
             state.heartbeat.frequency = parseInt(e.target.value, 10);
-        }, 100));
+        });
     }
     
     // 最大亮度滑动条
     if (heartbeatMaxBrightness) {
-        heartbeatMaxBrightness.addEventListener('input', window.ElectronCloud.UI.debounce((e) => {
+        heartbeatMaxBrightness.addEventListener('input', (e) => {
             const state = window.ElectronCloud.state;
             state.heartbeat.maxBrightness = parseInt(e.target.value, 10);
-        }, 100));
+        });
     }
     
     // 权重模式开关 - 独立实验功能
@@ -2638,3 +2638,68 @@ window.ElectronCloud.UI.createCustomSelect = function(select) {
         }
     });
 };
+
+// ==================== 顶部模式切换栏 ====================
+window.ElectronCloud.UI.initModeSwitcher = function() {
+    const switcher = document.getElementById('mode-switcher');
+    if (!switcher) return;
+    
+    const items = switcher.querySelectorAll('.mode-switcher-item');
+    
+    items.forEach(item => {
+        item.addEventListener('click', () => {
+            const mode = item.dataset.mode;
+            
+            // 更新UI状态
+            items.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            
+            // 根据模式切换逻辑
+            const multiselectToggle = document.getElementById('multiselect-toggle');
+            const compareToggle = document.getElementById('compare-toggle');
+            const controlPanel = document.getElementById('control-panel');
+            
+            switch(mode) {
+                case 'single':
+                    if (multiselectToggle) multiselectToggle.checked = false;
+                    if (compareToggle) compareToggle.checked = false;
+                    // 移除杂化模式的类
+                    if (controlPanel) controlPanel.classList.remove('hybrid-active');
+                    // 触发change事件以执行原有逻辑
+                    multiselectToggle?.dispatchEvent(new Event('change'));
+                    break;
+                case 'multi':
+                    if (multiselectToggle) multiselectToggle.checked = true;
+                    if (compareToggle) compareToggle.checked = false;
+                    // 移除杂化模式的类
+                    if (controlPanel) controlPanel.classList.remove('hybrid-active');
+                    multiselectToggle?.dispatchEvent(new Event('change'));
+                    break;
+                case 'compare':
+                    if (multiselectToggle) multiselectToggle.checked = false;
+                    if (compareToggle) compareToggle.checked = true;
+                    // 移除杂化模式的类
+                    if (controlPanel) controlPanel.classList.remove('hybrid-active');
+                    compareToggle?.dispatchEvent(new Event('change'));
+                    break;
+                case 'hybrid':
+                    // 杂化模式 - 复用多选模式的样式和禁用规则
+                    if (multiselectToggle) multiselectToggle.checked = true;
+                    if (compareToggle) compareToggle.checked = false;
+                    // 添加杂化模式的类（用于区分）
+                    if (controlPanel) controlPanel.classList.add('hybrid-active');
+                    // 触发多选模式的逻辑
+                    multiselectToggle?.dispatchEvent(new Event('change'));
+                    console.log('杂化模式已启用（复用多选模式样式）');
+                    break;
+            }
+        });
+    });
+};
+
+// 在 DOMContentLoaded 时初始化模式切换栏
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.ElectronCloud.UI.initModeSwitcher) {
+        window.ElectronCloud.UI.initModeSwitcher();
+    }
+});

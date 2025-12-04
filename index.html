@@ -29,6 +29,14 @@
         <span id="point-count">0</span>
     </div>
 
+    <!-- 顶部模式切换栏 -->
+    <div id="mode-switcher">
+        <div class="mode-switcher-item active" data-mode="single">单轨</div>
+        <div class="mode-switcher-item" data-mode="multi">多选</div>
+        <div class="mode-switcher-item" data-mode="compare">比照</div>
+        <div class="mode-switcher-item" data-mode="hybrid">杂化</div>
+    </div>
+
     <div id="gesture-status-popup" class="gesture-popup"
         style="display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);">
         <div class="status-indicator"></div>
@@ -187,17 +195,9 @@
                 </div>
             </div>
             <div class="panel-body">
-                <!-- 多选/比照模式放在一行，使用新UI样式 -->
-                <div class="mode-toggle-row">
-                    <div class="mode-toggle-box" id="multiselect-box">
-                        <span class="mode-name">多选</span>
-                        <input type="checkbox" id="multiselect-toggle" />
-                    </div>
-                    <div class="mode-toggle-box" id="compare-box">
-                        <span class="mode-name">比照</span>
-                        <input type="checkbox" id="compare-toggle" />
-                    </div>
-                </div>
+                <!-- 隐藏的多选/比照 checkbox，供 ui.js 逻辑使用 -->
+                <input type="checkbox" id="multiselect-toggle" style="display: none;" />
+                <input type="checkbox" id="compare-toggle" style="display: none;" />
                 <div class="control-group list-container">
                     <label for="orbital-select" id="orbital-select-label">选择轨道</label>
                     <!-- 多选/比照模式下显示的替代标签 -->

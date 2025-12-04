@@ -1,0 +1,32 @@
+{
+  "materials": {
+    "panel": {
+      "description": "面板材质 - 几乎不模糊，突出内容",
+      "background": "rgba(30, 30, 35, 0.25)",
+      "blur": "blur(1px)",
+      "shadow": "0 8px 32px rgba(0, 0, 0, 0.3)",
+      "border": "1px solid rgba(255, 255, 255, 0.08)"
+    },
+    "control": {
+      "description": "控件材质 - 与面板统一使用轻度模糊",
+      "background": "rgba(255, 255, 255, 0.03)",
+      "blur": "blur(1px)",
+      "border": "1px solid rgba(255, 255, 255, 0.15)",
+      "radius": "12px"
+    },
+    "dropdown": {
+      "description": "下拉材质 - 保持原有模糊度以确保可读性",
+      "background": "rgba(25, 25, 30, 0.95)",
+      "blur": "blur(12px)",
+      "border": "1px solid rgba(255, 255, 255, 0.15)",
+      "shadow": "0 8px 32px rgba(0, 0, 0, 0.5)"
+    }
+  },
+  "ui_behavior": {
+    "mode_switcher": {
+      "auto_hide_delay": 5000,
+      "show_on_hover_top": true
+    }
+  }
+}
+

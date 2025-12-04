@@ -384,6 +384,16 @@
             document.body.appendChild(div);
         }
     </script>
+    <script src="material-loader.js"></script>
+    <script>
+        // 确保材质在其他脚本之前加载
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 等待材质加载完成
+            if (window.materialLoader) {
+                await window.materialLoader.loadMaterials();
+            }
+        });
+    </script>
     <script src="main.js"></script>
 </body>
 

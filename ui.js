@@ -2643,22 +2643,25 @@ window.ElectronCloud.UI.createCustomSelect = function(select) {
 window.ElectronCloud.UI.initModeSwitcher = function() {
     const switcher = document.getElementById('mode-switcher');
     if (!switcher) return;
-    
+
     const items = switcher.querySelectorAll('.mode-switcher-item');
-    
+
+    // 初始化自动隐藏功能
+    this.initModeSwitcherAutoHide();
+
     items.forEach(item => {
         item.addEventListener('click', () => {
             const mode = item.dataset.mode;
-            
+
             // 更新UI状态
             items.forEach(i => i.classList.remove('active'));
             item.classList.add('active');
-            
+
             // 根据模式切换逻辑
             const multiselectToggle = document.getElementById('multiselect-toggle');
             const compareToggle = document.getElementById('compare-toggle');
             const controlPanel = document.getElementById('control-panel');
-            
+
             switch(mode) {
                 case 'single':
                     if (multiselectToggle) multiselectToggle.checked = false;
@@ -2695,6 +2698,85 @@ window.ElectronCloud.UI.initModeSwitcher = function() {
             }
         });
     });
+};
+
+// 模式切换栏自动隐藏功能
+window.ElectronCloud.UI.initModeSwitcherAutoHide = function() {
+    const switcher = document.getElementById('mode-switcher');
+    if (!switcher) return;
+
+    let hideTimeout;
+    let isFullscreen = false;
+
+    // 检查是否为全屏模式
+    const checkFullscreen = () => {
+        return document.fullscreenElement ||
+               document.webkitFullscreenElement ||
+               document.mozFullScreenElement ||
+               document.msFullscreenElement;
+    };
+
+    // 隐藏模式切换栏
+    const hideSwitcher = () => {
+        switcher.classList.add('hidden');
+    };
+
+    // 显示模式切换栏
+    const showSwitcher = () => {
+        switcher.classList.remove('hidden');
+        if (isFullscreen) {
+            // 在全屏模式下，重新启动自动隐藏计时器
+            resetAutoHideTimer();
+        }
+    };
+
+    // 重置自动隐藏计时器
+    const resetAutoHideTimer = () => {
+        if (hideTimeout) {
+            clearTimeout(hideTimeout);
+        }
+        if (isFullscreen) {
+            const delay = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--mode-switcher-auto-hide-delay')) || 5000;
+            hideTimeout = setTimeout(hideSwitcher, delay);
+        }
+    };
+
+    // 监听鼠标移动事件（只在屏幕上缘）
+    const handleMouseMove = (e) => {
+        if (!isFullscreen) return;
+
+        // 检查鼠标是否在屏幕上缘（前20px区域）
+        if (e.clientY <= 20) {
+            showSwitcher();
+        }
+    };
+
+    // 监听全屏状态变化
+    const handleFullscreenChange = () => {
+        const wasFullscreen = isFullscreen;
+        isFullscreen = checkFullscreen();
+
+        if (isFullscreen && !wasFullscreen) {
+            // 进入全屏模式
+            resetAutoHideTimer();
+        } else if (!isFullscreen && wasFullscreen) {
+            // 退出全屏模式
+            showSwitcher();
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+            }
+        }
+    };
+
+    // 绑定事件监听器
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    document.addEventListener('mousemove', handleMouseMove);
+
+    // 初始检查全屏状态
+    handleFullscreenChange();
 };
 
 // 在 DOMContentLoaded 时初始化模式切换栏

@@ -28,30 +28,30 @@ const CONFIG = {
     pinchStartThreshold: 0.22,    // 开始捏合（需要捏得比较紧，约22%手掌宽度）
     pinchEndThreshold: 0.35,      // 结束捏合（适度放宽，减少误触发）
     pinchReleaseVelocity: 0.035,  // 手指分开速度阈值
-    
+
     // 旋转控制
     rotationSensitivity: 4.0,     // 旋转灵敏度
     deadzone: 0.0008,             // 死区（更小的死区让响应更灵敏）
     maxDelta: 0.12,               // 单帧最大位移限幅
-    
+
     // 平滑 - 使用双重指数平滑
     positionSmoothing: 0.25,      // 位置平滑系数（越小越平滑，但延迟越大）
     velocitySmoothing: 0.3,       // 速度平滑系数
     pinchDistanceSmoothing: 0.35, // 捏合距离平滑系数
-    
+
     // 防抖
     jitterThreshold: 0.002,       // 抖动阈值（小于此值视为抖动）
     jitterFrames: 3,              // 连续几帧小位移视为静止
-    
+
     // 惯性
     friction: 0.92,               // 惯性摩擦系数
     minVelocity: 0.00008,         // 惯性停止阈值
     inertiaBoost: 1.2,            // 惯性初始速度放大
-    
+
     // 缩放
     zoomSensitivity: 2.5,         // 缩放灵敏度
     minHandSeparation: 0.15,      // 双手最小间距（防止误检）
-    
+
     // 释放缓冲
     releaseBufferFrames: 3,       // 松开后忽略的帧数
 };
@@ -75,10 +75,20 @@ const STATE = {
 };
 let currentState = STATE.IDLE;
 
+// One Euro Filters
+let filterX = new OneEuroFilter();
+let filterY = new OneEuroFilter();
+let filterPinchDist = new OneEuroFilter();
+
+// FPS Control
+let lastPredictionTime = 0;
+const TARGET_FPS = 30;
+const FRAME_INTERVAL = 1000 / TARGET_FPS;
+
 // 捏合状态（带滞后 + 意图识别）
 let isPinching = false;          // 当前是否捏合
 let lastPinchPosition = null;    // 上一帧捏合位置
-let smoothedPosition = null;     // 平滑后的位置
+let smoothedPosition = null;     // 平滑后的位置 (One Euro Filtered)
 let smoothedVelocity = null;     // 平滑后的速度
 let lastPinchDist = null;        // 上一帧捏合距离（用于意图识别）
 let smoothedPinchDist = null;    // 平滑后的捏合距离
@@ -111,7 +121,7 @@ function createGestureElements() {
     } else {
         video = document.getElementById('gesture-video');
     }
-    
+
     // 创建 canvas 元素（用于绘制手部骨架）
     if (!document.getElementById('gesture-canvas')) {
         canvasElement = document.createElement('canvas');
@@ -127,9 +137,9 @@ function createGestureElements() {
     } else {
         canvasElement = document.getElementById('gesture-canvas');
     }
-    
+
     canvasCtx = canvasElement.getContext('2d');
-    
+
     console.log('[Gesture v4] UI 元素已创建');
 }
 
@@ -166,11 +176,11 @@ async function initializeHandLandmarker() {
 function updateStatus(text, state = 'ready') {
     const popup = document.getElementById('gesture-status-popup');
     const textEl = document.getElementById('gesture-status-text');
-    
+
     if (textEl) {
         textEl.textContent = text;
     }
-    
+
     if (popup) {
         popup.className = 'gesture-status-popup';
         popup.classList.add(`status-${state}`);
@@ -184,7 +194,7 @@ function updateStatus(text, state = 'ready') {
 function getHandSize(landmarks) {
     const wrist = landmarks[0];
     const middleMCP = landmarks[9];
-    
+
     return Math.hypot(
         middleMCP.x - wrist.x,
         middleMCP.y - wrist.y
@@ -197,53 +207,57 @@ function getHandSize(landmarks) {
 function checkPinch(landmarks, wasPinching) {
     const thumbTip = landmarks[4];
     const indexTip = landmarks[8];
-    
+
     // 计算绝对距离
     const absoluteDistance = Math.hypot(
         thumbTip.x - indexTip.x,
         thumbTip.y - indexTip.y
     );
-    
+
     // 计算手部大小并归一化距离
     const handSize = getHandSize(landmarks);
     const distance = handSize > 0.01 ? absoluteDistance / handSize : absoluteDistance;
-    
-    // 平滑捏合距离
-    if (smoothedPinchDist === null) {
-        smoothedPinchDist = distance;
-    } else {
-        smoothedPinchDist = CONFIG.pinchDistanceSmoothing * distance + 
-                            (1 - CONFIG.pinchDistanceSmoothing) * smoothedPinchDist;
+
+    // 平滑捏合距离 (One Euro Filter)
+    const now = performance.now();
+
+    // 更新滤波器参数 (从配置读取)
+    if (CONFIG.minCutoff) {
+        filterPinchDist.minCutoff = CONFIG.minCutoff.value;
+        filterPinchDist.beta = CONFIG.beta.value;
+        filterPinchDist.dcutoff = CONFIG.dcutoff.value;
     }
-    
+
+    smoothedPinchDist = filterPinchDist.filter(distance, now);
+
     // 意图识别：检测手指分开速度
     let releaseIntent = false;
     if (lastPinchDist !== null && wasPinching) {
         const distVelocity = smoothedPinchDist - lastPinchDist;
-        
+
         // 策略1: 快速分开 (原有逻辑，阈值已降低)
         const isFastRelease = distVelocity > CONFIG.pinchReleaseVelocity;
-        
+
         // 策略2: 持续分开且距离已适度增加 (新逻辑)
         // 如果正在张开 (velocity > 0.015) 且距离已经超过了开始阈值的一定比例 (比如 1.25倍)
         // 这允许用户以中等速度张开，而不需要达到很大的绝对距离
         const isOpening = distVelocity > 0.015;
         const isWideEnough = distance > (CONFIG.pinchStartThreshold * 1.25);
-        
+
         if (isFastRelease || (isOpening && isWideEnough)) {
             releaseIntent = true;
             console.log('[Gesture] 检测到松开意图, 速度:', distVelocity.toFixed(4), '距离:', distance.toFixed(3));
         }
     }
     lastPinchDist = smoothedPinchDist;
-    
+
     // 调试日志（偶尔输出）
     if (Math.random() < 0.05) {
-        console.log('[Pinch] 相对距离:', distance.toFixed(3), 
-                    '手大小:', handSize.toFixed(3),
-                    '阈值:', CONFIG.pinchStartThreshold);
+        console.log('[Pinch] 相对距离:', distance.toFixed(3),
+            '手大小:', handSize.toFixed(3),
+            '阈值:', CONFIG.pinchStartThreshold);
     }
-    
+
     // 滞后判定 + 意图识别
     if (wasPinching) {
         // 之前在捏合：距离超过阈值 或 检测到松开意图 都算松开
@@ -263,7 +277,7 @@ function checkPinch(landmarks, wasPinching) {
 function getPinchPosition(landmarks) {
     const thumbTip = landmarks[4];
     const indexTip = landmarks[8];
-    
+
     return {
         x: (thumbTip.x + indexTip.x) / 2,
         y: (thumbTip.y + indexTip.y) / 2
@@ -276,7 +290,7 @@ function getPinchPosition(landmarks) {
 function getHandCenter(landmarks) {
     const wrist = landmarks[0];
     const middleMCP = landmarks[9];
-    
+
     return {
         x: (wrist.x + middleMCP.x) / 2,
         y: (wrist.y + middleMCP.y) / 2
@@ -289,7 +303,7 @@ function getHandCenter(landmarks) {
 function getHandsDistance(hand1, hand2) {
     const center1 = getHandCenter(hand1);
     const center2 = getHandCenter(hand2);
-    
+
     return Math.hypot(
         center1.x - center2.x,
         center1.y - center2.y
@@ -317,15 +331,15 @@ function applyRotation(deltaX, deltaY) {
 
     // 计算相机相对于目标点的偏移
     const offset = new THREE.Vector3().subVectors(camera.position, target);
-    
+
     // 获取当前相机的坐标系
     const cameraDirection = new THREE.Vector3();
     camera.getWorldDirection(cameraDirection);
-    
+
     // 计算相机的右轴和上轴（基于当前相机姿态）
     const cameraRight = new THREE.Vector3();
     cameraRight.crossVectors(cameraDirection, camera.up).normalize();
-    
+
     // 如果 cameraRight 接近零（相机 up 与观察方向平行），使用备用方案
     if (cameraRight.lengthSq() < 0.0001) {
         // 选择一个与 cameraDirection 正交的向量
@@ -335,30 +349,30 @@ function applyRotation(deltaX, deltaY) {
             cameraRight.crossVectors(new THREE.Vector3(0, 1, 0), cameraDirection).normalize();
         }
     }
-    
+
     // 相机的实际上轴（与观察方向正交）
     const cameraUp = new THREE.Vector3();
     cameraUp.crossVectors(cameraRight, cameraDirection).normalize();
-    
+
     // 创建旋转四元数
     // 水平拖动：绕相机的上轴旋转
     const qHorizontal = new THREE.Quaternion().setFromAxisAngle(cameraUp, -deltaX);
     // 垂直拖动：绕相机的右轴旋转
     const qVertical = new THREE.Quaternion().setFromAxisAngle(cameraRight, -deltaY);
-    
+
     // 合并旋转（先垂直后水平）
     const quaternion = new THREE.Quaternion();
     quaternion.multiplyQuaternions(qHorizontal, qVertical);
-    
+
     // 应用旋转到偏移向量
     offset.applyQuaternion(quaternion);
-    
+
     // 更新相机位置
     camera.position.copy(target).add(offset);
-    
+
     // 关键：同时旋转 camera.up 向量，实现完全自由旋转
     camera.up.applyQuaternion(quaternion).normalize();
-    
+
     // 防止 up 向量数值漂移（定期重新正交化）
     // 确保 up 向量与观察方向正交
     const newDirection = new THREE.Vector3().subVectors(target, camera.position).normalize();
@@ -367,10 +381,10 @@ function applyRotation(deltaX, deltaY) {
         // up 向量与观察方向不完全正交，进行校正
         camera.up.sub(newDirection.clone().multiplyScalar(dotProduct)).normalize();
     }
-    
+
     // 让相机看向目标点
     camera.lookAt(target);
-    
+
     // 更新控制器（但不让它重置我们的相机姿态）
     controls.target.copy(target);
 }
@@ -381,13 +395,13 @@ function applyRotation(deltaX, deltaY) {
 function applyZoom(delta) {
     const state = window.ElectronCloud.state;
     if (!state || !state.controls || !state.camera) return;
-    
+
     const controls = state.controls;
     const camera = state.camera;
 
     const offset = new THREE.Vector3().copy(camera.position).sub(controls.target);
     const currentDist = offset.length();
-    
+
     let newDist;
     if (delta > 0) {
         newDist = currentDist / (1 + Math.abs(delta));
@@ -405,8 +419,8 @@ function applyZoom(delta) {
 // 惯性是否运行中
 // ========================================
 function isInertiaActive() {
-    return Math.abs(rotationVelocity.x) > CONFIG.minVelocity || 
-           Math.abs(rotationVelocity.y) > CONFIG.minVelocity;
+    return Math.abs(rotationVelocity.x) > CONFIG.minVelocity ||
+        Math.abs(rotationVelocity.y) > CONFIG.minVelocity;
 }
 
 // ========================================
@@ -418,11 +432,11 @@ function physicsLoop() {
     // 只有在空闲状态才应用惯性
     if (currentState === STATE.IDLE && isInertiaActive()) {
         applyRotation(rotationVelocity.x, rotationVelocity.y);
-        
+
         // 阻尼衰减
         rotationVelocity.x *= CONFIG.friction;
         rotationVelocity.y *= CONFIG.friction;
-        
+
         if (Math.abs(rotationVelocity.x) < CONFIG.minVelocity) rotationVelocity.x = 0;
         if (Math.abs(rotationVelocity.y) < CONFIG.minVelocity) rotationVelocity.y = 0;
     }
@@ -447,11 +461,11 @@ function processHands(results) {
             currentState = STATE.IDLE;
             lastPinchDistance = null;
         }
-        
+
         if (canvasElement && canvasCtx) {
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         }
-        
+
         if (isInertiaActive()) {
             updateStatus("⏳ 惯性旋转中...", 'inertia');
         } else {
@@ -461,16 +475,16 @@ function processHands(results) {
     }
 
     const hands = results.landmarks;
-    
+
     // 绘制手部
     drawHands(hands, results.handedness);
-    
+
     // 释放缓冲期
     if (releaseBuffer > 0) {
         releaseBuffer--;
         return;
     }
-    
+
     // ========================================
     // 优先处理双手缩放
     // ========================================
@@ -478,14 +492,14 @@ function processHands(results) {
     if (hands.length >= 2) {
         const hand1 = hands[0];
         const hand2 = hands[1];
-        
+
         const hand1Pinching = checkPinch(hand1, currentState === STATE.ZOOMING);
         const hand2Pinching = checkPinch(hand2, currentState === STATE.ZOOMING);
-        
+
         // 只有当两只手都捏合时，才进入缩放模式
         if (hand1Pinching && hand2Pinching && areHandsSeparated(hand1, hand2)) {
             const currentDistance = getHandsDistance(hand1, hand2);
-            
+
             if (currentState === STATE.ZOOMING && lastPinchDistance !== null) {
                 const delta = currentDistance - lastPinchDistance;
                 if (Math.abs(delta) > 0.005) {
@@ -495,11 +509,11 @@ function processHands(results) {
             } else {
                 updateStatus("🤏🤏 双手缩放模式", 'active');
             }
-            
+
             lastPinchDistance = currentDistance;
             currentState = STATE.ZOOMING;
             isZooming = true;
-            
+
             // 重置单手状态
             isPinching = false;
             lastPinchPosition = null;
@@ -508,18 +522,18 @@ function processHands(results) {
             return;
         }
     }
-    
+
     // 退出缩放状态
     if (currentState === STATE.ZOOMING && !isZooming) {
         currentState = STATE.IDLE;
         lastPinchDistance = null;
     }
-    
+
     // ========================================
     // 单手捏合旋转 (支持多手存在时，只要有一只手捏合即可)
     // ========================================
     let activeHand = null;
-    
+
     // 遍历所有检测到的手，找到第一个捏合的手
     for (const hand of hands) {
         if (checkPinch(hand, isPinching)) {
@@ -527,60 +541,61 @@ function processHands(results) {
             break;
         }
     }
-    
+
     // 如果当前正在捏合旋转，优先使用之前追踪的手（这里简化为只要有捏合的手就继续）
     // 实际上由于 landmarks 顺序可能会变，这里简单取第一个捏合的手是可行的
-    
+
     if (activeHand) {
         const pinchPos = getPinchPosition(activeHand);
-        
+
         if (!isPinching) {
             // 刚开始捏合 - 初始化
             isPinching = true;
             currentState = STATE.ROTATING;
             lastPinchPosition = pinchPos;
             smoothedPosition = { x: pinchPos.x, y: pinchPos.y };
-            smoothedVelocity = { x: 0, y: 0 };
+
+            // 重置滤波器
+            const now = performance.now();
+            filterX.reset();
+            filterY.reset();
+            filterX.filter(pinchPos.x, now); // 初始化
+            filterY.filter(pinchPos.y, now);
+
             lastSignificantMove = { x: pinchPos.x, y: pinchPos.y };
             jitterCounter = 0;
             rotationVelocity = { x: 0, y: 0 };  // 清除惯性
-            
+
             console.log('[Gesture] 开始捏合旋转');
             updateStatus("🤏 捏合旋转中...\n移动手部旋转视角", 'active');
         } else {
-            // 继续捏合 - 使用双重指数平滑
-            
-            // 第一层：位置平滑 (EMA)
-            const smoothX = CONFIG.positionSmoothing * pinchPos.x + 
-                           (1 - CONFIG.positionSmoothing) * smoothedPosition.x;
-            const smoothY = CONFIG.positionSmoothing * pinchPos.y + 
-                           (1 - CONFIG.positionSmoothing) * smoothedPosition.y;
-            
-            // 计算原始速度（位移）
-            const rawDeltaX = smoothX - smoothedPosition.x;
-            const rawDeltaY = smoothY - smoothedPosition.y;
-            
-            // 第二层：速度平滑 (减少突变)
-            if (smoothedVelocity === null) {
-                smoothedVelocity = { x: rawDeltaX, y: rawDeltaY };
-            } else {
-                smoothedVelocity.x = CONFIG.velocitySmoothing * rawDeltaX + 
-                                     (1 - CONFIG.velocitySmoothing) * smoothedVelocity.x;
-                smoothedVelocity.y = CONFIG.velocitySmoothing * rawDeltaY + 
-                                     (1 - CONFIG.velocitySmoothing) * smoothedVelocity.y;
+            // 更新滤波器参数
+            if (CONFIG.minCutoff) {
+                filterX.minCutoff = CONFIG.minCutoff.value;
+                filterX.beta = CONFIG.beta.value;
+                filterX.dcutoff = CONFIG.dcutoff.value;
+
+                filterY.minCutoff = CONFIG.minCutoff.value;
+                filterY.beta = CONFIG.beta.value;
+                filterY.dcutoff = CONFIG.dcutoff.value;
             }
-            
-            // 使用平滑后的速度
-            const deltaX = smoothedVelocity.x;
-            const deltaY = smoothedVelocity.y;
-            
+
+            // 使用 One Euro Filter 平滑位置
+            const now = performance.now();
+            const smoothX = filterX.filter(pinchPos.x, now);
+            const smoothY = filterY.filter(pinchPos.y, now);
+
+            // 计算位移 (基于平滑后的位置)
+            const deltaX = smoothX - smoothedPosition.x;
+            const deltaY = smoothY - smoothedPosition.y;
+
             // 更新平滑位置
             smoothedPosition.x = smoothX;
             smoothedPosition.y = smoothY;
-            
+
             // 计算位移大小
             const deltaMag = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            
+
             // 防抖：检测是否为抖动
             if (deltaMag < CONFIG.jitterThreshold) {
                 jitterCounter++;
@@ -596,19 +611,19 @@ function processHands(results) {
                 jitterCounter = 0;
                 lastSignificantMove = { x: smoothX, y: smoothY };
             }
-            
+
             // 应用旋转
             if (deltaMag > CONFIG.deadzone * 0.5) {
                 // 限幅
                 const clampedX = Math.max(-CONFIG.maxDelta, Math.min(CONFIG.maxDelta, deltaX));
                 const clampedY = Math.max(-CONFIG.maxDelta, Math.min(CONFIG.maxDelta, deltaY));
-                
+
                 // 应用旋转（镜像：摄像头是镜像的）
                 const rotX = -clampedX * CONFIG.rotationSensitivity;
                 const rotY = clampedY * CONFIG.rotationSensitivity;
-                
+
                 applyRotation(rotX, rotY);
-                
+
                 // 更新惯性速度
                 if (deltaMag > CONFIG.deadzone) {
                     rotationVelocity.x = rotX * CONFIG.inertiaBoost;
@@ -624,9 +639,9 @@ function processHands(results) {
     } else {
         // 松开捏合
         if (isPinching) {
-            console.log('[Gesture] 松开捏合，惯性:', 
+            console.log('[Gesture] 松开捏合，惯性:',
                 rotationVelocity.x.toFixed(4), rotationVelocity.y.toFixed(4));
-            
+
             isPinching = false;
             currentState = STATE.IDLE;
             lastPinchPosition = null;
@@ -636,11 +651,12 @@ function processHands(results) {
             jitterCounter = 0;
             lastPinchDist = null;        // 重置意图识别
             smoothedPinchDist = null;
-            
+            filterPinchDist.reset();
+
             releaseBuffer = CONFIG.releaseBufferFrames;
             // 保留惯性速度 - 不要清零 rotationVelocity！
         }
-        
+
         if (isInertiaActive()) {
             updateStatus("⏳ 惯性旋转中...\n🖐️ 张开等待", 'inertia');
         } else {
@@ -662,9 +678,9 @@ function drawHands(landmarksArray, handednessArray) {
         canvasElement.width = displayWidth;
         canvasElement.height = displayHeight;
     }
-    
+
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    
+
     if (!landmarksArray || landmarksArray.length === 0) return;
 
     const width = canvasElement.width;
@@ -673,32 +689,32 @@ function drawHands(landmarksArray, handednessArray) {
     for (let handIndex = 0; handIndex < landmarksArray.length; handIndex++) {
         const landmarks = landmarksArray[handIndex];
         const pinching = checkPinch(landmarks, isPinching);
-        
+
         // 颜色：捏合时绿色，张开时白色
         const strokeColor = pinching ? "#00FF00" : "#FFFFFF";
-        
+
         // 获取拇指和食指尖端位置
         const thumbTip = landmarks[4];
         const indexTip = landmarks[8];
-        
+
         // 计算圆心（拇指和食指中点）和半径（两指距离的一半）
         const centerX = (1 - (thumbTip.x + indexTip.x) / 2) * width;
         const centerY = ((thumbTip.y + indexTip.y) / 2) * height;
-        
+
         // 计算两指距离作为直径
         const thumbX = (1 - thumbTip.x) * width;
         const thumbY = thumbTip.y * height;
         const indexX = (1 - indexTip.x) * width;
         const indexY = indexTip.y * height;
         const radius = Math.hypot(thumbX - indexX, thumbY - indexY) / 2;
-        
+
         // 绘制空心圆
         canvasCtx.strokeStyle = strokeColor;
         canvasCtx.lineWidth = 3;
         canvasCtx.beginPath();
         canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
         canvasCtx.stroke();
-        
+
         // 在圆心绘制小圆点表示捏合点
         if (pinching) {
             canvasCtx.fillStyle = strokeColor;
@@ -714,23 +730,33 @@ function drawHands(landmarksArray, handednessArray) {
 // ========================================
 async function predictWebcam() {
     if (!webcamRunning) return;
-    
+
     try {
         if (video.paused || video.ended) {
             await video.play();
         }
 
         const startTimeMs = performance.now();
+
+        // FPS 控制
+        if (startTimeMs - lastPredictionTime < FRAME_INTERVAL) {
+            if (webcamRunning) {
+                requestAnimationFrame(predictWebcam);
+            }
+            return;
+        }
+        lastPredictionTime = startTimeMs;
+
         if (lastVideoTime !== video.currentTime) {
             lastVideoTime = video.currentTime;
             results = handLandmarker.detectForVideo(video, startTimeMs);
         }
-        
+
         processHands(results);
     } catch (error) {
         console.error("手势识别错误:", error);
     }
-    
+
     if (webcamRunning) {
         requestAnimationFrame(predictWebcam);
     }
@@ -743,32 +769,32 @@ async function predictWebcam() {
 /**
  * 启动手势控制
  */
-window.ElectronCloud.Gesture.start = async function() {
+window.ElectronCloud.Gesture.start = async function () {
     if (webcamRunning) {
         console.log('[Gesture] 已在运行中');
         return;
     }
 
     console.log('[Gesture v4] 启动手势控制（捏合旋转模式）');
-    
+
     // 动态创建 UI 元素
     createGestureElements();
-    
+
     if (!video || !canvasElement) {
         console.error('[Gesture] UI 元素创建失败');
         return;
     }
-    
+
     // 初始化 HandLandmarker
     if (!handLandmarker) {
         updateStatus("加载手势模型...", 'waiting');
         await initializeHandLandmarker();
     }
-    
+
     // 启动摄像头
     try {
         updateStatus("启动摄像头...", 'waiting');
-        
+
         const stream = await navigator.mediaDevices.getUserMedia({
             video: {
                 width: { ideal: 640 },
@@ -776,12 +802,12 @@ window.ElectronCloud.Gesture.start = async function() {
                 facingMode: "user"
             }
         });
-        
+
         video.srcObject = stream;
         await video.play();
-        
+
         webcamRunning = true;
-        
+
         // 重置状态
         currentState = STATE.IDLE;
         isPinching = false;
@@ -790,18 +816,18 @@ window.ElectronCloud.Gesture.start = async function() {
         rotationVelocity = { x: 0, y: 0 };
         lastPinchDistance = null;
         releaseBuffer = 0;
-        
+
         // 启动循环
         requestAnimationFrame(predictWebcam);
         requestAnimationFrame(physicsLoop);
-        
+
         // 更新 UI
         const btn = document.getElementById('gesture-control-btn');
         if (btn) {
             btn.classList.add('gesture-active');
             btn.title = '手势控制（运行中）';
         }
-        
+
         const popup = document.getElementById('gesture-status-popup');
         if (popup) {
             popup.style.display = 'flex';
@@ -813,11 +839,11 @@ window.ElectronCloud.Gesture.start = async function() {
         if (statusIcon) {
             statusIcon.style.display = 'flex';
         }
-        
+
         updateStatus("🖐️ 就绪\n捏合拇指食指开始", 'ready');
-        
+
         console.log('[Gesture v4] 手势控制已启动');
-        
+
     } catch (err) {
         console.error("摄像头启动失败:", err);
         let msg = "无法访问摄像头。";
@@ -834,9 +860,9 @@ window.ElectronCloud.Gesture.start = async function() {
 /**
  * 停止手势控制
  */
-window.ElectronCloud.Gesture.stop = function() {
+window.ElectronCloud.Gesture.stop = function () {
     webcamRunning = false;
-    
+
     // 重置所有状态
     currentState = STATE.IDLE;
     isPinching = false;
@@ -844,13 +870,13 @@ window.ElectronCloud.Gesture.stop = function() {
     smoothedPosition = null;
     rotationVelocity = { x: 0, y: 0 };
     lastPinchDistance = null;
-    
+
     if (video && video.srcObject) {
         const tracks = video.srcObject.getTracks();
         tracks.forEach(track => track.stop());
         video.srcObject = null;
     }
-    
+
     const popup = document.getElementById('gesture-status-popup');
     if (popup) popup.style.display = 'none';
 
@@ -859,41 +885,41 @@ window.ElectronCloud.Gesture.stop = function() {
     if (statusIcon) {
         statusIcon.style.display = 'none';
     }
-    
+
     if (canvasElement && canvasCtx) {
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     }
-    
+
     const btn = document.getElementById('gesture-control-btn');
     if (btn) {
         btn.classList.remove('gesture-active');
         btn.title = '手势控制';
     }
-    
+
     // 【关键修复】恢复 OrbitControls 的兼容性
     // 由于手势控制使用自由旋转（会改变 camera.up），需要特殊处理
     const state = window.ElectronCloud.state;
     if (state && state.controls && state.camera) {
         // 方案：将当前相机姿态转换为 OrbitControls 兼容的状态
         // OrbitControls 期望 camera.up 接近 (0, 1, 0)
-        
+
         const camera = state.camera;
         const controls = state.controls;
         const target = controls.target.clone();
-        
+
         // 获取当前相机到目标的距离
         const distance = camera.position.distanceTo(target);
-        
+
         // 获取当前观察方向（从相机指向目标）
         const direction = new THREE.Vector3().subVectors(target, camera.position).normalize();
-        
+
         // 计算当前相机位置在"标准坐标系"中的球坐标
         // 这样可以保持观察角度，但重置 up 向量
         const offset = new THREE.Vector3().subVectors(camera.position, target);
-        
+
         // 如果相机不是正好从上/下方看，可以安全地重置 up
         const verticalAlignment = Math.abs(direction.y);
-        
+
         if (verticalAlignment < 0.99) {
             // 相机不在极点位置，可以安全重置 up 向量
             camera.up.set(0, 1, 0);
@@ -903,14 +929,14 @@ window.ElectronCloud.Gesture.stop = function() {
             // 保持当前 up 向量，但确保它与观察方向正交
             const dot = camera.up.dot(direction);
             camera.up.sub(direction.clone().multiplyScalar(dot)).normalize();
-            
+
             // 如果 up 向量太小，选择一个合理的默认值
             if (camera.up.lengthSq() < 0.01) {
                 camera.up.set(0, 0, direction.y > 0 ? 1 : -1);
             }
             camera.lookAt(target);
         }
-        
+
         // 恢复 OrbitControls 的状态（但不设置 enableRotate，因为使用自定义轨迹球）
         controls.enabled = true;
         // 注意：不设置 enableRotate = true，鼠标旋转由自定义轨迹球处理
@@ -925,14 +951,14 @@ window.ElectronCloud.Gesture.stop = function() {
         }
         controls.update();
     }
-    
+
     console.log('[Gesture v4] 手势控制已停止，相机状态已恢复');
 };
 
 /**
  * 检查是否正在运行
  */
-window.ElectronCloud.Gesture.isRunning = function() {
+window.ElectronCloud.Gesture.isRunning = function () {
     return webcamRunning;
 };
 

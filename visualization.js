@@ -11,7 +11,7 @@ window.ElectronCloud.Visualization.createAngularOverlay = function () {
     // 检查是否有选中的轨道
     if (!state.currentOrbitals || state.currentOrbitals.length === 0) return overlayGroup;
 
-    // 【优化】角向显示大小设置为轨道轮廓（95%分位半径）的130%
+    // 【优化】角向显示大小设置为轨道轮廓（95%分位半径）的91%（原130%的70%）
     // 先计算95%分位半径
     let contourRadius = Math.max(15, state.farthestDistance * 0.6);
     if (window.ElectronCloud.Visualization.calculate95PercentileRadius) {
@@ -20,7 +20,7 @@ window.ElectronCloud.Visualization.createAngularOverlay = function () {
             contourRadius = r95;
         }
     }
-    const baseRadius = contourRadius * 1.3; // 130% of contour
+    const baseRadius = contourRadius * 0.91; // 91% of contour (70% of original 130%)
 
     window.ElectronCloud.Visualization.createOrbitalMesh(overlayGroup, null, baseRadius);
 
@@ -121,8 +121,9 @@ window.ElectronCloud.Visualization.createOrbitalMesh = function (group, params, 
         }
     }
 
-    // 提高网格密度
-    const geometry = new THREE.SphereGeometry(baseRadius, 96, 48);
+    // 提高网格密度 - 使用 IcosahedronGeometry (Icosphere) 替代 SphereGeometry
+    // detail=50 (约 156,060 顶点) for ultra high density mesh
+    const geometry = new THREE.IcosahedronGeometry(baseRadius, 50);
     const vertices = geometry.attributes.position.array;
     const colors = new Float32Array(vertices.length);
 
@@ -275,7 +276,9 @@ window.ElectronCloud.Visualization.createAngularOverlayFromSamples = function ()
         return window.ElectronCloud.Visualization.createAngularOverlay();
     }
 
-    const geometry = new THREE.SphereGeometry(baseRadius, phiBins, thetaBins);
+    // 使用 IcosahedronGeometry 替代 SphereGeometry，确保所有模式下网格密度一致且无极点
+    // detail=50 (约 156,060 顶点)
+    const geometry = new THREE.IcosahedronGeometry(baseRadius, 50);
     const vertices = geometry.attributes.position.array;
     const colors = new Float32Array(vertices.length);
 
@@ -590,9 +593,9 @@ window.ElectronCloud.Visualization.createContourMesh = function (group, baseRadi
     const index95 = Math.floor(densities.length * 0.95);
     const densityThreshold = densities[index95] || 0;
 
-    const thetaBins = 48;
-    const phiBins = 96;
-    const geometry = new THREE.SphereGeometry(1, phiBins, thetaBins);
+    // 使用 IcosahedronGeometry 替代 SphereGeometry 解决极点问题，并提高密度
+    // detail=50 (约 156,060 顶点)
+    const geometry = new THREE.IcosahedronGeometry(1, 50);
     const vertices = geometry.attributes.position.array;
     const colors = new Float32Array(vertices.length);
 
@@ -834,9 +837,9 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
         const avgRadius = sumR / pointIndices.length;
 
         // 创建网格
-        const thetaBins = 32;
-        const phiBins = 64;
-        const geometry = new THREE.SphereGeometry(1, phiBins, thetaBins);
+        // 使用 IcosahedronGeometry 替代 SphereGeometry，解决极点问题并提高密度
+        // detail=50 (约 156,060 顶点)
+        const geometry = new THREE.IcosahedronGeometry(1, 50);
         const vertices = geometry.attributes.position.array;
         const colorsAttr = new Float32Array(vertices.length);
 
@@ -900,4 +903,70 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
 
         return overlayGroup;
     }
+};
+
+
+/**
+ * 创建高密度测地线球体网格 (Icosphere)
+ * 手动细分二十面体，绕过 Three.js 版本限制
+ * @param {number} radius 半径
+ * @param {number} detail 细分等级 (建议 5 或 6)
+ */
+window.ElectronCloud.Visualization.createGeodesicIcosphere = function (radius, detail) {
+    const t = (1 + Math.sqrt(5)) / 2;
+    const vertices = [
+        -1, t, 0, 1, t, 0, -1, -t, 0, 1, -t, 0,
+        0, -1, t, 0, 1, t, 0, -1, -t, 0, 1, -t,
+        t, 0, -1, t, 0, 1, -t, 0, -1, -t, 0, 1
+    ];
+    const indices = [
+        0, 11, 5, 0, 5, 1, 0, 1, 7, 0, 7, 10, 0, 10, 11,
+        1, 5, 9, 5, 11, 4, 11, 10, 2, 10, 7, 6, 7, 1, 8,
+        3, 9, 4, 3, 4, 2, 3, 2, 6, 3, 6, 8, 3, 8, 9,
+        4, 9, 5, 2, 4, 11, 6, 2, 10, 8, 6, 7, 9, 8, 1
+    ];
+
+    let faces = [];
+    for (let i = 0; i < indices.length; i += 3) {
+        faces.push([
+            new THREE.Vector3(vertices[indices[i] * 3], vertices[indices[i] * 3 + 1], vertices[indices[i] * 3 + 2]).normalize().multiplyScalar(radius),
+            new THREE.Vector3(vertices[indices[i + 1] * 3], vertices[indices[i + 1] * 3 + 1], vertices[indices[i + 1] * 3 + 2]).normalize().multiplyScalar(radius),
+            new THREE.Vector3(vertices[indices[i + 2] * 3], vertices[indices[i + 2] * 3 + 1], vertices[indices[i + 2] * 3 + 2]).normalize().multiplyScalar(radius)
+        ]);
+    }
+
+    for (let d = 0; d < detail; d++) {
+        const newFaces = [];
+        for (const tri of faces) {
+            const v1 = tri[0];
+            const v2 = tri[1];
+            const v3 = tri[2];
+            const a = v1.clone().add(v2).multiplyScalar(0.5).normalize().multiplyScalar(radius);
+            const b = v2.clone().add(v3).multiplyScalar(0.5).normalize().multiplyScalar(radius);
+            const c = v3.clone().add(v1).multiplyScalar(0.5).normalize().multiplyScalar(radius);
+
+            newFaces.push([v1, a, c]);
+            newFaces.push([v2, b, a]);
+            newFaces.push([v3, c, b]);
+            newFaces.push([a, b, c]);
+        }
+        faces = newFaces;
+    }
+
+    const positions = new Float32Array(faces.length * 9);
+    for (let i = 0; i < faces.length; i++) {
+        positions[i * 9] = faces[i][0].x;
+        positions[i * 9 + 1] = faces[i][0].y;
+        positions[i * 9 + 2] = faces[i][0].z;
+        positions[i * 9 + 3] = faces[i][1].x;
+        positions[i * 9 + 4] = faces[i][1].y;
+        positions[i * 9 + 5] = faces[i][1].z;
+        positions[i * 9 + 6] = faces[i][2].x;
+        positions[i * 9 + 7] = faces[i][2].y;
+        positions[i * 9 + 8] = faces[i][2].z;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    return geometry;
 };

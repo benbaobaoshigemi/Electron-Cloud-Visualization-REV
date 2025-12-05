@@ -2690,23 +2690,26 @@ window.ElectronCloud.UI.initModeSwitcher = function() {
                 case 'single':
                     if (multiselectToggle) multiselectToggle.checked = false;
                     if (compareToggle) compareToggle.checked = false;
-                    // 移除杂化模式的类
+                    // 移除杂化模式的类和状态
                     if (controlPanel) controlPanel.classList.remove('hybrid-active');
+                    state.isHybridMode = false;
                     // 触发change事件以执行原有逻辑
                     multiselectToggle?.dispatchEvent(new Event('change'));
                     break;
                 case 'multi':
                     if (multiselectToggle) multiselectToggle.checked = true;
                     if (compareToggle) compareToggle.checked = false;
-                    // 移除杂化模式的类
+                    // 移除杂化模式的类和状态
                     if (controlPanel) controlPanel.classList.remove('hybrid-active');
+                    state.isHybridMode = false;
                     multiselectToggle?.dispatchEvent(new Event('change'));
                     break;
                 case 'compare':
                     if (multiselectToggle) multiselectToggle.checked = false;
                     if (compareToggle) compareToggle.checked = true;
-                    // 移除杂化模式的类
+                    // 移除杂化模式的类和状态
                     if (controlPanel) controlPanel.classList.remove('hybrid-active');
+                    state.isHybridMode = false;
                     compareToggle?.dispatchEvent(new Event('change'));
                     break;
                 case 'hybrid':
@@ -2715,9 +2718,15 @@ window.ElectronCloud.UI.initModeSwitcher = function() {
                     if (compareToggle) compareToggle.checked = false;
                     // 添加杂化模式的类（用于区分）
                     if (controlPanel) controlPanel.classList.add('hybrid-active');
-                    // 触发多选模式的逻辑
+                    // 【核心】设置杂化模式状态
+                    state.isHybridMode = true;
+                    // 重置杂化采样缓存
+                    if (window.ElectronCloud.Sampling && window.ElectronCloud.Sampling.resetHybridCache) {
+                        window.ElectronCloud.Sampling.resetHybridCache();
+                    }
+                    // 触发多选模式的逻辑（复用选择界面）
                     multiselectToggle?.dispatchEvent(new Event('change'));
-                    console.log('杂化模式已启用（复用多选模式样式）');
+                    console.log('杂化模式已启用 - 使用波函数线性叠加计算概率密度');
                     break;
             }
         });

@@ -135,6 +135,58 @@ function density3D_real(angKey, n, l, r, theta, phi, Z = 1, a0 = A0) {
     return (R * R) * Y2;
 }
 
+/**
+ * 杂化轨道概率密度计算
+ * 
+ * 【物理原理】
+ * 杂化轨道是多个原子轨道波函数的线性组合：Ψ_hybrid = Σ c_i × Ψ_i
+ * 概率密度为 |Ψ_hybrid|² = |Σ c_i × R_i(r) × Y_i(θ,φ)|²
+ * 
+ * @param {Array} paramsList - 轨道参数列表
+ * @param {number} r - 径向距离
+ * @param {number} theta - 极角
+ * @param {number} phi - 方位角
+ * @returns {number} - 概率密度 |Ψ_hybrid|²
+ */
+function hybridDensity3D(paramsList, r, theta, phi) {
+    if (!paramsList || paramsList.length === 0) return 0;
+    
+    let psiReal = 0;
+    const defaultCoeff = 1.0 / Math.sqrt(paramsList.length);
+    
+    for (const p of paramsList) {
+        const coeff = p.coefficient !== undefined ? p.coefficient : defaultCoeff;
+        const R = radialR(p.n, p.l, r);
+        const Y = realYlm_value(p.angKey.l, p.angKey.m, p.angKey.t, theta, phi);
+        psiReal += coeff * R * Y;
+    }
+    
+    return psiReal * psiReal;
+}
+
+/**
+ * 估算杂化轨道的最大概率密度（用于拒绝采样）
+ */
+function hybridEstimateMaxDensity(paramsList, rMax, numSamples = 1000) {
+    if (!paramsList || paramsList.length === 0) return 1;
+    
+    let maxDensity = 0;
+    
+    for (let i = 0; i < numSamples; i++) {
+        const r = Math.random() * rMax * Math.pow(Math.random(), 0.5);
+        const cosTheta = 2 * Math.random() - 1;
+        const theta = Math.acos(cosTheta);
+        const phi = 2 * PI * Math.random();
+        
+        const density = hybridDensity3D(paramsList, r, theta, phi);
+        if (density > maxDensity) {
+            maxDensity = density;
+        }
+    }
+    
+    return maxDensity * 1.5;
+}
+
 // 轨道参数映射 - 包含 n=1 到 n=5 的所有轨道
 function orbitalParamsFromKey(key) {
     const R = (n, l, m, t) => ({ n, l, angKey: { l, m, t } });
@@ -738,10 +790,13 @@ function isStandardHydrogenMode(config) {
     // 条件1：必须有轨道配置
     if (!config.orbitals || config.orbitals.length === 0) return false;
 
-    // 条件2：不是线性组合模式（未来的杂化模式会设置这个标志）
+    // 条件2：不是杂化模式（杂化模式使用拒绝采样）
+    if (config.isHybridMode) return false;
+
+    // 条件3：不是线性组合模式
     if (config.isLinearCombination) return false;
 
-    // 条件3：所有轨道都是已知的标准氢原子轨道
+    // 条件4：所有轨道都是已知的标准氢原子轨道
     for (const key of config.orbitals) {
         const params = orbitalParamsFromKey(key);
         if (!params) return false;
@@ -754,6 +809,9 @@ function isStandardHydrogenMode(config) {
 
 // 是否启用重要性采样
 let useImportanceSampling = true;
+
+// 缓存杂化轨道的最大密度估计值
+let hybridMaxDensityCache = null;
 
 /**
  * 批量采样函数 - 在 Worker 中执行
@@ -774,6 +832,7 @@ function performSampling(config) {
         targetPoints,       // 目标点数
         isIndependentMode,  // 是否为独立模式（多选/比照）
         isMultiselectMode,  // 是否为多选模式
+        isHybridMode,       // 【新增】是否为杂化模式
         phaseOn,            // 是否显示相位
         compareColors       // 比照模式颜色
     } = config;
@@ -781,6 +840,11 @@ function performSampling(config) {
     const paramsList = orbitals.map(k => orbitalParamsFromKey(k)).filter(Boolean);
     if (!paramsList.length) {
         return { points: [], samples: [], farthestDistance: 0 };
+    }
+
+    // 【杂化模式】使用专门的杂化采样逻辑
+    if (isHybridMode) {
+        return performHybridSampling(paramsList, samplingBoundary, maxAttempts, targetPoints, phaseOn);
     }
 
     const samplingVolumeSize = samplingBoundary * 2;
@@ -929,6 +993,127 @@ function performSampling(config) {
     };
 }
 
+// ==================== 杂化模式采样 ====================
+
+/**
+ * 杂化模式采样函数
+ * 
+ * 【物理原理】
+ * 杂化轨道是多个原子轨道波函数的线性组合：Ψ_hybrid = Σ c_i × Ψ_i
+ * 概率密度为 |Ψ_hybrid|² = |Σ c_i × R_i(r) × Y_i(θ,φ)|²
+ * 
+ * 【采样方法】
+ * 使用最基础的拒绝采样法
+ * 
+ * @param {Array} paramsList - 轨道参数列表
+ * @param {number} samplingBoundary - 采样边界
+ * @param {number} maxAttempts - 最大尝试次数
+ * @param {number} targetPoints - 目标点数
+ * @param {boolean} phaseOn - 是否显示相位
+ * @returns {Object} - 采样结果
+ */
+function performHybridSampling(paramsList, samplingBoundary, maxAttempts, targetPoints, phaseOn) {
+    const samplingVolumeSize = samplingBoundary * 2;
+    const points = [];
+    const samples = [];
+    let farthestDistance = 0;
+    let attempts = 0;
+
+    // 计算最大 rMax 来估计最大密度
+    let maxRmax = 0;
+    for (const p of paramsList) {
+        const rmax = 15 * p.n * p.n;
+        if (rmax > maxRmax) maxRmax = rmax;
+    }
+
+    // 初始化或更新最大密度缓存
+    if (hybridMaxDensityCache === null) {
+        hybridMaxDensityCache = hybridEstimateMaxDensity(paramsList, maxRmax, 2000);
+    }
+
+    const defaultCoeff = 1.0 / Math.sqrt(paramsList.length);
+
+    while (attempts < maxAttempts && points.length < targetPoints) {
+        attempts++;
+
+        // 均匀随机采样
+        const x = (Math.random() - 0.5) * samplingVolumeSize;
+        const y = (Math.random() - 0.5) * samplingVolumeSize;
+        const z = (Math.random() - 0.5) * samplingVolumeSize;
+        const r = Math.sqrt(x * x + y * y + z * z);
+
+        if (r < 1e-10) continue;
+
+        const theta = Math.acos(z / r);
+        const phi = Math.atan2(y, x);
+
+        // 计算杂化轨道概率密度
+        const density = hybridDensity3D(paramsList, r, theta, phi);
+
+        // 拒绝采样
+        const acceptProb = density / hybridMaxDensityCache;
+
+        // 动态调整最大密度估计
+        if (acceptProb > 1.0) {
+            hybridMaxDensityCache = density * 1.5;
+        }
+
+        if (Math.random() > acceptProb) {
+            continue; // 拒绝
+        }
+
+        // 接受：计算颜色
+        let r_color, g_color, b_color;
+
+        if (phaseOn) {
+            // 计算杂化波函数的值
+            let psi = 0;
+            for (const p of paramsList) {
+                const coeff = p.coefficient !== undefined ? p.coefficient : defaultCoeff;
+                const R = radialR(p.n, p.l, r);
+                const Y = realYlm_value(p.angKey.l, p.angKey.m, p.angKey.t, theta, phi);
+                psi += coeff * R * Y;
+            }
+
+            if (psi > 0) {
+                r_color = 1; g_color = 0.2; b_color = 0.2;
+            } else if (psi < 0) {
+                r_color = 0.2; g_color = 0.2; b_color = 1;
+            } else {
+                r_color = 1; g_color = 1; b_color = 1;
+            }
+        } else {
+            r_color = 1; g_color = 1; b_color = 1;
+        }
+
+        // 添加抖动
+        const dither = 0.01;
+        const point = {
+            x: x + (Math.random() - 0.5) * dither,
+            y: y + (Math.random() - 0.5) * dither,
+            z: z + (Math.random() - 0.5) * dither,
+            r: r_color,
+            g: g_color,
+            b: b_color,
+            orbitalIndex: -1 // 杂化模式
+        };
+
+        points.push(point);
+        samples.push({ r, theta, orbitalKey: null });
+
+        if (r > farthestDistance) {
+            farthestDistance = r;
+        }
+    }
+
+    return {
+        points,
+        samples,
+        farthestDistance,
+        attempts
+    };
+}
+
 // ==================== Worker 消息处理 ====================
 
 self.onmessage = function (e) {
@@ -944,6 +1129,12 @@ self.onmessage = function (e) {
                 sessionId: sessionId, // 返回会话 ID 以便主线程验证
                 result: result
             });
+            break;
+
+        case 'reset-hybrid-cache':
+            // 重置杂化缓存
+            hybridMaxDensityCache = null;
+            self.postMessage({ type: 'hybrid-cache-reset', taskId: taskId });
             break;
 
         case 'ping':

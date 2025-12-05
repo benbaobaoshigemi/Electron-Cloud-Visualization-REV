@@ -126,6 +126,96 @@
     return (R*R)*Y2;
   }
 
+  /**
+   * 杂化轨道概率密度计算
+   * 
+   * 【物理原理】
+   * 杂化轨道是多个原子轨道波函数的线性组合：Ψ_hybrid = Σ c_i × Ψ_i
+   * 概率密度为 |Ψ_hybrid|² = |Σ c_i × R_i(r) × Y_i(θ,φ)|²
+   * 
+   * 注意：这与多选模式不同！
+   * - 多选模式：各轨道独立采样，|Ψ_1|² + |Ψ_2|² + ...
+   * - 杂化模式：波函数先叠加，再求模方，|Ψ_1 + Ψ_2 + ...|²
+   * 
+   * @param {Array} paramsList - 轨道参数列表，每个元素 {n, l, angKey: {l, m, t}, coefficient}
+   *                             coefficient 默认为 1/√N（等权重归一化）
+   * @param {number} r - 径向距离
+   * @param {number} theta - 极角
+   * @param {number} phi - 方位角
+   * @param {number} Z - 核电荷数（默认1）
+   * @param {number} a0 - 玻尔半径（默认A0）
+   * @returns {number} - 概率密度 |Ψ_hybrid|²
+   */
+  function hybridDensity3D(paramsList, r, theta, phi, Z=1, a0=A0) {
+    if (!paramsList || paramsList.length === 0) return 0;
+    
+    // 计算杂化波函数的实部和虚部
+    // 对于实球谐函数，波函数是实数，所以虚部为0
+    let psiReal = 0;
+    
+    // 默认使用等权重归一化系数
+    const defaultCoeff = 1.0 / Math.sqrt(paramsList.length);
+    
+    for (const p of paramsList) {
+      // 获取系数（默认为等权重）
+      const coeff = p.coefficient !== undefined ? p.coefficient : defaultCoeff;
+      
+      // 计算径向部分 R_nl(r)
+      const R = radialR(p.n, p.l, r, Z, a0);
+      
+      // 计算角向部分 Y_lm(θ,φ)
+      const Y = realYlm_value(p.angKey.l, p.angKey.m, p.angKey.t, theta, phi);
+      
+      // 叠加波函数：Ψ = R(r) × Y(θ,φ)
+      psiReal += coeff * R * Y;
+    }
+    
+    // 返回概率密度 |Ψ|²
+    return psiReal * psiReal;
+  }
+
+  /**
+   * 计算杂化轨道的推荐采样边界
+   * 取所有轨道中最大的 rMax
+   */
+  function hybridRecommendRmax(paramsList, a0=A0) {
+    if (!paramsList || paramsList.length === 0) return 40;
+    
+    let maxRmax = 0;
+    for (const p of paramsList) {
+      const rmax = recommendRmax(p.n, a0);
+      if (rmax > maxRmax) maxRmax = rmax;
+    }
+    return maxRmax;
+  }
+
+  /**
+   * 估算杂化轨道的最大概率密度（用于拒绝采样）
+   * 通过数值搜索找到近似最大值
+   */
+  function hybridEstimateMaxDensity(paramsList, rMax, numSamples = 1000) {
+    if (!paramsList || paramsList.length === 0) return 1;
+    
+    let maxDensity = 0;
+    
+    // 在球体内随机采样点来估计最大密度
+    for (let i = 0; i < numSamples; i++) {
+      // 使用更密集的内核采样（概率密度通常在内核区域最高）
+      const r = Math.random() * rMax * Math.pow(Math.random(), 0.5);
+      const cosTheta = 2 * Math.random() - 1;
+      const theta = Math.acos(cosTheta);
+      const phi = 2 * PI * Math.random();
+      
+      const density = hybridDensity3D(paramsList, r, theta, phi);
+      if (density > maxDensity) {
+        maxDensity = density;
+      }
+    }
+    
+    // 添加安全边际
+    return maxDensity * 1.5;
+  }
+
   function recommendRmax(n, a0=A0){ return 15*n*n*a0; }
 
   function radialGrid(n,l,rmax,num=512,Z=1,a0=A0){
@@ -718,5 +808,9 @@
     getMaxRadialWeight,
     importanceSample,
     batchImportanceSample,
+    // 杂化轨道相关函数
+    hybridDensity3D,
+    hybridRecommendRmax,
+    hybridEstimateMaxDensity,
   };
 })();

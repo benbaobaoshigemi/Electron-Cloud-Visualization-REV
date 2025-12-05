@@ -28,6 +28,7 @@ window.ElectronCloud.state = {
     samplingBoundary: 40,
     samplingCompleted: false,
     roundRobinIndex: 0, // 【新增】多选模式轮流采样索引
+    isHybridMode: false, // 【杂化模式】是否启用杂化轨道模式
     
     // 采样数据
     radialSamples: [],
@@ -162,6 +163,11 @@ window.ElectronCloud.resetState = function() {
     // 重置 Worker 采样会话，使旧的 Worker 结果无效
     if (window.ElectronCloud.Sampling && window.ElectronCloud.Sampling.resetSamplingSession) {
         window.ElectronCloud.Sampling.resetSamplingSession();
+    }
+    
+    // 重置杂化模式缓存
+    if (window.ElectronCloud.Sampling && window.ElectronCloud.Sampling.resetHybridCache) {
+        window.ElectronCloud.Sampling.resetHybridCache();
     }
     
     // 停止动画

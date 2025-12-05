@@ -27,6 +27,11 @@ window.ElectronCloud.Visualization.createOrbitalMesh = function(group, params, b
     const vertices = geometry.attributes.position.array;
     const colors = new Float32Array(vertices.length);
     
+    // 【杂化模式】使用波函数线性叠加
+    const isHybridMode = state.isHybridMode;
+    const paramsList = state.currentOrbitals.map(k => Hydrogen.orbitalParamsFromKey(k)).filter(Boolean);
+    const defaultCoeff = paramsList.length > 0 ? 1.0 / Math.sqrt(paramsList.length) : 1.0;
+    
     // 变形球面以匹配多轨道叠加的角向形状
     for (let i = 0; i < vertices.length; i += 3) {
         const x = vertices[i];
@@ -37,17 +42,28 @@ window.ElectronCloud.Visualization.createOrbitalMesh = function(group, params, b
         const theta = Math.acos(z / r);
         const phi = Math.atan2(y, x);
         
-        // 计算所有选中轨道的角向函数叠加
         let totalAngularIntensity = 0;
-        for (const orbitalKey of state.currentOrbitals) {
-            const orbitalParams = Hydrogen.orbitalParamsFromKey(orbitalKey);
-            if (orbitalParams) {
-                const Y = Hydrogen.realYlm_value(
-                    orbitalParams.angKey.l, 
-                    orbitalParams.angKey.m, 
-                    orbitalParams.angKey.t, 
-                    theta, 
-                    phi
+        
+        if (isHybridMode) {
+            // 杂化模式：波函数先叠加再求模方 |Σ c_i × Y_i|²
+            let psiY = 0;
+            for (const p of paramsList) {
+                const coeff = p.coefficient !== undefined ? p.coefficient : defaultCoeff;
+                const Y = Hydrogen.realYlm_value(p.angKey.l, p.angKey.m, p.angKey.t, theta, phi);
+                psiY += coeff * Y;
+            }
+            totalAngularIntensity = psiY * psiY;
+        } else {
+            // 普通模式：计算所有选中轨道的角向函数叠加 Σ|Y_i|²
+            for (const orbitalKey of state.currentOrbitals) {
+                const orbitalParams = Hydrogen.orbitalParamsFromKey(orbitalKey);
+                if (orbitalParams) {
+                    const Y = Hydrogen.realYlm_value(
+                        orbitalParams.angKey.l, 
+                        orbitalParams.angKey.m, 
+                        orbitalParams.angKey.t, 
+                        theta, 
+                        phi
                 );
                 totalAngularIntensity += Y * Y; // 概率密度叠加
             }

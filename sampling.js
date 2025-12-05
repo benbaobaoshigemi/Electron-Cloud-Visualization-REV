@@ -211,6 +211,7 @@ window.ElectronCloud.Sampling.submitSamplingTask = function() {
     
     const isCompareMode = ui.compareToggle && ui.compareToggle.checked;
     const isMultiselectMode = ui.multiselectToggle && ui.multiselectToggle.checked;
+    const isHybridMode = state.isHybridMode; // 【新增】杂化模式标志
     const phaseOn = document.getElementById('phase-toggle')?.checked || false;
     
     // 准备比照颜色（只传递值，不传递对象）
@@ -235,8 +236,9 @@ window.ElectronCloud.Sampling.submitSamplingTask = function() {
                 samplingBoundary: state.samplingBoundary,
                 maxAttempts: attemptsPerWorker,
                 targetPoints: pointsPerWorker,
-                isIndependentMode: isCompareMode || isMultiselectMode,
-                isMultiselectMode: isMultiselectMode,
+                isIndependentMode: !isHybridMode && (isCompareMode || isMultiselectMode),
+                isMultiselectMode: !isHybridMode && isMultiselectMode,
+                isHybridMode: isHybridMode, // 【新增】传递杂化模式标志
                 phaseOn: phaseOn,
                 compareColors: compareColors
             }
@@ -312,10 +314,11 @@ window.ElectronCloud.Sampling.updatePoints = function() {
     const startTime = performance.now();
     const maxTimePerFrame = 15; // 毫秒（60fps下每帧约16.67ms）
 
-    // 判断是否使用独立模式（多选/比照）
-    const isIndependentMode = (ui.compareToggle && ui.compareToggle.checked) || 
-                              (ui.multiselectToggle && ui.multiselectToggle.checked);
-    const isMultiselectMode = ui.multiselectToggle && ui.multiselectToggle.checked;
+    // 判断是否使用独立模式（多选/比照）- 但杂化模式除外
+    const isHybridMode = state.isHybridMode;
+    const isIndependentMode = !isHybridMode && ((ui.compareToggle && ui.compareToggle.checked) || 
+                              (ui.multiselectToggle && ui.multiselectToggle.checked));
+    const isMultiselectMode = !isHybridMode && ui.multiselectToggle && ui.multiselectToggle.checked;
 
     let attempts = 0;
     while (attempts < attemptPerFrame && newPoints < state.pointsPerFrame && state.pointCount < state.MAX_POINTS) {
@@ -324,6 +327,17 @@ window.ElectronCloud.Sampling.updatePoints = function() {
             break;
         }
         attempts++;
+        
+        // 【杂化模式】使用专门的杂化采样逻辑
+        if (isHybridMode) {
+            const success = window.ElectronCloud.Sampling.processHybridModePoint(
+                paramsList, positions, colorsAttr.array
+            );
+            if (success) {
+                newPoints++;
+            }
+            continue;
+        }
         
         // 根据采样模式选择不同的策略
         if (useImportanceSampling && window.Hydrogen.importanceSample) {
@@ -743,4 +757,150 @@ window.ElectronCloud.Sampling.processImportanceSamplingPoint = function(
     window.ElectronCloud.Sampling.updateFarthestDistance(r);
     
     return true;
+};
+
+// ==================== 杂化模式采样 ====================
+
+// 缓存杂化轨道的最大密度估计值
+let hybridMaxDensityCache = null;
+let hybridParamsHashCache = null;
+
+/**
+ * 计算参数列表的哈希值（用于缓存验证）
+ */
+function computeParamsHash(paramsList) {
+    return paramsList.map(p => `${p.n}_${p.l}_${p.angKey.m}_${p.angKey.t}`).join('|');
+}
+
+/**
+ * 杂化模式采样处理函数
+ * 
+ * 【物理原理】
+ * 杂化轨道是多个原子轨道波函数的线性组合：Ψ_hybrid = Σ c_i × Ψ_i
+ * 概率密度为 |Ψ_hybrid|² = |Σ c_i × R_i(r) × Y_i(θ,φ)|²
+ * 
+ * 【采样方法】
+ * 使用最基础的拒绝采样法：
+ * 1. 在采样空间内均匀随机生成点
+ * 2. 计算该点的杂化概率密度
+ * 3. 与均匀随机数比较，决定接受或拒绝
+ * 
+ * @param {Array} paramsList - 轨道参数列表
+ * @param {Float32Array} positions - 位置数组
+ * @param {Float32Array} colors - 颜色数组
+ * @returns {boolean} - 是否成功添加了一个点
+ */
+window.ElectronCloud.Sampling.processHybridModePoint = function(paramsList, positions, colors) {
+    const state = window.ElectronCloud.state;
+    
+    // 检查缓存是否有效
+    const currentHash = computeParamsHash(paramsList);
+    if (hybridParamsHashCache !== currentHash) {
+        // 重新估计最大密度
+        const rMax = Hydrogen.hybridRecommendRmax(paramsList);
+        hybridMaxDensityCache = Hydrogen.hybridEstimateMaxDensity(paramsList, rMax, 2000);
+        hybridParamsHashCache = currentHash;
+        console.log('杂化模式：估计最大密度 =', hybridMaxDensityCache.toExponential(3));
+    }
+    
+    const samplingVolumeSize = state.samplingBoundary * 2;
+    
+    // 均匀随机采样
+    const x = (Math.random() - 0.5) * samplingVolumeSize;
+    const y = (Math.random() - 0.5) * samplingVolumeSize;
+    const z = (Math.random() - 0.5) * samplingVolumeSize;
+    const r = Math.sqrt(x * x + y * y + z * z);
+    
+    if (r < 1e-10) return false;
+    
+    const theta = Math.acos(z / r);
+    const phi = Math.atan2(y, x);
+    
+    // 计算杂化轨道概率密度
+    const density = Hydrogen.hybridDensity3D(paramsList, r, theta, phi);
+    
+    // 拒绝采样：接受概率 = density / maxDensity
+    const acceptProb = density / hybridMaxDensityCache;
+    
+    // 动态调整最大密度估计（如果发现更大的密度）
+    if (acceptProb > 1.0) {
+        hybridMaxDensityCache = density * 1.5;
+        console.log('杂化模式：更新最大密度估计 =', hybridMaxDensityCache.toExponential(3));
+    }
+    
+    if (Math.random() > acceptProb) {
+        return false; // 拒绝
+    }
+    
+    // 接受：添加点
+    const i3 = state.pointCount * 3;
+    
+    // 添加亚像素抖动（摩尔纹抑制）
+    const dither = 0.01;
+    positions[i3] = x + (Math.random() - 0.5) * dither;
+    positions[i3 + 1] = y + (Math.random() - 0.5) * dither;
+    positions[i3 + 2] = z + (Math.random() - 0.5) * dither;
+    
+    // 计算颜色（支持相位显示）
+    let r_color, g_color, b_color;
+    const phaseOn = document.getElementById('phase-toggle')?.checked;
+    
+    if (phaseOn) {
+        // 计算杂化波函数的值（不是密度）
+        let psi = 0;
+        const defaultCoeff = 1.0 / Math.sqrt(paramsList.length);
+        
+        for (const p of paramsList) {
+            const coeff = p.coefficient !== undefined ? p.coefficient : defaultCoeff;
+            const R = Hydrogen.radialR(p.n, p.l, r);
+            const Y = Hydrogen.realYlm_value(p.angKey.l, p.angKey.m, p.angKey.t, theta, phi);
+            psi += coeff * R * Y;
+        }
+        
+        if (psi > 0) {
+            r_color = 1; g_color = 0.2; b_color = 0.2; // 正相位：红色
+        } else if (psi < 0) {
+            r_color = 0.2; g_color = 0.2; b_color = 1; // 负相位：蓝色
+        } else {
+            r_color = 1; g_color = 1; b_color = 1; // 节面：白色
+        }
+    } else {
+        // 默认白色
+        r_color = 1; g_color = 1; b_color = 1;
+    }
+    
+    colors[i3] = r_color;
+    colors[i3 + 1] = g_color;
+    colors[i3 + 2] = b_color;
+    
+    // 同步更新 baseColors（用于星空闪烁模式）
+    if (state.baseColors) {
+        state.baseColors[i3] = r_color;
+        state.baseColors[i3 + 1] = g_color;
+        state.baseColors[i3 + 2] = b_color;
+        state.baseColorsCount = state.pointCount + 1;
+    }
+    
+    // 存储轨道索引（杂化模式为 -1，表示混合轨道）
+    if (state.pointOrbitalIndices) {
+        state.pointOrbitalIndices[state.pointCount] = -1;
+    }
+    
+    state.pointCount++;
+    state.radialSamples.push(r);
+    state.angularSamples.push(theta);
+    
+    window.ElectronCloud.Sampling.updateFarthestDistance(r);
+    
+    return true;
+};
+
+/**
+ * 重置杂化模式的缓存
+ * 在切换轨道选择时调用
+ */
+window.ElectronCloud.Sampling.resetHybridCache = function() {
+    hybridMaxDensityCache = null;
+    hybridParamsHashCache = null;
+    console.log('杂化模式：缓存已重置');
 };

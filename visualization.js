@@ -399,7 +399,466 @@ window.ElectronCloud.Visualization.exportImage = function () {
     }
 };
 
-// ==================== 95% 等值面轮廓 ====================
+// ==================== 95% 等值面轮廓（点云高亮方案）====================
+// 【新方案】不使用网格，而是高亮现有采样点中靠近等值面的点
+// 优势：天然解决波瓣分离问题，每个点独立，不会粘连
+
+/**
+ * 启用等值面轮廓高亮
+ * 高亮现有点云中位于等值面附近的点
+ */
+window.ElectronCloud.Visualization.enableContourHighlight = function () {
+    const state = window.ElectronCloud.state;
+    const ui = window.ElectronCloud.ui;
+
+    if (!state.points || state.pointCount < 100) {
+        console.log('[Contour] 点数不足，无法显示等值面');
+        return;
+    }
+
+    console.log('[Contour] 启用等值面高亮，点数:', state.pointCount);
+
+    // 标记等值面高亮已启用
+    state.contourHighlightEnabled = true;
+
+    // 计算每个点的密度排名（如果wave模式没有预先计算）
+    const Hydrogen = window.Hydrogen;
+    const positions = state.points.geometry.attributes.position;
+    const colors = state.points.geometry.attributes.color;
+    const pointCount = state.pointCount;
+    const maxPoints = state.MAX_POINTS || 100000;
+
+    // 获取轨道参数
+    const isHybridMode = state.isHybridMode === true;
+    const orbitals = state.currentOrbitals || [state.currentOrbital || '1s'];
+    let orbitalParams = orbitals.map(key => Hydrogen.orbitalParamsFromKey(key)).filter(Boolean);
+
+    if (isHybridMode && Hydrogen.sortOrbitalsForHybridization) {
+        orbitalParams = Hydrogen.sortOrbitalsForHybridization(orbitalParams);
+    }
+
+    if (orbitalParams.length === 0) {
+        console.log('[Contour] 没有有效的轨道参数');
+        return;
+    }
+
+    // 初始化等值面相关数组
+    if (!state.contourRanks || state.contourRanks.length < maxPoints) {
+        state.contourRanks = new Float32Array(maxPoints);
+        state.contourDensities = new Float32Array(maxPoints);
+        state.contourPsiSigns = new Int8Array(maxPoints); // 存储波函数符号
+    }
+
+    // 保存原始颜色（用于恢复）
+    if (!state.contourBaseColors || state.contourBaseColors.length < maxPoints * 3) {
+        state.contourBaseColors = new Float32Array(maxPoints * 3);
+    }
+    const colorArray = colors.array;
+    for (let i = 0; i < pointCount * 3; i++) {
+        state.contourBaseColors[i] = colorArray[i];
+    }
+
+    // 获取杂化系数矩阵
+    let coeffMatrix = null;
+    if (isHybridMode && Hydrogen.getHybridCoefficients && orbitalParams.length > 1) {
+        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams.length);
+    }
+
+    // 是否为比照模式
+    const isCompareMode = ui.compareToggle && ui.compareToggle.checked;
+    const usePerPointOrbital = (isCompareMode || isHybridMode) && state.pointOrbitalIndices;
+
+    console.log('[Contour] 开始计算密度和相位...');
+
+    // 计算每个点的密度和波函数符号（相位）
+    for (let i = 0; i < pointCount; i++) {
+        const i3 = i * 3;
+        const x = positions.array[i3];
+        const y = positions.array[i3 + 1];
+        const z = positions.array[i3 + 2];
+        const r = Math.sqrt(x * x + y * y + z * z);
+        const theta = r > 0 ? Math.acos(Math.max(-1, Math.min(1, z / r))) : 0;
+        const phi = Math.atan2(y, x);
+
+        let density = 0;
+        let psi = 0;
+
+        if (isHybridMode && coeffMatrix && usePerPointOrbital) {
+            // 杂化模式：使用该点所属的杂化轨道
+            const hybridIdx = state.pointOrbitalIndices[i] || 0;
+            const coeffs = coeffMatrix[hybridIdx] || coeffMatrix[0];
+
+            for (let j = 0; j < orbitalParams.length; j++) {
+                const op = orbitalParams[j];
+                const R = Hydrogen.radialWavefunction(op.n, op.l, r);
+                const Y = Hydrogen.realYlm_value(op.angKey.l, op.angKey.m, op.angKey.t, theta, phi);
+                psi += coeffs[j] * R * Y;
+            }
+            density = psi * psi;
+        } else if (isCompareMode && usePerPointOrbital) {
+            // 比照模式：使用该点所属的轨道
+            const orbitalIndex = state.pointOrbitalIndices[i] || 0;
+            const op = orbitalParams[orbitalIndex] || orbitalParams[0];
+            const R = Hydrogen.radialWavefunction(op.n, op.l, r);
+            const Y = Hydrogen.realYlm_value(op.angKey.l, op.angKey.m, op.angKey.t, theta, phi);
+            psi = R * Y;
+            density = psi * psi;
+        } else {
+            // 单选或多选叠加模式
+            for (const op of orbitalParams) {
+                const R = Hydrogen.radialWavefunction(op.n, op.l, r);
+                const Y = Hydrogen.realYlm_value(op.angKey.l, op.angKey.m, op.angKey.t, theta, phi);
+                psi += R * Y;
+            }
+            density = psi * psi;
+        }
+
+        state.contourDensities[i] = density;
+        state.contourPsiSigns[i] = psi > 0 ? 1 : (psi < 0 ? -1 : 0);
+    }
+
+    // 按密度排序，计算每个点的等值面排名
+    // 对于比照模式和杂化模式，按轨道分组排序
+    if (usePerPointOrbital) {
+        // 按轨道分组
+        const orbitalPointGroups = {};
+        for (let i = 0; i < pointCount; i++) {
+            const orbitalIndex = state.pointOrbitalIndices[i] || 0;
+            if (!orbitalPointGroups[orbitalIndex]) {
+                orbitalPointGroups[orbitalIndex] = [];
+            }
+            orbitalPointGroups[orbitalIndex].push(i);
+        }
+
+        // 每组内部排序
+        for (const groupKey of Object.keys(orbitalPointGroups)) {
+            const groupIndices = orbitalPointGroups[groupKey];
+            groupIndices.sort((a, b) => state.contourDensities[b] - state.contourDensities[a]);
+
+            const groupSize = groupIndices.length;
+            for (let rank = 0; rank < groupSize; rank++) {
+                const pointIndex = groupIndices[rank];
+                state.contourRanks[pointIndex] = rank / (groupSize - 1 || 1);
+            }
+        }
+    } else {
+        // 所有点一起排序
+        const indices = new Array(pointCount);
+        for (let i = 0; i < pointCount; i++) indices[i] = i;
+        indices.sort((a, b) => state.contourDensities[b] - state.contourDensities[a]);
+
+        for (let rank = 0; rank < pointCount; rank++) {
+            const pointIndex = indices[rank];
+            state.contourRanks[pointIndex] = rank / (pointCount - 1 || 1);
+        }
+    }
+
+    console.log('[Contour] 密度排名计算完成，应用高亮效果...');
+
+    // 应用等值面高亮效果
+    window.ElectronCloud.Visualization.updateContourHighlight();
+};
+
+/**
+ * 更新等值面高亮效果
+ * 高亮排名在95%附近的点，并程序化插入更多点增加密度
+ */
+window.ElectronCloud.Visualization.updateContourHighlight = function () {
+    const state = window.ElectronCloud.state;
+
+    if (!state.contourHighlightEnabled || !state.points || !state.contourRanks) {
+        return;
+    }
+
+    const colors = state.points.geometry.attributes.color;
+    const positions = state.points.geometry.attributes.position;
+    const pointCount = state.pointCount;
+    const colorArray = colors.array;
+    const posArray = positions.array;
+
+    // 等值面位置：95%分位（rank = 0.95）
+    const contourPosition = 0.95;
+    // 等值面宽度：控制高亮区域的粗细（缩小到1%）
+    const contourWidth = 0.01;
+
+    // 高亮颜色（亮绿色）
+    const highlightR = 0.3;
+    const highlightG = 1.0;
+    const highlightB = 0.6;
+
+    // 收集等值面附近的点用于后续插点
+    const contourPoints = [];
+
+    for (let i = 0; i < pointCount; i++) {
+        const i3 = i * 3;
+        const rank = state.contourRanks[i];
+
+        // 计算距离等值面的距离
+        const distToContour = Math.abs(rank - contourPosition);
+
+        if (distToContour < contourWidth) {
+            // 在等值面附近：高亮显示
+            // 使用更高的亮度（3.0-5.0）
+            const intensity = 1.0 - (distToContour / contourWidth);
+            const brightness = 3.0 + intensity * 2.0;
+
+            colorArray[i3] = Math.min(1.0, highlightR * brightness);
+            colorArray[i3 + 1] = Math.min(1.0, highlightG * brightness);
+            colorArray[i3 + 2] = Math.min(1.0, highlightB * brightness);
+
+            // 记录等值面点位置
+            contourPoints.push({
+                x: posArray[i3],
+                y: posArray[i3 + 1],
+                z: posArray[i3 + 2],
+                psiSign: state.contourPsiSigns[i]
+            });
+        } else {
+            // 远离等值面：显示为非常暗（几乎透明）
+            const dimFactor = 0.05;
+            colorArray[i3] = state.contourBaseColors[i3] * dimFactor;
+            colorArray[i3 + 1] = state.contourBaseColors[i3 + 1] * dimFactor;
+            colorArray[i3 + 2] = state.contourBaseColors[i3 + 2] * dimFactor;
+        }
+    }
+
+    colors.needsUpdate = true;
+
+    console.log('[Contour] 等值面点数:', contourPoints.length);
+
+    // 程序化插入更多点（在等值面点之间插值）
+    if (contourPoints.length > 100) {
+        window.ElectronCloud.Visualization.createContourInterpolationPoints(contourPoints);
+    }
+
+    console.log('[Contour] 高亮效果已应用');
+};
+
+/**
+ * 程序化生成等值面点（使用波函数直接计算）
+ * 在球面上均匀采样方向，用二分搜索找到等值面半径，生成均匀分布的点
+ */
+window.ElectronCloud.Visualization.createContourInterpolationPoints = function (contourPoints) {
+    const state = window.ElectronCloud.state;
+    const ui = window.ElectronCloud.ui;
+    const Hydrogen = window.Hydrogen;
+
+    // 移除旧的插值点
+    if (state.contourInterpolationPoints) {
+        state.scene.remove(state.contourInterpolationPoints);
+        state.contourInterpolationPoints.geometry.dispose();
+        state.contourInterpolationPoints.material.dispose();
+        state.contourInterpolationPoints = null;
+    }
+
+    // 获取轨道参数
+    const isHybridMode = state.isHybridMode === true;
+    const orbitals = state.currentOrbitals || [state.currentOrbital || '1s'];
+    let orbitalParams = orbitals.map(key => Hydrogen.orbitalParamsFromKey(key)).filter(Boolean);
+
+    if (isHybridMode && Hydrogen.sortOrbitalsForHybridization) {
+        orbitalParams = Hydrogen.sortOrbitalsForHybridization(orbitalParams);
+    }
+
+    if (orbitalParams.length === 0) return;
+
+    // 获取杂化系数
+    let coeffMatrix = null;
+    if (isHybridMode && Hydrogen.getHybridCoefficients && orbitalParams.length > 1) {
+        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams.length);
+    }
+
+    // 计算波函数值
+    const calcPsi = (r, theta, phi) => {
+        if (isHybridMode && coeffMatrix) {
+            // 杂化模式：取所有杂化轨道中绝对值最大的波函数
+            let maxAbsPsi = 0;
+            let dominantPsi = 0;
+            for (let h = 0; h < orbitalParams.length; h++) {
+                const coeffs = coeffMatrix[h];
+                let psi = 0;
+                for (let j = 0; j < orbitalParams.length; j++) {
+                    const op = orbitalParams[j];
+                    const R = Hydrogen.radialWavefunction(op.n, op.l, r);
+                    const Y = Hydrogen.realYlm_value(op.angKey.l, op.angKey.m, op.angKey.t, theta, phi);
+                    psi += coeffs[j] * R * Y;
+                }
+                if (Math.abs(psi) > maxAbsPsi) {
+                    maxAbsPsi = Math.abs(psi);
+                    dominantPsi = psi;
+                }
+            }
+            return dominantPsi;
+        } else {
+            // 单选或多选模式
+            let psi = 0;
+            for (const op of orbitalParams) {
+                const R = Hydrogen.radialWavefunction(op.n, op.l, r);
+                const Y = Hydrogen.realYlm_value(op.angKey.l, op.angKey.m, op.angKey.t, theta, phi);
+                psi += R * Y;
+            }
+            return psi;
+        }
+    };
+
+    // 计算密度
+    const calcDensity = (r, theta, phi) => {
+        const psi = calcPsi(r, theta, phi);
+        return psi * psi;
+    };
+
+    // 从现有采样点估算95%密度阈值
+    const sortedDensities = [...state.contourDensities.slice(0, state.pointCount)].sort((a, b) => b - a);
+    const index95 = Math.floor(sortedDensities.length * 0.95);
+    const densityThreshold = sortedDensities[index95] || 0;
+
+    // 估算平均半径
+    const positions = state.points.geometry.attributes.position.array;
+    let sumR = 0;
+    for (let i = 0; i < state.pointCount; i++) {
+        const i3 = i * 3;
+        const x = positions[i3];
+        const y = positions[i3 + 1];
+        const z = positions[i3 + 2];
+        sumR += Math.sqrt(x * x + y * y + z * z);
+    }
+    const avgRadius = sumR / state.pointCount;
+
+    console.log('[Contour] 密度阈值:', densityThreshold, '平均半径:', avgRadius);
+
+    // 在球面上均匀采样方向，生成等值面点
+    const interpolatedPositions = [];
+    const interpolatedColors = [];
+
+    // 高亮颜色
+    const highlightR = 0.3;
+    const highlightG = 1.0;
+    const highlightB = 0.6;
+    const brightness = 4.0;
+
+    // 使用黄金螺旋在球面上均匀分布点
+    const numPoints = 30000; // 生成30000个均匀分布的方向
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // 黄金角
+
+    for (let i = 0; i < numPoints; i++) {
+        // 均匀分布的 y 坐标 (-1 到 1)
+        const y = 1 - (i / (numPoints - 1)) * 2;
+        const radiusFactor = Math.sqrt(1 - y * y);
+
+        // 均匀分布的 phi 角度
+        const phi = goldenAngle * i;
+
+        // 转换为球坐标的 theta（极角，从 z 轴测量）
+        const theta = Math.acos(Math.max(-1, Math.min(1, y)));
+
+        // 在这个方向上用二分搜索找等值面半径
+        let rMin = 0.1;
+        let rMax = avgRadius * 2.5;
+
+        // 检查 rMax 处的密度是否足够低
+        const densityAtMax = calcDensity(rMax, theta, phi);
+        if (densityAtMax > densityThreshold) {
+            rMax = avgRadius * 3.5;
+        }
+
+        // 二分搜索找等值面
+        let radius95 = avgRadius;
+        for (let iter = 0; iter < 20; iter++) {
+            const rMid = (rMin + rMax) / 2;
+            const density = calcDensity(rMid, theta, phi);
+
+            if (density > densityThreshold) {
+                rMin = rMid;
+            } else {
+                rMax = rMid;
+            }
+            radius95 = (rMin + rMax) / 2;
+        }
+
+        // 检查该方向的波函数相位
+        const psi = calcPsi(radius95, theta, phi);
+
+        // 只在有有效波函数的区域生成点（排除节面附近）
+        if (Math.abs(psi) > densityThreshold * 0.1 && radius95 > 0.5) {
+            // 转换为笛卡尔坐标
+            const x = radius95 * Math.sin(theta) * Math.cos(phi);
+            const yPos = radius95 * Math.cos(theta);
+            const z = radius95 * Math.sin(theta) * Math.sin(phi);
+
+            interpolatedPositions.push(x, yPos, z);
+            interpolatedColors.push(
+                Math.min(1.0, highlightR * brightness),
+                Math.min(1.0, highlightG * brightness),
+                Math.min(1.0, highlightB * brightness)
+            );
+        }
+    }
+
+    console.log('[Contour] 使用波函数生成等值面点:', interpolatedPositions.length / 3);
+
+    if (interpolatedPositions.length === 0) return;
+
+    // 创建点云几何体
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(interpolatedPositions, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(interpolatedColors, 3));
+
+    // 使用与原始点云相同的材质
+    const sprite = window.ElectronCloud.Scene.generateCircleSprite();
+    const material = new THREE.PointsMaterial({
+        map: sprite,
+        size: state.points.material.size * 1.2,
+        vertexColors: true,
+        transparent: true,
+        opacity: 1.0,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+    });
+
+    state.contourInterpolationPoints = new THREE.Points(geometry, material);
+    state.contourInterpolationPoints.layers.set(0);
+    state.scene.add(state.contourInterpolationPoints);
+
+    console.log('[Contour] 等值面点已添加到场景');
+};
+
+/**
+ * 禁用等值面轮廓高亮
+ * 恢复原始点云颜色，并移除插值点
+ */
+window.ElectronCloud.Visualization.disableContourHighlight = function () {
+    const state = window.ElectronCloud.state;
+
+    // 移除插值点
+    if (state.contourInterpolationPoints) {
+        state.scene.remove(state.contourInterpolationPoints);
+        state.contourInterpolationPoints.geometry.dispose();
+        state.contourInterpolationPoints.material.dispose();
+        state.contourInterpolationPoints = null;
+        console.log('[Contour] 已移除插值点');
+    }
+
+    if (!state.points || !state.contourBaseColors) {
+        state.contourHighlightEnabled = false;
+        return;
+    }
+
+    state.contourHighlightEnabled = false;
+
+    // 恢复原始颜色
+    const colors = state.points.geometry.attributes.color;
+    const pointCount = state.pointCount;
+    const colorArray = colors.array;
+
+    for (let i = 0; i < pointCount * 3; i++) {
+        colorArray[i] = state.contourBaseColors[i];
+    }
+
+    colors.needsUpdate = true;
+    console.log('[Contour] 已恢复原始颜色');
+};
+
+// ==================== 网格等值面 ====================
 
 window.ElectronCloud.Visualization.createContourOverlay = function () {
     const state = window.ElectronCloud.state;
@@ -493,173 +952,102 @@ window.ElectronCloud.Visualization.calculate95PercentileRadiusMap = function (th
 
     return { radiusMap, thetaBins, phiBins, globalMax };
 };
-
 /**
- * 创建等值面网格
- * 
- * 【关键】网格极点对准轨道的最高次旋转对称轴
+ * 创建等值面网格 - 基于 Marching Cubes 算法
+ * 每个波瓣生成独立的封闭等值面，自动分离连通域
  */
 window.ElectronCloud.Visualization.createContourMesh = function (group, baseRadius) {
+    console.log('[Contour] Marching Cubes, baseRadius:', baseRadius);
+
     const state = window.ElectronCloud.state;
     const isHybridMode = state.isHybridMode === true;
-    const isSingleHybridMode = isHybridMode && state.hybridRenderMode === 'single';
-    const hybridIndex = state.hybridSingleIndex || 0;
 
-    // 获取所有轨道参数
     const orbitals = state.currentOrbitals || [];
     let orbitalParams = orbitals.map(key => Hydrogen.orbitalParamsFromKey(key)).filter(Boolean);
+    if (orbitalParams.length === 0) return;
 
-    if (orbitalParams.length === 0) {
-        return;
-    }
-
-    // 【关键修复】对轨道进行排序
     if (isHybridMode && Hydrogen.sortOrbitalsForHybridization) {
         orbitalParams = Hydrogen.sortOrbitalsForHybridization(orbitalParams);
     }
-    const numOrbitals = orbitalParams.length;
 
-    // 获取杂化系数矩阵
     let coeffMatrix = null;
-    if (isHybridMode && numOrbitals > 1 && Hydrogen.getHybridCoefficients) {
-        coeffMatrix = Hydrogen.getHybridCoefficients(numOrbitals);
+    if (isHybridMode && orbitalParams.length > 1 && Hydrogen.getHybridCoefficients) {
+        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams.length);
     }
 
-    // 【关键】确定网格极点的目标方向（最高次对称轴）
-    let symmetryAxis = { x: 0, y: 0, z: 1 };
-
-    if (isSingleHybridMode) {
-        if (Hydrogen.getHybridLobeAxis) {
-            symmetryAxis = Hydrogen.getHybridLobeAxis(orbitalParams, hybridIndex);
-        } else if (Hydrogen.findHybridPrincipalAxis) {
-            symmetryAxis = Hydrogen.findHybridPrincipalAxis(orbitalParams, hybridIndex);
-        }
-    } else if (isHybridMode && numOrbitals > 1) {
-        if (Hydrogen.getSetSymmetryAxis) {
-            symmetryAxis = Hydrogen.getSetSymmetryAxis(orbitalParams);
-        } else if (Hydrogen.findHybridPrincipalAxis) {
-            symmetryAxis = Hydrogen.findHybridPrincipalAxis(orbitalParams, 0);
-        }
-    } else if (!isHybridMode && numOrbitals === 1 && Hydrogen.getOrbitalSymmetryAxis) {
-        symmetryAxis = Hydrogen.getOrbitalSymmetryAxis(orbitalParams[0].angKey);
-    }
-
-    // 【关键】THREE.js SphereGeometry 极点在 Y 轴，需要旋转到对称轴方向
-    let quaternion = null;
-    const threeJsPoleAxis = new THREE.Vector3(0, 1, 0);
-    const targetAxis = new THREE.Vector3(symmetryAxis.x, symmetryAxis.y, symmetryAxis.z).normalize();
-
-    const dotProduct = threeJsPoleAxis.dot(targetAxis);
-    if (Math.abs(dotProduct - 1) > 1e-6) {
-        quaternion = new THREE.Quaternion();
-        quaternion.setFromUnitVectors(threeJsPoleAxis, targetAxis);
-    }
-
-    // 密度计算函数
-    function calcDensity(r, theta, phi) {
-        if (isSingleHybridMode && Hydrogen.singleHybridDensity3D) {
-            return Hydrogen.singleHybridDensity3D(orbitalParams, hybridIndex, r, theta, phi);
-        } else if (isHybridMode && Hydrogen.allHybridOrbitalsDensity3D) {
-            return Hydrogen.allHybridOrbitalsDensity3D(orbitalParams, r, theta, phi);
-        } else {
-            let density = 0;
-            for (const op of orbitalParams) {
-                density += Hydrogen.density3D_real(op.angKey, op.n, op.l, r, theta, phi);
-            }
-            return density / numOrbitals;
-        }
-    }
-
-    // 计算95%分位的密度阈值
-    const densities = [];
-    const positions = state.points.geometry.attributes.position.array;
-
-    for (let i = 0; i < state.pointCount; i++) {
-        const i3 = i * 3;
-        const x = positions[i3];
-        const y = positions[i3 + 1];
-        const z = positions[i3 + 2];
+    // 波函数计算 (直角坐标)
+    function calcPsi(x, y, z) {
         const r = Math.sqrt(x * x + y * y + z * z);
-        if (r < 1e-10) continue;
-
+        if (r < 1e-10) return 0;
         const theta = Math.acos(Math.max(-1, Math.min(1, z / r)));
         const phi = Math.atan2(y, x);
 
-        const density = calcDensity(r, theta, phi);
-        densities.push(density);
-    }
-
-    densities.sort((a, b) => b - a);
-    const index95 = Math.floor(densities.length * 0.95);
-    const densityThreshold = densities[index95] || 0;
-
-    // 使用 IcosahedronGeometry 替代 SphereGeometry 解决极点问题，并提高密度
-    // detail=50 (约 156,060 顶点)
-    const geometry = new THREE.IcosahedronGeometry(1, 50);
-    const vertices = geometry.attributes.position.array;
-    const colors = new Float32Array(vertices.length);
-
-    for (let i = 0; i < vertices.length; i += 3) {
-        const x0 = vertices[i];
-        const y0 = vertices[i + 1];
-        const z0 = vertices[i + 2];
-
-        const unitR = Math.sqrt(x0 * x0 + y0 * y0 + z0 * z0);
-        if (unitR < 1e-10) continue;
-
-        let physDir = new THREE.Vector3(x0 / unitR, y0 / unitR, z0 / unitR);
-        if (quaternion) {
-            physDir.applyQuaternion(quaternion);
-        }
-
-        const theta = Math.acos(Math.max(-1, Math.min(1, physDir.z)));
-        const phi = Math.atan2(physDir.y, physDir.x);
-
-        let rMin = 0.1;
-        let rMax = baseRadius * 1.5;
-        let radius95 = rMax * 0.5;
-
-        const densityAtMax = calcDensity(rMax, theta, phi);
-        if (densityAtMax > densityThreshold) {
-            rMax = baseRadius * 2.5;
-        }
-
-        for (let iter = 0; iter < 25; iter++) {
-            const rMid = (rMin + rMax) / 2;
-            const density = calcDensity(rMid, theta, phi);
-
-            if (density > densityThreshold) {
-                rMin = rMid;
-            } else {
-                rMax = rMid;
+        if (isHybridMode && coeffMatrix) {
+            let maxAbsPsi = 0, dominantPsi = 0;
+            for (let h = 0; h < orbitalParams.length; h++) {
+                let psi = 0;
+                for (let i = 0; i < orbitalParams.length; i++) {
+                    const op = orbitalParams[i];
+                    psi += coeffMatrix[h][i] * Hydrogen.radialWavefunction(op.n, op.l, r) *
+                        Hydrogen.realYlm_value(op.angKey.l, op.angKey.m, op.angKey.t, theta, phi);
+                }
+                if (Math.abs(psi) > maxAbsPsi) { maxAbsPsi = Math.abs(psi); dominantPsi = psi; }
             }
-            radius95 = rMid;
+            return dominantPsi;
+        } else {
+            let psi = 0;
+            for (const op of orbitalParams) {
+                psi += Hydrogen.radialWavefunction(op.n, op.l, r) *
+                    Hydrogen.realYlm_value(op.angKey.l, op.angKey.m, op.angKey.t, theta, phi);
+            }
+            return psi;
         }
-
-        vertices[i] = physDir.x * radius95;
-        vertices[i + 1] = physDir.y * radius95;
-        vertices[i + 2] = physDir.z * radius95;
-
-        colors[i] = 0.2;
-        colors[i + 1] = 1.0;
-        colors[i + 2] = 0.5;
     }
 
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    geometry.attributes.position.needsUpdate = true;
+    // 计算等值面阈值
+    // 使用 95% 分位的 |ψ| 作为边界（即包含 95% 概率的等值面）
+    const psiValues = [];
+    const positions = state.points.geometry.attributes.position.array;
+    for (let i = 0; i < state.pointCount; i++) {
+        const i3 = i * 3;
+        psiValues.push(Math.abs(calcPsi(positions[i3], positions[i3 + 1], positions[i3 + 2])));
+    }
+    psiValues.sort((a, b) => a - b);
+    const isovalue = psiValues[Math.floor(psiValues.length * 0.05)] || 0.0001;
+    console.log('[Contour] isovalue:', isovalue.toFixed(8));
 
-    const material = new THREE.MeshBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.6,
-        side: THREE.DoubleSide,
-        wireframe: true,
-        wireframeLinewidth: 1.5
-    });
+    // Marching Cubes - 优化分辨率以兼顾性能和质量
+    const bound = baseRadius * 1.3;
+    const resolution = 80; // 降低至 80，避免性能问题
+    const result = window.MarchingCubes.run(calcPsi, { min: [-bound, -bound, -bound], max: [bound, bound, bound] }, resolution, isovalue);
 
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.layers.set(1);
-    group.add(mesh);
+    console.log('[Contour] 正波瓣:', result.positive.length / 3, '三角形, 负波瓣:', result.negative.length / 3, '三角形');
+
+    // 创建网格
+    function addLobeMeshes(triangles, color) {
+        if (triangles.length < 9) return;
+        const components = window.MarchingCubes.separate(triangles);
+        console.log('[Contour] 分离出', components.length, '个连通域');
+
+        for (const comp of components) {
+            if (comp.length < 9) continue;
+            const geom = window.MarchingCubes.toGeometry(comp);
+            const colors = new Float32Array(comp.length * 3);
+            for (let i = 0; i < comp.length; i++) { colors[i * 3] = color.r; colors[i * 3 + 1] = color.g; colors[i * 3 + 2] = color.b; }
+            geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const mesh = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({
+                vertexColors: true, transparent: true, opacity: 0.55,
+                side: THREE.DoubleSide, wireframe: true, wireframeLinewidth: 1.5
+            }));
+            mesh.layers.set(1);
+            group.add(mesh);
+        }
+    }
+
+    const standardColor = { r: 0.2, g: 1.0, b: 0.5 };
+    addLobeMeshes(result.positive, standardColor);
+    addLobeMeshes(result.negative, standardColor);
 };
 
 window.ElectronCloud.Visualization.updateContourOverlay = function () {
@@ -770,27 +1158,13 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
     function createSingleHybridContour(orbitalParams, coeffs, hybridIndex, pointIndices, color) {
         const overlayGroup = new THREE.Group();
 
-        // 获取该杂化轨道的主轴方向
-        let symmetryAxis = { x: 0, y: 0, z: 1 };
-        if (Hydrogen.getHybridLobeAxis) {
-            symmetryAxis = Hydrogen.getHybridLobeAxis(orbitalParams, hybridIndex);
-        } else if (Hydrogen.findHybridPrincipalAxis) {
-            symmetryAxis = Hydrogen.findHybridPrincipalAxis(orbitalParams, hybridIndex);
-        }
+        // 波函数计算
+        function calcPsi(x, y, z) {
+            const r = Math.sqrt(x * x + y * y + z * z);
+            if (r < 1e-10) return 0;
+            const theta = Math.acos(Math.max(-1, Math.min(1, z / r)));
+            const phi = Math.atan2(y, x);
 
-        // 计算旋转四元数
-        let quaternion = null;
-        const threeJsPoleAxis = new THREE.Vector3(0, 1, 0);
-        const targetAxis = new THREE.Vector3(symmetryAxis.x, symmetryAxis.y, symmetryAxis.z).normalize();
-
-        const dotProduct = threeJsPoleAxis.dot(targetAxis);
-        if (Math.abs(dotProduct - 1) > 1e-6) {
-            quaternion = new THREE.Quaternion();
-            quaternion.setFromUnitVectors(threeJsPoleAxis, targetAxis);
-        }
-
-        // 密度计算函数
-        function calcDensity(r, theta, phi) {
             let psi = 0;
             for (let j = 0; j < orbitalParams.length; j++) {
                 const op = orbitalParams[j];
@@ -798,12 +1172,13 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
                 const Y = Hydrogen.realYlm_value(op.angKey.l, op.angKey.m, op.angKey.t, theta, phi);
                 psi += coeffs[j] * R * Y;
             }
-            return psi * psi;
+            return psi;
         }
 
         // 计算该轨道点的95%分位密度阈值
         const positions = state.points.geometry.attributes.position.array;
-        const densities = [];
+        const psiValues = [];
+        let maxR = 0;
 
         for (const pointIdx of pointIndices) {
             const i3 = pointIdx * 3;
@@ -811,106 +1186,66 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
             const y = positions[i3 + 1];
             const z = positions[i3 + 2];
             const r = Math.sqrt(x * x + y * y + z * z);
-            if (r < 1e-10) continue;
+            if (r > maxR) maxR = r;
 
-            const theta = Math.acos(Math.max(-1, Math.min(1, z / r)));
-            const phi = Math.atan2(y, x);
-            const density = calcDensity(r, theta, phi);
-            densities.push(density);
+            // 计算此处的 psi
+            psiValues.push(Math.abs(calcPsi(x, y, z)));
         }
 
-        if (densities.length < 50) return null;
+        if (psiValues.length < 50) return null;
 
-        densities.sort((a, b) => b - a);
-        const index95 = Math.floor(densities.length * 0.95);
-        const densityThreshold = densities[index95] || 0;
+        psiValues.sort((a, b) => a - b);
+        // 95% 概率包含在等值面内 = 5% 的点在外面 (小值)
+        const isovalue = psiValues[Math.floor(psiValues.length * 0.05)] || 0.0001;
 
-        // 估算平均半径
-        let sumR = 0;
-        for (const pointIdx of pointIndices) {
-            const i3 = pointIdx * 3;
-            const x = positions[i3];
-            const y = positions[i3 + 1];
-            const z = positions[i3 + 2];
-            sumR += Math.sqrt(x * x + y * y + z * z);
-        }
-        const avgRadius = sumR / pointIndices.length;
+        // Marching Cubes
+        // 边界：使用最大点半径再扩大一点
+        const bound = (maxR > 0 ? maxR : 10) * 1.3;
+        const resolution = 80; // 降低至 80，确保稳定性
 
-        // 创建网格
-        // 使用 IcosahedronGeometry 替代 SphereGeometry，解决极点问题并提高密度
-        // detail=50 (约 156,060 顶点)
-        const geometry = new THREE.IcosahedronGeometry(1, 50);
-        const vertices = geometry.attributes.position.array;
-        const colorsAttr = new Float32Array(vertices.length);
+        const result = window.MarchingCubes.run(calcPsi, { min: [-bound, -bound, -bound], max: [bound, bound, bound] }, resolution, isovalue);
 
-        for (let i = 0; i < vertices.length; i += 3) {
-            const x0 = vertices[i];
-            const y0 = vertices[i + 1];
-            const z0 = vertices[i + 2];
+        // 添加网格
+        function addLobeMeshes(triangles, meshColor) {
+            if (triangles.length < 9) return;
+            const components = window.MarchingCubes.separate(triangles);
 
-            const unitR = Math.sqrt(x0 * x0 + y0 * y0 + z0 * z0);
-            if (unitR < 1e-10) continue;
-
-            let physDir = new THREE.Vector3(x0 / unitR, y0 / unitR, z0 / unitR);
-            if (quaternion) {
-                physDir.applyQuaternion(quaternion);
-            }
-
-            const theta = Math.acos(Math.max(-1, Math.min(1, physDir.z)));
-            const phi = Math.atan2(physDir.y, physDir.x);
-
-            // 二分搜索找到95%等值面半径
-            let rMin = 0.1;
-            let rMax = avgRadius * 2.0;
-            let radius95 = avgRadius;
-
-            for (let iter = 0; iter < 20; iter++) {
-                const rMid = (rMin + rMax) / 2;
-                const density = calcDensity(rMid, theta, phi);
-
-                if (density > densityThreshold) {
-                    rMin = rMid;
-                } else {
-                    rMax = rMid;
+            for (const comp of components) {
+                if (comp.length < 9) continue;
+                const geom = window.MarchingCubes.toGeometry(comp);
+                const colors = new Float32Array(comp.length * 3);
+                for (let i = 0; i < comp.length; i++) {
+                    colors[i * 3] = meshColor.r;
+                    colors[i * 3 + 1] = meshColor.g;
+                    colors[i * 3 + 2] = meshColor.b;
                 }
-                radius95 = rMid;
+                geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+                const mesh = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({
+                    vertexColors: true, transparent: true, opacity: 0.6,
+                    side: THREE.DoubleSide, wireframe: true, wireframeLinewidth: 1.0
+                }));
+                mesh.layers.set(1);
+                overlayGroup.add(mesh);
             }
-
-            vertices[i] = physDir.x * radius95;
-            vertices[i + 1] = physDir.y * radius95;
-            vertices[i + 2] = physDir.z * radius95;
-
-            colorsAttr[i] = color.r;
-            colorsAttr[i + 1] = color.g;
-            colorsAttr[i + 2] = color.b;
         }
 
-        geometry.setAttribute('color', new THREE.BufferAttribute(colorsAttr, 3));
-        geometry.attributes.position.needsUpdate = true;
+        // 杂化轨道通常只需显示一种颜色（即传入的 color），不区分正负波瓣颜色
+        addLobeMeshes(result.positive, color);
+        addLobeMeshes(result.negative, color);
 
-        const material = new THREE.MeshBasicMaterial({
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.5,
-            side: THREE.DoubleSide,
-            wireframe: true,
-            wireframeLinewidth: 1.5
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.layers.set(1);
-        overlayGroup.add(mesh);
-
-        return overlayGroup;
+        if (overlayGroup.children.length > 0) {
+            return overlayGroup;
+        }
+        return null;
     }
 };
-
 
 /**
  * 创建高密度测地线球体网格 (Icosphere)
  * 手动细分二十面体，绕过 Three.js 版本限制
- * @param {number} radius 半径
- * @param {number} detail 细分等级 (建议 5 或 6)
+ * @param { number } radius 半径
+ * @param { number } detail 细分等级(建议 5 或 6)
  */
 window.ElectronCloud.Visualization.createGeodesicIcosphere = function (radius, detail) {
     const t = (1 + Math.sqrt(5)) / 2;

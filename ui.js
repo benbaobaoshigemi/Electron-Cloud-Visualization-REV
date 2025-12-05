@@ -1220,7 +1220,7 @@ window.ElectronCloud.UI.onAngularOverlayToggle = function (event) {
     }
 };
 
-// 处理95%等值面轮廓显隐
+// 处理95%等值面轮廓显隐（网格方案）
 window.ElectronCloud.UI.onContourOverlayToggle = function (event) {
     const state = window.ElectronCloud.state;
 
@@ -1238,9 +1238,10 @@ window.ElectronCloud.UI.onContourOverlayToggle = function (event) {
             return;
         }
 
+        // 使用网格等值面方案
         window.ElectronCloud.Visualization.updateContourOverlay();
     } else {
-        // 移除等值面
+        // 移除等值面网格
         if (state.contourOverlay) {
             state.scene.remove(state.contourOverlay);
             state.contourOverlay.traverse((child) => {
@@ -2890,6 +2891,18 @@ window.ElectronCloud.UI.initModeSwitcher = function () {
                     // 重置杂化采样缓存
                     if (window.ElectronCloud.Sampling && window.ElectronCloud.Sampling.resetHybridCache) {
                         window.ElectronCloud.Sampling.resetHybridCache();
+                    }
+                    // 【修复】从比照模式切换过来时，恢复相位开关的可用状态
+                    // 必须在触发 onMultiselectToggle 之前处理，因为 compareToggle 已经被设为 false
+                    {
+                        const phaseToggle = document.getElementById('phase-toggle');
+                        const phaseBox = document.getElementById('phase-box');
+                        if (phaseToggle) {
+                            phaseToggle.disabled = false;
+                        }
+                        if (phaseBox) {
+                            phaseBox.classList.remove('disabled');
+                        }
                     }
                     // 触发多选模式的逻辑（复用选择界面）
                     multiselectToggle?.dispatchEvent(new Event('change'));

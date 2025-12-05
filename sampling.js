@@ -212,7 +212,7 @@ window.ElectronCloud.Sampling.submitSamplingTask = function () {
     const isCompareMode = ui.compareToggle && ui.compareToggle.checked;
     const isMultiselectMode = ui.multiselectToggle && ui.multiselectToggle.checked;
     const isHybridMode = state.isHybridMode; // 【新增】杂化模式标志
-    const phaseOn = document.getElementById('phase-toggle')?.checked || false;
+    const phaseOn = state.usePhaseColoring || false;
 
     // 准备比照颜色（只传递值，不传递对象）
     const compareColors = constants.compareColors ?
@@ -444,7 +444,7 @@ window.ElectronCloud.Sampling.processIndependentModePoint = function (x, y, z, r
 
         if (isMultiselectMode) {
             // 多选模式：支持相位显示功能
-            const phaseOn = document.getElementById('phase-toggle')?.checked;
+            const phaseOn = window.ElectronCloud.state.usePhaseColoring;
             let sign = 0;
             if (phaseOn) {
                 // 只计算当前选中轨道的波函数，不叠加其他轨道
@@ -454,10 +454,10 @@ window.ElectronCloud.Sampling.processIndependentModePoint = function (x, y, z, r
                 sign = psi > 0 ? 1 : (psi < 0 ? -1 : 0);
             }
 
-            if (sign > 0) { // 红色（正相位）
-                r_color = 1; g_color = 0.2; b_color = 0.2;
-            } else if (sign < 0) { // 蓝色（负相位）
-                r_color = 0.2; g_color = 0.2; b_color = 1;
+            if (sign > 0) { // 蓝色（正相位）
+                r_color = 0; g_color = 0; b_color = 1;
+            } else if (sign < 0) { // 红色（负相位）
+                r_color = 1; g_color = 0; b_color = 0;
             } else { // 中性白
                 r_color = 1; g_color = 1; b_color = 1;
             }
@@ -547,7 +547,7 @@ window.ElectronCloud.Sampling.processNormalModePoint = function (x, y, z, r, the
         positions[i3 + 2] = z;
 
         // 多选模式和默认模式：都支持相位显示功能
-        const phaseOn = document.getElementById('phase-toggle')?.checked;
+        const phaseOn = window.ElectronCloud.state.usePhaseColoring;
         let sign = 0;
         if (phaseOn) {
             let psi = 0;
@@ -560,10 +560,10 @@ window.ElectronCloud.Sampling.processNormalModePoint = function (x, y, z, r, the
         }
 
         let r_color, g_color, b_color;
-        if (sign > 0) { // 红色
-            r_color = 1; g_color = 0.2; b_color = 0.2;
-        } else if (sign < 0) { // 蓝色
-            r_color = 0.2; g_color = 0.2; b_color = 1;
+        if (sign > 0) { // 蓝色（正相位）
+            r_color = 0; g_color = 0; b_color = 1;
+        } else if (sign < 0) { // 红色（负相位）
+            r_color = 1; g_color = 0; b_color = 0;
         } else { // 中性白
             r_color = 1; g_color = 1; b_color = 1;
         }
@@ -696,7 +696,7 @@ window.ElectronCloud.Sampling.processImportanceSamplingPoint = function (
         }
     } else {
         // 单选模式或多选模式：支持相位显示
-        const phaseOn = document.getElementById('phase-toggle')?.checked;
+        const phaseOn = window.ElectronCloud.state.usePhaseColoring;
         let sign = 0;
 
         if (phaseOn) {
@@ -718,9 +718,9 @@ window.ElectronCloud.Sampling.processImportanceSamplingPoint = function (
         }
 
         if (sign > 0) {
-            r_color = 1; g_color = 0.2; b_color = 0.2;
+            r_color = 0; g_color = 0; b_color = 1; // 蓝色（正相位）
         } else if (sign < 0) {
-            r_color = 0.2; g_color = 0.2; b_color = 1;
+            r_color = 1; g_color = 0; b_color = 0; // 红色（负相位）
         } else {
             r_color = 1; g_color = 1; b_color = 1;
         }
@@ -916,16 +916,16 @@ function addHybridPoint(result, paramsList, positions, colors) {
 
     // 计算颜色（支持相位显示）
     let r_color, g_color, b_color;
-    const phaseOn = document.getElementById('phase-toggle')?.checked;
+    const phaseOn = state.usePhaseColoring;
 
     if (phaseOn) {
         // 使用已计算的波函数值确定相位
         const psi = result.psi;
 
         if (psi > 0) {
-            r_color = 1; g_color = 0.2; b_color = 0.2; // 正相位：红色
+            r_color = 0; g_color = 0; b_color = 1; // 正相位：蓝色
         } else if (psi < 0) {
-            r_color = 0.2; g_color = 0.2; b_color = 1; // 负相位：蓝色
+            r_color = 1; g_color = 0; b_color = 0; // 负相位：红色
         } else {
             r_color = 1; g_color = 1; b_color = 1; // 节面：白色
         }
@@ -1071,15 +1071,15 @@ function addHybridPointAll(result, paramsList, positions, colors) {
 
     // 计算颜色
     let r_color, g_color, b_color;
-    const phaseOn = document.getElementById('phase-toggle')?.checked;
+    const phaseOn = state.usePhaseColoring;
 
     if (phaseOn) {
         // 相位模式：根据波函数符号着色
         const psi = result.psi;
         if (psi > 0) {
-            r_color = 1; g_color = 0.2; b_color = 0.2;
+            r_color = 0; g_color = 0; b_color = 1; // 正相位：蓝色
         } else if (psi < 0) {
-            r_color = 0.2; g_color = 0.2; b_color = 1;
+            r_color = 1; g_color = 0; b_color = 0; // 负相位：红色
         } else {
             r_color = 1; g_color = 1; b_color = 1;
         }

@@ -956,6 +956,101 @@ window.ElectronCloud.Visualization.calculate95PercentileRadiusMap = function (th
  * 创建等值面网格 - 基于 Marching Cubes 算法
  * 每个波瓣生成独立的封闭等值面，自动分离连通域
  */
+// 更新点云相位颜色
+window.ElectronCloud.Visualization.updatePointColors = function () {
+    const state = window.ElectronCloud.state;
+    if (!state.points) return;
+
+    const positions = state.points.geometry.attributes.position.array;
+    const colors = state.points.geometry.attributes.color.array;
+    const pointCount = state.pointCount;
+
+    // 预备参数
+    const isHybridMode = state.isHybridMode === true;
+    const orbitals = state.currentOrbitals || [];
+    let orbitalParams = orbitals.map(key => Hydrogen.orbitalParamsFromKey(key)).filter(Boolean);
+
+    if (orbitalParams.length === 0) return;
+
+    if (isHybridMode && Hydrogen.sortOrbitalsForHybridization) {
+        orbitalParams = Hydrogen.sortOrbitalsForHybridization(orbitalParams);
+    }
+
+    let coeffMatrix = null;
+    if (isHybridMode && orbitalParams.length > 1 && Hydrogen.getHybridCoefficients) {
+        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams.length);
+    }
+
+    // 颜色定义（注意：此处颜色与采样时相反，以保证后开相位显示一致性）
+    const colorPos = { r: 1.0, g: 0.0, b: 0.0 }; // psi>=0 用红
+    const colorNeg = { r: 0.0, g: 0.0, b: 1.0 }; // psi<0 用蓝
+    const colorWhite = { r: 1.0, g: 1.0, b: 1.0 };
+
+    // 遍历所有点
+    for (let i = 0; i < pointCount; i++) {
+        const i3 = i * 3;
+        const x = positions[i3];
+        const y = positions[i3 + 1];
+        const z = positions[i3 + 2];
+
+        // 默认白色 (未开启相位显示时)
+        if (!state.usePhaseColoring) {
+            colors[i3] = colorWhite.r;
+            colors[i3 + 1] = colorWhite.g;
+            colors[i3 + 2] = colorWhite.b;
+            continue;
+        }
+
+        // 计算 Psi (复用 createContourMesh 的逻辑)
+        let psi = 0;
+        const r = Math.sqrt(x * x + y * y + z * z);
+        if (r < 1e-10) {
+            psi = 0;
+        } else {
+            const theta = Math.acos(Math.max(-1, Math.min(1, z / r)));
+            const phi = Math.atan2(y, x);
+
+            if (isHybridMode && coeffMatrix) {
+                let maxAbsPsi = 0;
+                for (let h = 0; h < orbitalParams.length; h++) {
+                    let hPsi = 0;
+                    for (let k = 0; k < orbitalParams.length; k++) {
+                        const op = orbitalParams[k];
+                        hPsi += coeffMatrix[h][k] * Hydrogen.radialWavefunction(op.n, op.l, r) *
+                            Hydrogen.realYlm_value(op.angKey.l, op.angKey.m, op.angKey.t, theta, phi);
+                    }
+                    if (Math.abs(hPsi) > maxAbsPsi) {
+                        maxAbsPsi = Math.abs(hPsi);
+                        psi = hPsi;
+                    }
+                }
+            } else {
+                // 单轨/多轨叠加
+                // 如果是多轨模式，点云中的点实际上属于特定轨道
+                // 但为了相位显示的连续性，我们可以计算叠加场的相位，或者区分轨道
+                // 这里采用：计算叠加波函数 psi (简单叠加)
+                for (const op of orbitalParams) {
+                    psi += Hydrogen.radialWavefunction(op.n, op.l, r) *
+                        Hydrogen.realYlm_value(op.angKey.l, op.angKey.m, op.angKey.t, theta, phi);
+                }
+            }
+        }
+
+        // 根据相位上色
+        if (psi >= 0) {
+            colors[i3] = colorPos.r;
+            colors[i3 + 1] = colorPos.g;
+            colors[i3 + 2] = colorPos.b;
+        } else {
+            colors[i3] = colorNeg.r;
+            colors[i3 + 1] = colorNeg.g;
+            colors[i3 + 2] = colorNeg.b;
+        }
+    }
+
+    state.points.geometry.attributes.color.needsUpdate = true;
+};
+
 window.ElectronCloud.Visualization.createContourMesh = function (group, baseRadius) {
     console.log('[Contour] Marching Cubes, baseRadius:', baseRadius);
 
@@ -1018,7 +1113,7 @@ window.ElectronCloud.Visualization.createContourMesh = function (group, baseRadi
 
     // Marching Cubes - 优化分辨率以兼顾性能和质量
     const bound = baseRadius * 1.3;
-    const resolution = 80; // 降低至 80，避免性能问题
+    const resolution = 120; // 提升分辨率至 120
     const result = window.MarchingCubes.run(calcPsi, { min: [-bound, -bound, -bound], max: [bound, bound, bound] }, resolution, isovalue);
 
     console.log('[Contour] 正波瓣:', result.positive.length / 3, '三角形, 负波瓣:', result.negative.length / 3, '三角形');
@@ -1045,9 +1140,43 @@ window.ElectronCloud.Visualization.createContourMesh = function (group, baseRadi
         }
     }
 
-    const standardColor = { r: 0.2, g: 1.0, b: 0.5 };
-    addLobeMeshes(result.positive, standardColor);
-    addLobeMeshes(result.negative, standardColor);
+    const standardColor = { r: 0.2, g: 1.0, b: 0.5 }; // 默认绿色
+    const colorPos = { r: 0.0, g: 0.75, b: 1.0 };     // 冰蓝
+    const colorNeg = { r: 1.0, g: 0.27, b: 0.0 };     // 橙色
+
+    if (state.usePhaseColoring) {
+        // 开启相位显示：正蓝负红
+        addLobeMeshes(result.positive, colorPos);
+        addLobeMeshes(result.negative, colorNeg);
+    } else {
+        // 关闭相位显示：统一绿色 (默认)
+        addLobeMeshes(result.positive, standardColor);
+        addLobeMeshes(result.negative, standardColor);
+    }
+};
+
+window.ElectronCloud.Visualization.createContourOverlay = function () {
+    const state = window.ElectronCloud.state;
+    const group = new THREE.Group();
+
+    if (!state.points) return group;
+
+    // 计算包围球半径
+    const positions = state.points.geometry.attributes.position.array;
+    let maxR = 0;
+    for (let i = 0; i < state.pointCount; i++) {
+        const x = positions[i * 3];
+        const y = positions[i * 3 + 1];
+        const z = positions[i * 3 + 2];
+        const r = Math.sqrt(x * x + y * y + z * z);
+        if (r > maxR) maxR = r;
+    }
+    const baseRadius = maxR > 0 ? maxR : 10;
+
+    // 创建 Marching Cubes 等值面
+    window.ElectronCloud.Visualization.createContourMesh(group, baseRadius);
+
+    return group;
 };
 
 window.ElectronCloud.Visualization.updateContourOverlay = function () {
@@ -1201,10 +1330,11 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
         // Marching Cubes
         // 边界：使用最大点半径再扩大一点
         const bound = (maxR > 0 ? maxR : 10) * 1.3;
-        const resolution = 80; // 降低至 80，确保稳定性
+        const resolution = 120; // 提升分辨率至 120
 
         const result = window.MarchingCubes.run(calcPsi, { min: [-bound, -bound, -bound], max: [bound, bound, bound] }, resolution, isovalue);
 
+        // 添加网格
         // 添加网格
         function addLobeMeshes(triangles, meshColor) {
             if (triangles.length < 9) return;
@@ -1230,9 +1360,17 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
             }
         }
 
-        // 杂化轨道通常只需显示一种颜色（即传入的 color），不区分正负波瓣颜色
-        addLobeMeshes(result.positive, color);
-        addLobeMeshes(result.negative, color);
+        // 杂化轨道颜色逻辑
+        if (state.usePhaseColoring) {
+            const colorPos = { r: 0.0, g: 0.75, b: 1.0 }; // 冰蓝
+            const colorNeg = { r: 1.0, g: 0.27, b: 0.0 }; // 橙色
+            addLobeMeshes(result.positive, colorPos);
+            addLobeMeshes(result.negative, colorNeg);
+        } else {
+            // 默认显示区分颜色
+            addLobeMeshes(result.positive, color);
+            addLobeMeshes(result.negative, color);
+        }
 
         if (overlayGroup.children.length > 0) {
             return overlayGroup;
@@ -1305,3 +1443,4 @@ window.ElectronCloud.Visualization.createGeodesicIcosphere = function (radius, d
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     return geometry;
 };
+

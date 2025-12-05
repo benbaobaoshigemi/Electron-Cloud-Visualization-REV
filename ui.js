@@ -698,6 +698,12 @@ window.ElectronCloud.UI.init = function () {
         }
     }, 100);
 
+    // 相位显示开关
+    const phaseToggle = document.getElementById('phase-toggle');
+    if (phaseToggle) {
+        phaseToggle.addEventListener('change', window.ElectronCloud.UI.onPhaseToggle);
+    }
+
     console.log('UI 事件监听器初始化完成');
 
 };
@@ -1582,6 +1588,39 @@ window.ElectronCloud.UI.onCenterLockChange = function () {
     }
 
     console.log('[UI] centerLock 状态变更:', locked ? '锁定' : '解锁', ', enablePan:', state.controls.enablePan);
+};
+
+// 处理相位显示开关
+window.ElectronCloud.UI.onPhaseToggle = function (event) {
+    const state = window.ElectronCloud.state;
+    const ui = window.ElectronCloud.ui;
+
+    state.usePhaseColoring = event.target.checked;
+
+    // 更新 phase-box 的 active 样式
+    const phaseBox = document.getElementById('phase-box');
+    if (phaseBox) {
+        phaseBox.classList.toggle('active', state.usePhaseColoring);
+    }
+
+    // 只有在有点云数据时才更新颜色
+    if (state.points && state.pointCount > 0) {
+        // 更新点云颜色
+        if (window.ElectronCloud.Visualization.updatePointColors) {
+            window.ElectronCloud.Visualization.updatePointColors();
+        }
+
+        // 更新轮廓颜色（如果轮廓已显示）
+        if (state.contourOverlay && window.ElectronCloud.Visualization.updateContourOverlay) {
+            // 重新生成等值面以应用新颜色
+            window.ElectronCloud.Visualization.updateContourOverlay();
+        } else if (state.hybridContourOverlay && window.ElectronCloud.Visualization.createHybridContourOverlays) {
+            // 重新生成杂化轨道等值面
+            window.ElectronCloud.Visualization.createHybridContourOverlays();
+        }
+    }
+
+    console.log('[UI] 相位显示切换:', state.usePhaseColoring ? '开启' : '关闭');
 };
 
 // 辅助函数：检查并同步 centerLock 状态

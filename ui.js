@@ -365,7 +365,6 @@ window.ElectronCloud.UI.init = function () {
         heartbeatToggle.addEventListener('change', (e) => {
             const state = window.ElectronCloud.state;
             state.heartbeat.enabled = e.target.checked;
-            console.log('闪烁模式:', e.target.checked, 'bloomPass:', !!state.bloomPass);
 
             // 功能框激活状态变绿
             if (flickerFeatureBox) {
@@ -495,8 +494,6 @@ window.ElectronCloud.UI.init = function () {
             state.diffuseDensitiesComputed = false;
             state.waveRanksComputed = false;
             state.waveRanksPointCount = 0;
-
-            console.log('闪烁模式切换:', previousMode, '->', e.target.value);
         });
     }
 
@@ -520,8 +517,6 @@ window.ElectronCloud.UI.init = function () {
     const weightModeToggle = document.getElementById('weight-mode-toggle');
     const weightFeatureBox = document.getElementById('weight-feature-box');
 
-    console.log('权重模式初始化 - toggle:', weightModeToggle, 'box:', weightFeatureBox);
-
     if (weightModeToggle) {
         weightModeToggle.addEventListener('change', (e) => {
             const state = window.ElectronCloud.state;
@@ -541,8 +536,6 @@ window.ElectronCloud.UI.init = function () {
             if (!e.target.checked) {
                 state.densityWeights = null;
             }
-
-            console.log('权重模式:', e.target.checked ? '开启' : '关闭');
         });
     } else {
         console.error('weight-mode-toggle 元素未找到');
@@ -552,7 +545,6 @@ window.ElectronCloud.UI.init = function () {
     if (weightFeatureBox) {
         weightFeatureBox.addEventListener('click', (e) => {
             const toggle = document.getElementById('weight-mode-toggle');
-            console.log('权重功能框被点击, toggle:', toggle);
             if (toggle) {
                 toggle.checked = !toggle.checked;
                 toggle.dispatchEvent(new Event('change', { bubbles: true }));
@@ -560,6 +552,37 @@ window.ElectronCloud.UI.init = function () {
         });
     } else {
         console.error('weight-feature-box 元素未找到');
+    }
+
+    // 滚动生成模式开关
+    const rollingModeToggle = document.getElementById('rolling-mode-toggle');
+    const rollingFeatureBox = document.getElementById('rolling-feature-box');
+
+    if (rollingModeToggle) {
+        rollingModeToggle.addEventListener('change', (e) => {
+            const state = window.ElectronCloud.state;
+
+            // 渲染完成后直接生效；渲染前只设置pending
+            if (state.samplingCompleted) {
+                state.rollingMode.enabled = e.target.checked;
+            } else {
+                state.rollingMode.pendingEnabled = e.target.checked;
+            }
+
+            // 更新按钮激活样式
+            if (rollingFeatureBox) {
+                rollingFeatureBox.classList.toggle('active', e.target.checked);
+            }
+        });
+    }
+
+    if (rollingFeatureBox) {
+        rollingFeatureBox.addEventListener('click', (e) => {
+            if (rollingModeToggle) {
+                rollingModeToggle.checked = !rollingModeToggle.checked;
+                rollingModeToggle.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
     }
 
     // 导出设置二级面板
@@ -597,7 +620,6 @@ window.ElectronCloud.UI.init = function () {
     // 点击导出功能框直接导出图片
     if (exportFeatureBox) {
         exportFeatureBox.addEventListener('click', (e) => {
-            console.log('导出功能框被点击');
             if (window.ElectronCloud.Visualization && typeof window.ElectronCloud.Visualization.exportImage === 'function') {
                 window.ElectronCloud.Visualization.exportImage();
             } else {
@@ -605,7 +627,6 @@ window.ElectronCloud.UI.init = function () {
                 alert('导出功能暂时不可用，请刷新页面后重试');
             }
         });
-        console.log('导出功能框点击事件已绑定');
     }
 
     // 旋转设置二级面板
@@ -704,8 +725,6 @@ window.ElectronCloud.UI.init = function () {
         phaseToggle.addEventListener('change', window.ElectronCloud.UI.onPhaseToggle);
     }
 
-    console.log('UI 事件监听器初始化完成');
-
 };
 
 // 锁定摄像机到指定轴视角
@@ -762,8 +781,6 @@ window.ElectronCloud.UI.lockCameraToAxis = function (axis) {
     // 设置自定义旋转处理（绕锁定轴旋转场景对象）
     // 注意：setupLockedAxisRotation 会禁用 OrbitControls
     window.ElectronCloud.UI.setupLockedAxisRotation(axis);
-
-    console.log(`视角已锁定到${axis}轴`);
 };
 
 // 设置锁定轴的自定义旋转处理
@@ -773,8 +790,6 @@ window.ElectronCloud.UI.setupLockedAxisRotation = function (axis) {
 
     // 先清除之前的监听器
     window.ElectronCloud.UI.clearLockedAxisRotation();
-
-    console.log('设置锁定轴旋转处理, axis:', axis);
 
     // **关键修复**：完全禁用 OrbitControls 以避免事件冲突
     // OrbitControls 即使 enableRotate=false，仍会拦截 pointer 事件
@@ -964,8 +979,6 @@ window.ElectronCloud.UI.setupLockedAxisRotation = function (axis) {
 
     // 也在 window 上监听 pointerup 以确保拖动到窗口外也能释放
     window.addEventListener('pointerup', onPointerUp);
-
-    console.log('已设置锁定轴旋转处理，OrbitControls 已禁用，使用自定义 pointer 事件');
 };
 
 // 清除锁定轴的自定义旋转处理
@@ -1011,7 +1024,6 @@ window.ElectronCloud.UI.clearLockedAxisRotation = function () {
         }
 
         state.lockedAxisHandlers = null;
-        console.log('已清除锁定轴旋转处理');
     }
 
     // 重新启用 OrbitControls
@@ -1135,8 +1147,6 @@ window.ElectronCloud.UI.resetOrbitalSelections = function () {
 
     // 更新选择计数
     window.ElectronCloud.UI.updateSelectionCount();
-
-    console.log('[UI] 轨道选择已清除');
 };
 
 // 重置所有场景对象的旋转状态（公共函数，避免重复代码）
@@ -1344,6 +1354,19 @@ window.ElectronCloud.UI.updateAngular3DToggleState = function () {
             angular3dLabel.style.cursor = 'not-allowed';
             angular3dLabel.title = '对比模式下不可用';
         }
+        return;
+    }
+
+    // 【新增】多选模式禁用3D角向形状
+    if (ui.multiselectToggle && ui.multiselectToggle.checked) {
+        ui.angular3dToggle.disabled = true;
+        if (angular3dLabel) {
+            angular3dLabel.style.opacity = '0.5';
+            angular3dLabel.style.cursor = 'not-allowed';
+            angular3dLabel.title = '多选模式下不可用';
+        }
+        // 同步更新轨道轮廓状态
+        window.ElectronCloud.UI.updateContour3DToggleState();
         return;
     }
 
@@ -1586,8 +1609,6 @@ window.ElectronCloud.UI.onCenterLockChange = function () {
         state.controls.target.set(0, 0, 0);
         state.controls.update();
     }
-
-    console.log('[UI] centerLock 状态变更:', locked ? '锁定' : '解锁', ', enablePan:', state.controls.enablePan);
 };
 
 // 处理相位显示开关
@@ -1610,6 +1631,18 @@ window.ElectronCloud.UI.onPhaseToggle = function (event) {
             window.ElectronCloud.Visualization.updatePointColors();
         }
 
+        // 【关键修复】同步更新 baseColors 以确保闪烁模式使用正确的相位颜色
+        if (state.baseColors && state.points.geometry) {
+            const colors = state.points.geometry.attributes.color;
+            if (colors) {
+                const pointCount = state.pointCount || 0;
+                for (let i = 0; i < pointCount * 3; i++) {
+                    state.baseColors[i] = colors.array[i];
+                }
+                state.baseColorsCount = pointCount;
+            }
+        }
+
         // 更新轮廓颜色（如果轮廓已显示）
         if (state.contourOverlay && window.ElectronCloud.Visualization.updateContourOverlay) {
             // 重新生成等值面以应用新颜色
@@ -1619,8 +1652,6 @@ window.ElectronCloud.UI.onPhaseToggle = function (event) {
             window.ElectronCloud.Visualization.createHybridContourOverlays();
         }
     }
-
-    console.log('[UI] 相位显示切换:', state.usePhaseColoring ? '开启' : '关闭');
 };
 
 // 辅助函数：检查并同步 centerLock 状态
@@ -2328,7 +2359,6 @@ window.ElectronCloud.UI.onGestureButtonClick = function () {
             btn.title = '手势控制';
         }
 
-        console.log('[UI] 手势控制已停止');
         return;
     }
 
@@ -2492,8 +2522,6 @@ window.ElectronCloud.UI.startRotationRecording = function () {
     // 【全屏画布方案】画布已经是全屏尺寸，直接录制即可
     const canvas = state.renderer.domElement;
 
-    console.log('录制画布尺寸 (全屏):', canvas.width, 'x', canvas.height);
-
     // 尝试获取支持的 MIME 类型
     let mimeType = 'video/webm;codecs=vp9';
     if (!MediaRecorder.isTypeSupported(mimeType)) {
@@ -2520,9 +2548,6 @@ window.ElectronCloud.UI.startRotationRecording = function () {
         const basePixels = 1920 * 1080;
         let videoBitrate = Math.round(baseBitrate * (pixelCount / basePixels));
         videoBitrate = Math.max(8000000, Math.min(videoBitrate, 30000000));
-
-        console.log('录制参数: 画布尺寸', canvas.width, 'x', canvas.height,
-            ', 像素数:', pixelCount, ', 比特率:', (videoBitrate / 1000000).toFixed(1), 'Mbps');
 
         // 创建 MediaRecorder
         state.mediaRecorder = new MediaRecorder(stream, {
@@ -2553,8 +2578,6 @@ window.ElectronCloud.UI.startRotationRecording = function () {
                 URL.revokeObjectURL(url);
             }, 100);
 
-            console.log('录制完成，视频已保存');
-
             // 提示用户如何使用WebM文件
             setTimeout(() => {
                 alert('视频已保存为 WebM 格式\n\n使用方法：\n• 可直接在浏览器中播放\n• 可上传到 B站、YouTube 等平台\n• 如需转为 MP4，可使用在线工具或 FFmpeg');
@@ -2565,8 +2588,6 @@ window.ElectronCloud.UI.startRotationRecording = function () {
         state.autoRotate.totalAngle = 0;
         state.isRecordingRotation = true;
 
-        console.log('开始录制，累计角度已重置为0，目标:', (Math.PI * 2).toFixed(4), '(一周)');
-
         // 开始录制
         state.mediaRecorder.start(100); // 每100ms收集一次数据
 
@@ -2575,8 +2596,6 @@ window.ElectronCloud.UI.startRotationRecording = function () {
             recordBtn.textContent = '停止';
             recordBtn.classList.add('recording');
         }
-
-        console.log('开始录制旋转视频，等待旋转一周...');
 
     } catch (err) {
         console.error('录制启动失败:', err);
@@ -2603,8 +2622,6 @@ window.ElectronCloud.UI.stopRotationRecording = function () {
         recordBtn.textContent = '录制';
         recordBtn.classList.remove('recording');
     }
-
-    console.log('录制已停止');
 };
 
 // ========== 自定义轨道列表逻辑 ==========
@@ -2953,7 +2970,6 @@ window.ElectronCloud.UI.initModeSwitcher = function () {
                     window.ElectronCloud.UI.updateContour3DToggleState();
                     // 更新杂化轨道按钮
                     window.ElectronCloud.UI.updateHybridOrbitalButtons();
-                    console.log('杂化模式已启用 - 使用波函数线性叠加计算概率密度');
                     break;
             }
         });
@@ -3160,8 +3176,6 @@ window.ElectronCloud.UI.updateHybridOrbitalButtons = function () {
 
         container.appendChild(btn);
     }
-
-    console.log(`杂化面板：生成了 ${numOrbitals} 个轨道按钮`);
 };
 
 /**
@@ -3176,8 +3190,6 @@ window.ElectronCloud.UI.enableHybridOrbitalButtons = function () {
         btn.classList.remove('disabled');
         btn.classList.add('clickable');
     });
-
-    console.log('杂化面板：按钮已启用，可点击控制显示');
 };
 
 /**
@@ -3188,7 +3200,7 @@ window.ElectronCloud.UI.toggleHybridOrbitalVisibility = function (orbitalIndex) 
     const state = window.ElectronCloud.state;
     const container = document.getElementById('hybrid-orbital-controls');
 
-    if (!state.points || !state.hybridOrbitalPointsMap) return;
+    if (!state.points || !state.pointOrbitalIndices) return;
 
     // 切换可见性状态
     state.hybridOrbitalVisibility[orbitalIndex] = !state.hybridOrbitalVisibility[orbitalIndex];
@@ -3206,41 +3218,36 @@ window.ElectronCloud.UI.toggleHybridOrbitalVisibility = function (orbitalIndex) 
         }
     }
 
-    // 获取该轨道的所有点索引
-    const pointIndices = state.hybridOrbitalPointsMap[orbitalIndex] || [];
+    // 【关键修复】使用位置隐藏方式（与比照模式保持一致）
+    // 位置隐藏不会被其他颜色效果覆盖，更加稳定可靠
+    const positions = state.points.geometry.attributes.position.array;
 
-    if (pointIndices.length === 0) {
-        console.warn(`杂化轨道 ${orbitalIndex} 没有采样点`);
-        return;
+    // 如果还没有备份原始位置，先备份
+    if (!state.originalPositions) {
+        state.originalPositions = new Float32Array(positions);
     }
 
-    // 通过修改透明度来隐藏/显示点
-    const colors = state.points.geometry.attributes.color.array;
-    const targetAlpha = isVisible ? 1.0 : 0.0;
+    for (let i = 0; i < state.pointCount; i++) {
+        const pointHybridIdx = state.pointOrbitalIndices[i];
 
-    pointIndices.forEach(pointIndex => {
-        const i3 = pointIndex * 3;
-        // 通过设置颜色为0来"隐藏"点（配合点大小或透明度）
+        // 只处理属于当前切换轨道的点
+        if (pointHybridIdx !== orbitalIndex) continue;
+
+        const i3 = i * 3;
         if (isVisible) {
-            // 恢复原始颜色
-            if (state.baseColors) {
-                colors[i3] = state.baseColors[i3];
-                colors[i3 + 1] = state.baseColors[i3 + 1];
-                colors[i3 + 2] = state.baseColors[i3 + 2];
-            } else {
-                colors[i3] = 1;
-                colors[i3 + 1] = 1;
-                colors[i3 + 2] = 1;
-            }
+            // 显示：恢复原始位置
+            positions[i3] = state.originalPositions[i3];
+            positions[i3 + 1] = state.originalPositions[i3 + 1];
+            positions[i3 + 2] = state.originalPositions[i3 + 2];
         } else {
-            // 设置为全黑来"隐藏"
-            colors[i3] = 0;
-            colors[i3 + 1] = 0;
-            colors[i3 + 2] = 0;
+            // 隐藏：移动到视野外
+            positions[i3] = 10000;
+            positions[i3 + 1] = 10000;
+            positions[i3 + 2] = 10000;
         }
-    });
+    }
 
-    state.points.geometry.attributes.color.needsUpdate = true;
+    state.points.geometry.attributes.position.needsUpdate = true;
 
     // 【同步更新】如果轨道轮廓开关开启，需要更新等值面
     const hybridContourToggle = document.getElementById('hybrid-contour-toggle');
@@ -3248,8 +3255,6 @@ window.ElectronCloud.UI.toggleHybridOrbitalVisibility = function (orbitalIndex) 
         // 触发等值面重新渲染
         hybridContourToggle.dispatchEvent(new Event('change'));
     }
-
-    console.log(`杂化轨道 ${orbitalIndex + 1} ${isVisible ? '显示' : '隐藏'}，影响 ${pointIndices.length} 个点`);
 };
 
 /**

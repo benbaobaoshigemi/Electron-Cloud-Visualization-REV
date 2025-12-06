@@ -55,8 +55,6 @@ window.ElectronCloud.Visualization.createOrbitalMesh = function (group, params, 
     // 【关键】确定网格极点的目标方向（最高次对称轴）
     let symmetryAxis = { x: 0, y: 0, z: 1 };
 
-    console.log('[DEBUG createOrbitalMesh] isHybridMode:', isHybridMode, 'isSingleHybridMode:', isSingleHybridMode, 'hybridIndex:', hybridIndex);
-
     if (isSingleHybridMode) {
         // 单个杂化轨道模式：使用解析算法计算当前 Lobe 的指向
         if (Hydrogen.getHybridLobeAxis) {
@@ -331,7 +329,6 @@ window.ElectronCloud.Visualization.createAngularOverlayFromSamples = function ()
 
 // 导出截图
 window.ElectronCloud.Visualization.exportImage = function () {
-    console.log('exportImage 函数被调用');
     const state = window.ElectronCloud.state;
 
     if (!state || !state.renderer) {
@@ -412,11 +409,8 @@ window.ElectronCloud.Visualization.enableContourHighlight = function () {
     const ui = window.ElectronCloud.ui;
 
     if (!state.points || state.pointCount < 100) {
-        console.log('[Contour] 点数不足，无法显示等值面');
         return;
     }
-
-    console.log('[Contour] 启用等值面高亮，点数:', state.pointCount);
 
     // 标记等值面高亮已启用
     state.contourHighlightEnabled = true;
@@ -438,7 +432,6 @@ window.ElectronCloud.Visualization.enableContourHighlight = function () {
     }
 
     if (orbitalParams.length === 0) {
-        console.log('[Contour] 没有有效的轨道参数');
         return;
     }
 
@@ -467,8 +460,6 @@ window.ElectronCloud.Visualization.enableContourHighlight = function () {
     // 是否为比照模式
     const isCompareMode = ui.compareToggle && ui.compareToggle.checked;
     const usePerPointOrbital = (isCompareMode || isHybridMode) && state.pointOrbitalIndices;
-
-    console.log('[Contour] 开始计算密度和相位...');
 
     // 计算每个点的密度和波函数符号（相位）
     for (let i = 0; i < pointCount; i++) {
@@ -553,8 +544,6 @@ window.ElectronCloud.Visualization.enableContourHighlight = function () {
         }
     }
 
-    console.log('[Contour] 密度排名计算完成，应用高亮效果...');
-
     // 应用等值面高亮效果
     window.ElectronCloud.Visualization.updateContourHighlight();
 };
@@ -624,14 +613,10 @@ window.ElectronCloud.Visualization.updateContourHighlight = function () {
 
     colors.needsUpdate = true;
 
-    console.log('[Contour] 等值面点数:', contourPoints.length);
-
     // 程序化插入更多点（在等值面点之间插值）
     if (contourPoints.length > 100) {
         window.ElectronCloud.Visualization.createContourInterpolationPoints(contourPoints);
     }
-
-    console.log('[Contour] 高亮效果已应用');
 };
 
 /**
@@ -724,8 +709,6 @@ window.ElectronCloud.Visualization.createContourInterpolationPoints = function (
     }
     const avgRadius = sumR / state.pointCount;
 
-    console.log('[Contour] 密度阈值:', densityThreshold, '平均半径:', avgRadius);
-
     // 在球面上均匀采样方向，生成等值面点
     const interpolatedPositions = [];
     const interpolatedColors = [];
@@ -794,8 +777,6 @@ window.ElectronCloud.Visualization.createContourInterpolationPoints = function (
         }
     }
 
-    console.log('[Contour] 使用波函数生成等值面点:', interpolatedPositions.length / 3);
-
     if (interpolatedPositions.length === 0) return;
 
     // 创建点云几何体
@@ -818,8 +799,6 @@ window.ElectronCloud.Visualization.createContourInterpolationPoints = function (
     state.contourInterpolationPoints = new THREE.Points(geometry, material);
     state.contourInterpolationPoints.layers.set(0);
     state.scene.add(state.contourInterpolationPoints);
-
-    console.log('[Contour] 等值面点已添加到场景');
 };
 
 /**
@@ -835,7 +814,6 @@ window.ElectronCloud.Visualization.disableContourHighlight = function () {
         state.contourInterpolationPoints.geometry.dispose();
         state.contourInterpolationPoints.material.dispose();
         state.contourInterpolationPoints = null;
-        console.log('[Contour] 已移除插值点');
     }
 
     if (!state.points || !state.contourBaseColors) {
@@ -855,28 +833,9 @@ window.ElectronCloud.Visualization.disableContourHighlight = function () {
     }
 
     colors.needsUpdate = true;
-    console.log('[Contour] 已恢复原始颜色');
 };
 
 // ==================== 网格等值面 ====================
-
-window.ElectronCloud.Visualization.createContourOverlay = function () {
-    const state = window.ElectronCloud.state;
-    const overlayGroup = new THREE.Group();
-
-    if (!state.points || state.pointCount < 100) {
-        return overlayGroup;
-    }
-
-    const contourRadius = window.ElectronCloud.Visualization.calculate95PercentileRadius();
-
-    if (contourRadius <= 0) {
-        return overlayGroup;
-    }
-
-    window.ElectronCloud.Visualization.createContourMesh(overlayGroup, contourRadius);
-    return overlayGroup;
-};
 
 window.ElectronCloud.Visualization.calculate95PercentileRadius = function () {
     const state = window.ElectronCloud.state;
@@ -888,70 +847,6 @@ window.ElectronCloud.Visualization.calculate95PercentileRadius = function () {
     return sortedRadii[index95];
 };
 
-window.ElectronCloud.Visualization.calculate95PercentileRadiusMap = function (thetaBins = 32, phiBins = 64) {
-    const state = window.ElectronCloud.state;
-    const radiusBins = new Array(thetaBins).fill(null).map(() =>
-        new Array(phiBins).fill(null).map(() => [])
-    );
-
-    if (!state.points || !state.points.geometry) {
-        return null;
-    }
-
-    const positions = state.points.geometry.attributes.position.array;
-
-    for (let i = 0; i < state.pointCount; i++) {
-        const i3 = i * 3;
-        const x = positions[i3];
-        const y = positions[i3 + 1];
-        const z = positions[i3 + 2];
-        const r = Math.sqrt(x * x + y * y + z * z);
-        if (r < 1e-10) continue;
-        const theta = Math.acos(z / r);
-        const phi = Math.atan2(y, x);
-        const thetaIndex = Math.min(thetaBins - 1, Math.floor((theta / Math.PI) * thetaBins));
-        const phiIndex = Math.min(phiBins - 1, Math.floor(((phi + Math.PI) / (2 * Math.PI)) * phiBins));
-        radiusBins[thetaIndex][phiIndex].push(r);
-    }
-
-    const radiusMap = new Array(thetaBins).fill(0).map(() => new Array(phiBins).fill(0));
-    let globalMax = 0;
-
-    for (let i = 0; i < thetaBins; i++) {
-        for (let j = 0; j < phiBins; j++) {
-            const samples = radiusBins[i][j];
-            if (samples.length < 5) {
-                radiusMap[i][j] = -1;
-            } else {
-                samples.sort((a, b) => a - b);
-                const index95 = Math.floor(samples.length * 0.95);
-                radiusMap[i][j] = samples[index95];
-                globalMax = Math.max(globalMax, samples[index95]);
-            }
-        }
-    }
-
-    for (let i = 0; i < thetaBins; i++) {
-        for (let j = 0; j < phiBins; j++) {
-            if (radiusMap[i][j] < 0) {
-                let sum = 0, count = 0;
-                for (let di = -2; di <= 2; di++) {
-                    for (let dj = -2; dj <= 2; dj++) {
-                        const ni = (i + di + thetaBins) % thetaBins;
-                        const nj = (j + dj + phiBins) % phiBins;
-                        if (radiusMap[ni][nj] > 0) {
-                            sum += radiusMap[ni][nj];
-                            count++;
-                        }
-                    }
-                }
-                radiusMap[i][j] = count > 0 ? sum / count : globalMax * 0.8;
-            }
-        }
-    }
-
-    return { radiusMap, thetaBins, phiBins, globalMax };
-};
 /**
  * 创建等值面网格 - 基于 Marching Cubes 算法
  * 每个波瓣生成独立的封闭等值面，自动分离连通域
@@ -1052,8 +947,6 @@ window.ElectronCloud.Visualization.updatePointColors = function () {
 };
 
 window.ElectronCloud.Visualization.createContourMesh = function (group, baseRadius) {
-    console.log('[Contour] Marching Cubes, baseRadius:', baseRadius);
-
     const state = window.ElectronCloud.state;
     const isHybridMode = state.isHybridMode === true;
 
@@ -1109,20 +1002,16 @@ window.ElectronCloud.Visualization.createContourMesh = function (group, baseRadi
     }
     psiValues.sort((a, b) => a - b);
     const isovalue = psiValues[Math.floor(psiValues.length * 0.05)] || 0.0001;
-    console.log('[Contour] isovalue:', isovalue.toFixed(8));
 
     // Marching Cubes - 优化分辨率以兼顾性能和质量
     const bound = baseRadius * 1.3;
     const resolution = 120; // 提升分辨率至 120
     const result = window.MarchingCubes.run(calcPsi, { min: [-bound, -bound, -bound], max: [bound, bound, bound] }, resolution, isovalue);
 
-    console.log('[Contour] 正波瓣:', result.positive.length / 3, '三角形, 负波瓣:', result.negative.length / 3, '三角形');
-
     // 创建网格
     function addLobeMeshes(triangles, color) {
         if (triangles.length < 9) return;
         const components = window.MarchingCubes.separate(triangles);
-        console.log('[Contour] 分离出', components.length, '个连通域');
 
         for (const comp of components) {
             if (comp.length < 9) continue;

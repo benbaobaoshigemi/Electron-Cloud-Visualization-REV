@@ -1141,3 +1141,300 @@ window.ElectronCloud.Sampling.resetHybridCache = function () {
     }
     console.log('杂化模式：缓存已重置');
 };
+
+// 滚动生成更新逻辑
+window.ElectronCloud.Sampling.performRollingUpdate = function () {
+    const state = window.ElectronCloud.state;
+    const ui = window.ElectronCloud.ui;
+    const constants = window.ElectronCloud.constants;
+
+    // 基本检查
+    if (!state.points || state.pointCount < 100) return;
+
+    // 每帧更新千分之一的点
+    const pointsToUpdate = Math.max(1, Math.floor(state.pointCount / 100)); // 1%
+
+    // 获取必要的数据引用
+    const positions = state.points.geometry.attributes.position.array;
+    const colors = state.points.geometry.attributes.color.array;
+
+    // 确定当前模式
+    const isHybridMode = state.isHybridMode;
+    const isMultiselectMode = ui.multiselectToggle && ui.multiselectToggle.checked;
+    const isCompareMode = ui.compareToggle && ui.compareToggle.checked;
+    const isIndependentMode = !isHybridMode && (isCompareMode || isMultiselectMode);
+
+    // 获取轨道参数列表
+    let paramsList = state.currentOrbitals.map(k => Hydrogen.orbitalParamsFromKey(k)).filter(Boolean);
+    if (!paramsList.length) return;
+
+    const now = performance.now();
+
+    // 杂化模式预处理
+    let hybridCoeffs = null;
+    let hybridNumOrbitals = 0;
+    if (isHybridMode) {
+        if (Hydrogen.sortOrbitalsForHybridization) {
+            paramsList = Hydrogen.sortOrbitalsForHybridization(paramsList);
+        }
+        hybridNumOrbitals = paramsList.length;
+        const matrix = Hydrogen.getHybridCoefficients(hybridNumOrbitals);
+        // 我们只在循环里取需要的系数
+        hybridCoeffs = matrix;
+    }
+
+    for (let k = 0; k < pointsToUpdate; k++) {
+        // 1. 随机选择一个要被替换的点
+        const targetIndex = Math.floor(Math.random() * state.pointCount);
+
+        // 【关键修复】跳过属于隐藏轨道的点，防止隐藏轨道的点被"蚕食"
+        if (state.pointOrbitalIndices) {
+            const checkOrbitalIdx = state.pointOrbitalIndices[targetIndex];
+
+            if (isHybridMode && state.hybridOrbitalVisibility) {
+                // 杂化模式：检查该点所属的轨道是否被隐藏
+                if (checkOrbitalIdx !== undefined &&
+                    state.hybridOrbitalVisibility[checkOrbitalIdx] === false) {
+                    continue; // 跳过，不替换隐藏轨道的点
+                }
+            } else if (isIndependentMode && state.orbitalVisibility && state.currentOrbitals) {
+                // 独立模式：检查该点所属的轨道是否被隐藏
+                const checkKey = state.currentOrbitals[checkOrbitalIdx];
+                if (checkKey && state.orbitalVisibility[checkKey] === false) {
+                    continue; // 跳过，不替换隐藏轨道的点
+                }
+            }
+        }
+
+        // 【关键修复】更新映射表（在覆盖前移除旧映射）
+        if (state.pointOrbitalIndices) {
+            const oldOrbitalIdx = state.pointOrbitalIndices[targetIndex];
+
+            if (isHybridMode && state.hybridOrbitalPointsMap) {
+                // 杂化模式：从旧的杂化轨道map中移除
+                // oldOrbitalIdx 直接是杂化轨道索引 (0, 1, ...)
+                if (oldOrbitalIdx !== undefined && oldOrbitalIdx >= 0) {
+                    const arr = state.hybridOrbitalPointsMap[oldOrbitalIdx];
+                    if (arr) {
+                        const idxInMap = arr.indexOf(targetIndex);
+                        if (idxInMap !== -1) arr.splice(idxInMap, 1);
+                    }
+                }
+            } else if (isIndependentMode && state.orbitalPointsMap) {
+                // 普通独立模式（比照/多选）：从旧的轨道map中移除
+                if (oldOrbitalIdx !== undefined && oldOrbitalIdx >= 0 &&
+                    state.currentOrbitals && oldOrbitalIdx < state.currentOrbitals.length) {
+                    const oldKey = state.currentOrbitals[oldOrbitalIdx];
+                    const oldMap = state.orbitalPointsMap[oldKey];
+                    if (oldMap) {
+                        const idxInMap = oldMap.indexOf(targetIndex);
+                        if (idxInMap !== -1) {
+                            try {
+                                oldMap.splice(idxInMap, 1);
+                            } catch (e) {
+                                // 忽略潜在错误
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. 准备采样
+        let x, y, z, r, theta, phi;
+        let orbitalIndex = 0;
+        let orbitalKey = null;
+        let currentCoeffs = null; // 杂化系数
+
+        if (isHybridMode) {
+            // 【杂化采样】
+            // 【关键修复】只为可见的轨道生成新点
+            // 先收集所有可见的轨道索引
+            const visibleHybridOrbitals = [];
+            for (let h = 0; h < hybridNumOrbitals; h++) {
+                if (!state.hybridOrbitalVisibility || state.hybridOrbitalVisibility[h] !== false) {
+                    visibleHybridOrbitals.push(h);
+                }
+            }
+
+            // 如果没有可见的轨道，跳过此次采样
+            if (visibleHybridOrbitals.length === 0) continue;
+
+            // 从可见轨道中随机选择一个
+            orbitalIndex = visibleHybridOrbitals[Math.floor(Math.random() * visibleHybridOrbitals.length)];
+            currentCoeffs = hybridCoeffs[orbitalIndex];
+
+            // 注入系数
+            const paramsWithCoeffs = paramsList.map((p, i) => ({
+                ...p,
+                coefficient: currentCoeffs[i]
+            }));
+
+            const result = Hydrogen.hybridPreciseSample(paramsWithCoeffs, state.samplingBoundary);
+            if (!result || !result.accepted) continue;
+            ({ x, y, z, r, theta, phi } = result);
+            orbitalKey = state.currentOrbital;
+        } else {
+            // 【普通采样】
+            // 【关键修复】独立模式下也只为可见轨道生成新点
+            if (isIndependentMode) {
+                // 收集可见轨道
+                const visibleOrbitals = [];
+                for (let o = 0; o < paramsList.length; o++) {
+                    const key = state.currentOrbitals[o];
+                    if (!state.orbitalVisibility || state.orbitalVisibility[key] !== false) {
+                        visibleOrbitals.push(o);
+                    }
+                }
+
+                // 如果没有可见轨道，跳过
+                if (visibleOrbitals.length === 0) continue;
+
+                orbitalIndex = visibleOrbitals[Math.floor(Math.random() * visibleOrbitals.length)];
+            } else {
+                orbitalIndex = 0;
+            }
+
+            const p = paramsList[orbitalIndex];
+            orbitalKey = state.currentOrbitals[orbitalIndex];
+
+            const result = Hydrogen.importanceSample(p.n, p.l, p.angKey, state.samplingBoundary);
+            if (!result || !result.accepted) continue;
+            ({ x, y, z, r, theta, phi } = result);
+        }
+
+        // 3. 更新位置
+        const i3 = targetIndex * 3;
+        positions[i3] = x;
+        positions[i3 + 1] = y;
+        positions[i3 + 2] = z;
+
+        // 【关键修复】同步更新 originalPositions（用于位置隐藏方式的恢复）
+        if (state.originalPositions) {
+            state.originalPositions[i3] = x;
+            state.originalPositions[i3 + 1] = y;
+            state.originalPositions[i3 + 2] = z;
+        }
+
+        // 【关键修复】更新新映射
+        if (state.pointOrbitalIndices) {
+            // 杂化模式下 orbitalIndex 是 hybridIndex
+            // 独立模式下 orbitalIndex 是 paramsList index
+            const newIndexToStore = isHybridMode ? orbitalIndex : (isIndependentMode ? orbitalIndex : 0);
+            state.pointOrbitalIndices[targetIndex] = newIndexToStore;
+        }
+
+        if (isIndependentMode && state.orbitalPointsMap && orbitalKey) {
+            if (!state.orbitalPointsMap[orbitalKey]) state.orbitalPointsMap[orbitalKey] = [];
+            state.orbitalPointsMap[orbitalKey].push(targetIndex);
+        }
+
+        if (isHybridMode && state.hybridOrbitalPointsMap) {
+            if (!state.hybridOrbitalPointsMap[orbitalIndex]) state.hybridOrbitalPointsMap[orbitalIndex] = [];
+            state.hybridOrbitalPointsMap[orbitalIndex].push(targetIndex);
+        }
+
+        // 4. 计算颜色
+        let r_color, g_color, b_color;
+
+        if (isIndependentMode && !isMultiselectMode) {
+            // 比照模式
+            if (orbitalIndex < constants.compareColors.length) {
+                const c = constants.compareColors[orbitalIndex].value;
+                r_color = c[0]; g_color = c[1]; b_color = c[2];
+            } else {
+                r_color = 1; g_color = 1; b_color = 1;
+            }
+        } else {
+            // 相位颜色
+            const phaseOn = state.usePhaseColoring;
+            let sign = 0;
+
+            if (phaseOn) {
+                if (isHybridMode) {
+                    // 杂化相位计算
+                    let psi = 0;
+                    for (let i = 0; i < paramsList.length; i++) {
+                        const p = paramsList[i];
+                        const coeff = currentCoeffs[i];
+                        const R = Hydrogen.radialR(p.n, p.l, r);
+                        const Y = Hydrogen.realYlm_value(p.angKey.l, p.angKey.m, p.angKey.t, theta, phi);
+                        psi += coeff * R * Y;
+                    }
+                    sign = psi > 0 ? 1 : -1;
+                } else if (isMultiselectMode) {
+                    const p = paramsList[orbitalIndex];
+                    const R = Hydrogen.radialR(p.n, p.l, r);
+                    const Y = Hydrogen.realYlm_value(p.angKey.l, p.angKey.m, p.angKey.t, theta, phi);
+                    const psi = R * Y;
+                    sign = psi > 0 ? 1 : -1;
+                } else {
+                    let psi = 0;
+                    for (const p of paramsList) {
+                        const R = Hydrogen.radialR(p.n, p.l, r);
+                        const Y = Hydrogen.realYlm_value(p.angKey.l, p.angKey.m, p.angKey.t, theta, phi);
+                        psi += R * Y;
+                    }
+                    sign = psi > 0 ? 1 : -1;
+                }
+            }
+
+            // 【修正】用户反馈相位反转，因此这里反转颜色逻辑
+            if (sign > 0) { r_color = 1; g_color = 0; b_color = 0; } // 改为红色
+            else if (sign < 0) { r_color = 0; g_color = 0; b_color = 1; } // 改为蓝色
+            else { r_color = 1; g_color = 1; b_color = 1; }
+        }
+
+        // 【关键修复】可见性检查
+        // 如果轨道被隐藏，则强制颜色为不可见（黑/透明），且不触发高亮
+        let isVisible = true;
+        if (isHybridMode && state.hybridOrbitalVisibility) {
+            // 杂化模式：检查杂化轨道索引对应的可见性
+            if (state.hybridOrbitalVisibility[orbitalIndex] === false) {
+                isVisible = false;
+            }
+        } else if (state.orbitalVisibility && orbitalKey) {
+            // 普通模式：检查轨道key对应的可见性
+            if (state.orbitalVisibility[orbitalKey] === false) {
+                isVisible = false;
+            }
+        }
+
+        if (!isVisible) {
+            // 设为黑色 (配合 AdditiveBlending)
+            r_color = 0; g_color = 0; b_color = 0;
+        }
+
+        // 同步 baseColors
+        if (state.baseColors) {
+            state.baseColors[i3] = r_color;
+            state.baseColors[i3 + 1] = g_color;
+            state.baseColors[i3 + 2] = b_color;
+        }
+
+        // 写入当前颜色（下一帧高亮前会短暂显示这个颜色，或者被高亮直接覆盖）
+        colors[i3] = r_color;
+        colors[i3 + 1] = g_color;
+        colors[i3 + 2] = b_color;
+
+        // 6. 注册高亮
+        // 【关键修复】只有可见的点才高亮
+        if (isVisible && state.rollingMode.highlightedPoints) {
+            state.rollingMode.highlightedPoints.push({
+                index: targetIndex,
+                startTime: now
+            });
+        }
+
+        // 7. 更新统计数据（确保图表能反映实时变化）
+        if (state.radialSamples && targetIndex < state.radialSamples.length) {
+            state.radialSamples[targetIndex] = r;
+        }
+        if (state.angularSamples && targetIndex < state.angularSamples.length) {
+            state.angularSamples[targetIndex] = theta;
+        }
+    }
+
+    state.points.geometry.attributes.position.needsUpdate = true;
+    state.points.geometry.attributes.color.needsUpdate = true;
+};

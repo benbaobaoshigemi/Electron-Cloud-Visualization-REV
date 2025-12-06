@@ -155,6 +155,17 @@ window.ElectronCloud.Orbital.startDrawing = function () {
         hybridContourToggle.disabled = true;
     }
 
+    // 【新增】采样过程中禁用相位显示开关
+    const phaseToggle = document.getElementById('phase-toggle');
+    if (phaseToggle) {
+        phaseToggle.disabled = true;
+        const phaseBox = document.getElementById('phase-box');
+        if (phaseBox) {
+            phaseBox.classList.add('disabled');
+            phaseBox.title = '采样过程中不可切换';
+        }
+    }
+
     // 更新角向分布叠加
     const angular3dToggle = ui.angular3dToggle;
     if (angular3dToggle && angular3dToggle.checked) {
@@ -269,6 +280,17 @@ window.ElectronCloud.Orbital.clearDrawing = function () {
         }
         // 确保开关重新启用
         hybridContourToggle.disabled = false;
+    }
+
+    // 【新增】清除绘制时，重新启用相位显示开关
+    const phaseToggle = document.getElementById('phase-toggle');
+    if (phaseToggle) {
+        phaseToggle.disabled = false;
+        const phaseBox = document.getElementById('phase-box');
+        if (phaseBox) {
+            phaseBox.classList.remove('disabled');
+            phaseBox.title = '';
+        }
     }
 
     console.log('清除绘制');

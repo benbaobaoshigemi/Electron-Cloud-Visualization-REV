@@ -958,6 +958,127 @@ window.ElectronCloud.Scene.animate = function () {
 
     state.controls.update();
 
+    // 【新增】滚动生成模式更新
+    if (state.rollingMode && state.rollingMode.enabled && state.samplingCompleted) {
+        if (window.ElectronCloud.Sampling.performRollingUpdate) {
+            window.ElectronCloud.Sampling.performRollingUpdate();
+
+            // 【新增】定期刷新图表（每200ms）
+            const now = performance.now();
+            if (now - (state.rollingMode.lastUpdateTime || 0) > 200) {
+                // 更新图表数据源
+                if (window.ElectronCloud.Orbital.updateBackgroundChartData) {
+                    window.ElectronCloud.Orbital.updateBackgroundChartData();
+                }
+                // 重绘图表
+                if (window.ElectronCloud.Orbital.drawProbabilityChart) {
+                    window.ElectronCloud.Orbital.drawProbabilityChart(true);
+                }
+                state.rollingMode.lastUpdateTime = now;
+            }
+        }
+    }
+
+    // 【新增】处理新生成点的高亮效果（半秒内高亮）
+    // 放在这里是为了覆盖闪烁模式的颜色修改
+    if (state.rollingMode && state.rollingMode.highlightedPoints && state.rollingMode.highlightedPoints.length > 0) {
+        const now = performance.now();
+        const duration = 500; // 500ms 高亮持续时间
+        const points = state.rollingMode.highlightedPoints;
+        const colors = state.points.geometry.attributes.color;
+
+        if (colors) {
+            const colorArray = colors.array;
+            let hasActiveHighlights = false;
+
+            // 从后向前遍历方便删除
+            for (let i = points.length - 1; i >= 0; i--) {
+                const hp = points[i];
+                const age = now - hp.startTime;
+
+                if (age >= duration) {
+                    // 高亮结束，恢复原始颜色（从 baseColors）
+                    // 【关键修复】恢复前检查轨道可见性
+                    const i3 = hp.index * 3;
+                    let shouldBeBlack = false;
+
+                    if (state.isHybridMode && state.hybridOrbitalVisibility && state.pointOrbitalIndices) {
+                        const hybridIdx = state.pointOrbitalIndices[hp.index];
+                        if (hybridIdx !== undefined && state.hybridOrbitalVisibility[hybridIdx] === false) {
+                            shouldBeBlack = true;
+                        }
+                    } else if (state.orbitalVisibility && state.pointOrbitalIndices && state.currentOrbitals) {
+                        const orbIdx = state.pointOrbitalIndices[hp.index];
+                        if (orbIdx !== undefined && orbIdx >= 0 && orbIdx < state.currentOrbitals.length) {
+                            const orbKey = state.currentOrbitals[orbIdx];
+                            if (state.orbitalVisibility[orbKey] === false) {
+                                shouldBeBlack = true;
+                            }
+                        }
+                    }
+
+                    if (shouldBeBlack) {
+                        colorArray[i3] = 0;
+                        colorArray[i3 + 1] = 0;
+                        colorArray[i3 + 2] = 0;
+                    } else if (state.baseColors) {
+                        colorArray[i3] = state.baseColors[i3];
+                        colorArray[i3 + 1] = state.baseColors[i3 + 1];
+                        colorArray[i3 + 2] = state.baseColors[i3 + 2];
+                    }
+                    // 移除该点
+                    points.splice(i, 1);
+                } else {
+                    // 计算高亮颜色：从白色(1,1,1)过渡到原始颜色
+                    const t = age / duration; // 0 -> 1
+
+                    const i3 = hp.index * 3;
+
+                    // 【关键修复】检查点所属轨道的可见性
+                    // 如果轨道被隐藏，跳过高亮，直接设为黑色
+                    let isPointHidden = false;
+                    if (state.isHybridMode && state.hybridOrbitalVisibility && state.pointOrbitalIndices) {
+                        const hybridIdx = state.pointOrbitalIndices[hp.index];
+                        if (hybridIdx !== undefined && state.hybridOrbitalVisibility[hybridIdx] === false) {
+                            isPointHidden = true;
+                        }
+                    } else if (state.orbitalVisibility && state.pointOrbitalIndices && state.currentOrbitals) {
+                        const orbIdx = state.pointOrbitalIndices[hp.index];
+                        if (orbIdx !== undefined && orbIdx >= 0 && orbIdx < state.currentOrbitals.length) {
+                            const orbKey = state.currentOrbitals[orbIdx];
+                            if (state.orbitalVisibility[orbKey] === false) {
+                                isPointHidden = true;
+                            }
+                        }
+                    }
+
+                    if (isPointHidden) {
+                        colorArray[i3] = 0;
+                        colorArray[i3 + 1] = 0;
+                        colorArray[i3 + 2] = 0;
+                        continue;
+                    }
+
+                    const baseR = state.baseColors ? state.baseColors[i3] : colorArray[i3];
+                    const baseG = state.baseColors ? state.baseColors[i3 + 1] : colorArray[i3 + 1];
+                    const baseB = state.baseColors ? state.baseColors[i3 + 2] : colorArray[i3 + 2];
+
+                    // 混合白色和底色 (t=0 -> white, t=1 -> base)
+                    // 高亮时不考虑透明度，直接给最亮
+                    colorArray[i3] = 1.0 * (1 - t) + baseR * t;
+                    colorArray[i3 + 1] = 1.0 * (1 - t) + baseG * t;
+                    colorArray[i3 + 2] = 1.0 * (1 - t) + baseB * t;
+
+                    hasActiveHighlights = true;
+                }
+            }
+
+            if (hasActiveHighlights || points.length > 0) { // 只要有点被处理了就需要更新
+                colors.needsUpdate = true;
+            }
+        }
+    }
+
     // 根据辉光状态选择渲染方式
     if (state.bloomEnabled && state.composer) {
         // 先隐藏坐标轴（不参与bloom）
@@ -1004,6 +1125,17 @@ window.ElectronCloud.Scene.onSamplingCompleted = function () {
 
     state.samplingCompleted = true;
     state.renderingCompleted = true;
+
+    // 【新增】如果预设了滚动生成模式，现在生效
+    if (state.rollingMode.pendingEnabled) {
+        state.rollingMode.enabled = true;
+        state.rollingMode.pendingEnabled = false;
+        // 更新按钮状态，确保 UI 同步
+        const rollingFeatureBox = document.getElementById('rolling-feature-box');
+        if (rollingFeatureBox) {
+            rollingFeatureBox.classList.add('active');
+        }
+    }
 
     // 更新坐标轴滑动条状态（采样完成后可修改）
     window.ElectronCloud.UI.updateAxesSizeRangeState();
@@ -1069,6 +1201,17 @@ window.ElectronCloud.Scene.onSamplingCompleted = function () {
     const hybridContourToggle = document.getElementById('hybrid-contour-toggle');
     if (hybridContourToggle) {
         hybridContourToggle.disabled = false;
+    }
+
+    // 【新增】采样完成，重新启用相位显示开关
+    const phaseToggle = document.getElementById('phase-toggle');
+    if (phaseToggle) {
+        phaseToggle.disabled = false;
+        const phaseBox = document.getElementById('phase-box');
+        if (phaseBox) {
+            phaseBox.classList.remove('disabled');
+            phaseBox.title = '';
+        }
     }
 };
 

@@ -143,10 +143,10 @@ v2.1 版本带来了全面的 UI 视觉升级，提升了用户交互体验和�
 
 ## 📚 相关文档
 
-- **README.md** - 项目介绍和快速开始
-- **USAGE_GUIDE.md** - 详细使用指南（手势控制、坐标系控制等）
-- **ALGORITHMS.md** - 算法工程文档（量子力学计算、采样算法等）
-- **CHANGELOG.md** - 完整更新日志
+- [README.md](README.md) - 项目介绍和快速开始
+- [USAGE_GUIDE.md](USAGE_GUIDE.md) - 详细使用指南（手势控制、坐标系控制等）
+- [ALGORITHMS.md](ALGORITHMS.md) - 算法工程文档（量子力学计算、采样算法等）
+- [CHANGELOG.md](CHANGELOG.md) - 完整更新日志
 
 ---
 

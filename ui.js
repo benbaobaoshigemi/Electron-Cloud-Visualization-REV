@@ -1,4 +1,4 @@
-// UI 控件交互模块
+﻿// UI 控件交互模块
 window.ElectronCloud = window.ElectronCloud || {};
 window.ElectronCloud.UI = {};
 
@@ -724,6 +724,96 @@ window.ElectronCloud.UI.init = function () {
     if (phaseToggle) {
         phaseToggle.addEventListener('change', window.ElectronCloud.UI.onPhaseToggle);
     }
+
+    // ==================== 原子选择器 ====================
+    const atomSettingsBtn = document.getElementById('atom-settings-btn');
+    const atomSubmenu = document.getElementById('atom-submenu');
+    const atomFeatureBox = document.getElementById('atom-feature-box');
+
+    if (atomSettingsBtn && atomSubmenu) {
+        // 设置按钮点击：展开/收起子面板
+        atomSettingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const state = window.ElectronCloud.state;
+
+            // 渲染中或已完成时禁用
+            if (state.isDrawing || state.pointCount > 0) {
+                return;
+            }
+
+            // 切换子面板显示
+            const isVisible = atomSubmenu.classList.contains('visible');
+            closeAllSubmenus();
+            if (!isVisible) {
+                // 获取实验面板的位置（与闪烁模式相同的定位逻辑）
+                const experimentalPanel = document.getElementById('experimental-panel');
+                const panelRect = experimentalPanel ? experimentalPanel.getBoundingClientRect() : null;
+                const btnRect = atomSettingsBtn.getBoundingClientRect();
+
+                // 二级菜单定位在面板左侧，完全不重叠
+                atomSubmenu.style.top = btnRect.top + 'px';
+                atomSubmenu.style.right = 'auto';
+                atomSubmenu.style.left = 'auto';
+                if (panelRect) {
+                    // 定位在面板左边缘的左侧，留出10px间距
+                    atomSubmenu.style.right = (window.innerWidth - panelRect.left + 10) + 'px';
+                } else {
+                    atomSubmenu.style.right = (window.innerWidth - btnRect.left + 10) + 'px';
+                }
+                atomSubmenu.classList.add('visible');
+                atomSettingsBtn.classList.add('active');
+            }
+        });
+    }
+
+    // 原子下拉选择框事件
+    const atomSelect = document.getElementById('atom-select');
+    if (atomSelect) {
+        atomSelect.addEventListener('change', function () {
+            const atomSymbol = this.value;
+            const state = window.ElectronCloud.state;
+
+            // 渲染中或已完成时禁用
+            if (state.isDrawing || state.pointCount > 0) {
+                this.value = state.currentAtom; // 恢复原值
+                return;
+            }
+
+            // 更新显示
+            const currentLabel = document.getElementById('current-atom-label');
+            if (currentLabel) currentLabel.textContent = atomSymbol;
+
+            // 更新状态
+            state.currentAtom = atomSymbol;
+
+            // 更新原子信息显示
+            const atomInfo = document.getElementById('atom-info');
+            if (atomInfo && window.SlaterBasis && window.SlaterBasis[atomSymbol]) {
+                const atom = window.SlaterBasis[atomSymbol];
+                atomInfo.textContent = `基态: ${atom.groundState}`;
+            }
+
+            // TODO: 更新轨道选择器为该原子可用的轨道
+            console.log('选择原子:', atomSymbol);
+        });
+    }
+
+    // 更新原子选择器禁用状态的函数
+    window.ElectronCloud.UI.updateAtomSelectorState = function () {
+        const state = window.ElectronCloud.state;
+        const atomSettingsBtn = document.getElementById('atom-settings-btn');
+        const atomFeatureBox = document.getElementById('atom-feature-box');
+        const isDisabled = state.isDrawing || state.pointCount > 0;
+
+        if (atomSettingsBtn) {
+            atomSettingsBtn.disabled = isDisabled;
+            atomSettingsBtn.style.opacity = isDisabled ? '0.5' : '1';
+        }
+        if (atomFeatureBox) {
+            atomFeatureBox.style.opacity = isDisabled ? '0.5' : '1';
+            atomFeatureBox.style.pointerEvents = isDisabled ? 'none' : 'auto';
+        }
+    };
 
 };
 

@@ -17,6 +17,7 @@ window.ElectronCloud.state = {
     // 轨道状态
     currentOrbital: '1s',
     currentOrbitals: ['1s'],
+    currentAtom: 'H', // 当前选择的原子类型（默认氢）
 
     // 采样状态
     animationFrameId: null,

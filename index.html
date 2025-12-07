@@ -81,6 +81,14 @@
                         <input type="checkbox" id="rolling-mode-toggle" style="display:none" />
                     </div>
                 </div>
+                <!-- 原子选择：功能框 -->
+                <div class="feature-row">
+                    <button id="atom-settings-btn" class="feature-settings-btn" title="选择原子类型">⚙</button>
+                    <div id="atom-feature-box" class="feature-box">
+                        <span class="feature-name">原子类型</span>
+                        <span id="current-atom-label" class="feature-value">H</span>
+                    </div>
+                </div>
                 <div class="control-group action-buttons">
                     <button id="gesture-control-btn" title="手势控制 (渲染完成后可用)" disabled>
                         <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2"
@@ -132,6 +140,31 @@
                     <option value="black" selected>黑色</option>
                     <option value="transparent">透明</option>
                 </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 原子选择二级面板 -->
+    <div id="atom-submenu" class="submenu-panel right-side">
+        <div class="submenu-header">选择原子类型</div>
+        <div class="submenu-body">
+            <div class="control-group">
+                <label>原子</label>
+                <select id="atom-select">
+                    <option value="H" selected>H - 氢</option>
+                    <option value="He">He - 氦</option>
+                    <option value="Li">Li - 锂</option>
+                    <option value="Be">Be - 铍</option>
+                    <option value="B">B - 硼</option>
+                    <option value="C">C - 碳</option>
+                    <option value="N">N - 氮</option>
+                    <option value="O">O - 氧</option>
+                    <option value="F">F - 氟</option>
+                    <option value="Ne">Ne - 氖</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <small id="atom-info" style="color: #888;">基态: 1s¹</small>
             </div>
         </div>
     </div>
@@ -385,6 +418,7 @@
     <script src="physics.js"></script>
     <script src="marching_cubes.js"></script>
     <script src="data_panel.js"></script>
+    <script src="slater_basis.js"></script>
     <!-- 模块化脚本文件 -->
     <script src="core.js?v=22"></script>
     <script src="scene.js?v=22"></script>

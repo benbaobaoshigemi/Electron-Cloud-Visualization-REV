@@ -1109,6 +1109,7 @@ window.ElectronCloud.Visualization.updateContourOverlay = function () {
 
     state.scene.add(state.contourOverlay);
 };
+
 /**
  * 创建杂化轨道的独立等值面轮廓（每个轨道一个）
  * 只为可见的轨道创建等值面
@@ -1139,7 +1140,8 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
 
     if (!coeffMatrix) return overlays;
 
-    // 使用 estimateOrbitalRadius95 计算正确的轨道边界
+    // 【关键修复】使用 estimateOrbitalRadius95 计算正确的轨道边界
+    // 而不是 state.farthestDistance（可能是旧原子的遗留值）
     let estimatedRadius = 15; // 默认值
     if (Hydrogen.estimateOrbitalRadius95) {
         for (const key of orbitals) {
@@ -1157,6 +1159,45 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
         { r: 0.8, g: 1.0, b: 0.2 },   // 黄绿色
         { r: 0.2, g: 1.0, b: 1.0 },   // 青色
     ];
+
+    // 【关键修复】为所有杂化轨道计算统一的 isovalue
+    // 由于 sp 杂化的轨道是等价的（只是方向相反），应该使用相同的阈值
+    let unifiedIsovalue = 0.0001;
+    const positions = state.points.geometry.attributes.position.array;
+    const allPsiValues = [];
+
+    // 收集所有杂化轨道点的 psi 值
+    for (let hybridIndex = 0; hybridIndex < numOrbitals; hybridIndex++) {
+        const pointIndices = state.hybridOrbitalPointsMap[hybridIndex] || [];
+        const coeffs = coeffMatrix[hybridIndex];
+
+        for (const pointIdx of pointIndices) {
+            const i3 = pointIdx * 3;
+            const x = positions[i3];
+            const y = positions[i3 + 1];
+            const z = positions[i3 + 2];
+            const r = Math.sqrt(x * x + y * y + z * z);
+            if (r < 1e-10) continue;
+            const theta = Math.acos(Math.max(-1, Math.min(1, z / r)));
+            const phi = Math.atan2(y, x);
+
+            let psi = 0;
+            for (let j = 0; j < orbitalParams.length; j++) {
+                const op = orbitalParams[j];
+                const R = Hydrogen.radialWavefunction(op.n, op.l, r, 1, 1, atomType);
+                const Y = Hydrogen.realYlm_value(op.angKey.l, op.angKey.m, op.angKey.t, theta, phi);
+                psi += coeffs[j] * R * Y;
+            }
+            allPsiValues.push(Math.abs(psi));
+        }
+    }
+
+    // 计算统一的 95% 分位数阈值
+    if (allPsiValues.length >= 100) {
+        allPsiValues.sort((a, b) => b - a);  // 从大到小排序
+        // 取第 95% 位置的值（即只有 5% 的点的 |ψ| 低于此阈值）
+        unifiedIsovalue = allPsiValues[Math.floor(allPsiValues.length * 0.95)] || 0.0001;
+    }
 
     // 为每个可见的杂化轨道创建等值面
     for (let hybridIndex = 0; hybridIndex < numOrbitals; hybridIndex++) {
@@ -1177,7 +1218,8 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
             coeffMatrix[hybridIndex],
             hybridIndex,
             pointIndices,
-            colors[hybridIndex % colors.length]
+            colors[hybridIndex % colors.length],
+            unifiedIsovalue  // 传入统一的 isovalue
         );
 
         if (overlay) {
@@ -1212,7 +1254,7 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
 
         // 计算该轨道点的95%分位密度阈值
         const positions = state.points.geometry.attributes.position.array;
-        const rawPsiValues = [];  // 带符号的原始值
+        const psiValues = [];
         let maxR = 0;
 
         for (const pointIdx of pointIndices) {
@@ -1224,45 +1266,25 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
             if (r > maxR) maxR = r;
 
             // 计算此处的 psi
-            const psi = calcPsi(x, y, z);
-            rawPsiValues.push(psi);
+            psiValues.push(Math.abs(calcPsi(x, y, z)));
         }
 
-        if (rawPsiValues.length < 50) return null;
+        if (psiValues.length < 50) return null;
 
-        // 【关键修复】分别计算正负波瓣的 95% 阈值
-        const posValues = rawPsiValues.filter(v => v > 0).sort((a, b) => b - a); // 降序 (大->小)
-        const negValues = rawPsiValues.filter(v => v < 0).map(v => Math.abs(v)).sort((a, b) => b - a); // 绝对值降序
-
-        // 正瓣阈值
-        const isovaluePos = posValues.length > 10
-            ? posValues[Math.floor(posValues.length * 0.95)]
-            : 0.0001;
-
-        // 负瓣阈值
-        const isovalueNeg = negValues.length > 10
-            ? negValues[Math.floor(negValues.length * 0.95)]
-            : 0.0001;
-
-        // 【调试】验证包裹点数
-        const posPoints = posValues.length;
-        const negPoints = negValues.length;
-        const posInside = rawPsiValues.filter(v => v >= isovaluePos).length;
-        const negInside = rawPsiValues.filter(v => v <= -isovalueNeg).length;
-
-        console.log(`[DEBUG 等值面] hybridIndex=${hybridIndex}:`);
-        console.log(`  正瓣: 总点数=${posPoints}, 阈值=${isovaluePos.toExponential(4)}, 被包裹=${posInside} (${(posPoints > 0 ? posInside / posPoints * 100 : 0).toFixed(1)}%)`);
-        console.log(`  负瓣: 总点数=${negPoints}, 阈值=${isovalueNeg.toExponential(4)}, 被包裹=${negInside} (${(negPoints > 0 ? negInside / negPoints * 100 : 0).toFixed(1)}%)`);
-        console.log(`  maxR=${maxR.toFixed(2)}, estimatedRadius=${estimatedRadius.toFixed(2)}, bound=${Math.max(maxR, estimatedRadius) * 1.5}`);
+        psiValues.sort((a, b) => b - a);  // 从大到小排序
+        // 95% 等值面：取第 95% 位置的值（即只有 5% 的点的 |ψ| 低于此阈值）
+        // 等值面将包围内层 95% 的点
+        const isovalue = psiValues[Math.floor(psiValues.length * 0.95)] || 0.0001;
 
         // Marching Cubes
+        // 【关键修复】使用该杂化轨道点的实际最远距离 maxR
+        // 而非 state.farthestDistance（可能是旧值或其他轨道的值）
         const bound = Math.max(maxR, estimatedRadius) * 1.5;
-        const resolution = 100;
+        const resolution = 100; // 降低分辨率以提升性能
 
-        // 传入非对称阈值对象
-        const isovalues = { positive: isovaluePos, negative: isovalueNeg };
-        const result = window.MarchingCubes.run(calcPsi, { min: [-bound, -bound, -bound], max: [bound, bound, bound] }, resolution, isovalues);
+        const result = window.MarchingCubes.run(calcPsi, { min: [-bound, -bound, -bound], max: [bound, bound, bound] }, resolution, isovalue);
 
+        // 添加网格
         // 添加网格
         function addLobeMeshes(triangles, meshColor) {
             if (triangles.length < 9) return;

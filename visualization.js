@@ -1175,7 +1175,7 @@ window.ElectronCloud.Visualization.createCompareContourMeshes = function (group,
 
         // Marching Cubes
         const bound = baseRadius * 1.3;
-        const resolution = 100; // 略低分辨率以提升性能（多个轮廓）
+        const resolution = 200; // 与单轨模式一致或更高，确保线框细腻
 
         const result = window.MarchingCubes.run(
             calcPsi,
@@ -1423,7 +1423,7 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
         // 【关键修复】使用该杂化轨道点的实际最远距离 maxR
         // 而非 state.farthestDistance（可能是旧值或其他轨道的值）
         const bound = Math.max(maxR, estimatedRadius) * 1.5;
-        const resolution = 100; // 降低分辨率以提升性能
+        const resolution = 200; // 与单轨模式一致或更高，确保线框细腻
 
         const result = window.MarchingCubes.run(calcPsi, { min: [-bound, -bound, -bound], max: [bound, bound, bound] }, resolution, isovalue);
 

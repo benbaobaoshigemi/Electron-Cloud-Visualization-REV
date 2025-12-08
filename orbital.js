@@ -841,3 +841,60 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
         DataPanel.renderChartAngular(hist, { centers, values });
     }
 };
+
+/**
+ * 更新比照模式下某个slot的可见性
+ * 【重构】使用slot索引控制可见性，而非轨道键
+ * @param {number} orbitalIndex - 在activeSlots数组中的索引（Worker中的orbitalIndex）
+ * @param {boolean} visible - 是否可见
+ */
+window.ElectronCloud.Orbital.updateCompareSlotVisibility = function (orbitalIndex, visible) {
+    const state = window.ElectronCloud.state;
+    const ui = window.ElectronCloud.ui;
+
+    console.log(`updateCompareSlotVisibility: orbitalIndex=${orbitalIndex}, visible=${visible}`);
+    console.log(`state.pointCount=${state.pointCount}, state.renderingCompleted=${state.renderingCompleted}`);
+    console.log(`pointOrbitalIndices存在？${!!state.pointOrbitalIndices}`);
+
+    // 只有渲染完成后才能切换可见性
+    if (!state.points || !state.renderingCompleted || !ui.compareToggle.checked) {
+        console.log('渲染未完成或不在比照模式，返回');
+        return;
+    }
+
+    const positions = state.points.geometry.attributes.position.array;
+
+    // 如果还没有备份原始位置，先备份
+    if (!state.originalPositions) {
+        state.originalPositions = new Float32Array(positions);
+        console.log('已备份原始位置');
+    }
+
+    // 统计匹配的点数
+    let matchCount = 0;
+
+    // 遍历所有点，找到属于这个slot的点并切换可见性
+    for (let i = 0; i < state.pointCount; i++) {
+        const pointOrbitalIndex = state.pointOrbitalIndices ? state.pointOrbitalIndices[i] : 0;
+
+        // 检查这个点是否属于当前轨道索引
+        if (pointOrbitalIndex === orbitalIndex) {
+            matchCount++;
+            const posIdx = i * 3;
+            if (visible) {
+                // 显示：恢复原始位置
+                positions[posIdx] = state.originalPositions[posIdx];
+                positions[posIdx + 1] = state.originalPositions[posIdx + 1];
+                positions[posIdx + 2] = state.originalPositions[posIdx + 2];
+            } else {
+                // 隐藏：移动到视野外
+                positions[posIdx] = 10000;
+                positions[posIdx + 1] = 10000;
+                positions[posIdx + 2] = 10000;
+            }
+        }
+    }
+
+    state.points.geometry.attributes.position.needsUpdate = true;
+    console.log(`orbitalIndex=${orbitalIndex} 可见性已更新为: ${visible}, 匹配${matchCount}个点`);
+};

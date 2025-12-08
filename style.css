@@ -2878,3 +2878,155 @@ input[type=range]::-webkit-slider-thumb:hover {
     background: rgba(100, 100, 100, 0.3);
     color: rgba(255, 255, 255, 0.7);
 }
+
+/* ========== 比照模式专用样式 ========== */
+#compare-orbital-selectors {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.compare-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+/* 颜色指示器 - 复用 glass-item 的圆角 */
+.compare-color-indicator {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    border: 1px solid transparent;
+}
+
+.compare-color-indicator .color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+/* 红色指示器 - 复用 compare-a 颜色 */
+.compare-color-indicator.compare-a {
+    background: rgba(255, 80, 80, 0.15);
+    border: 1px solid rgba(255, 80, 80, 0.4);
+}
+
+.compare-color-indicator.compare-a .color-dot {
+    background: rgb(255, 80, 80);
+}
+
+.compare-color-indicator.compare-a:hover {
+    background: rgba(255, 80, 80, 0.25);
+    box-shadow: 0 0 12px rgba(255, 80, 80, 0.3);
+}
+
+/* 绿色指示器 - 复用 compare-b 颜色 */
+.compare-color-indicator.compare-b {
+    background: rgba(80, 255, 80, 0.15);
+    border: 1px solid rgba(80, 255, 80, 0.4);
+}
+
+.compare-color-indicator.compare-b .color-dot {
+    background: rgb(80, 255, 80);
+}
+
+.compare-color-indicator.compare-b:hover {
+    background: rgba(80, 255, 80, 0.25);
+    box-shadow: 0 0 12px rgba(80, 255, 80, 0.3);
+}
+
+/* 蓝色指示器 - 复用 compare-c 颜色 */
+.compare-color-indicator.compare-c {
+    background: rgba(80, 80, 255, 0.15);
+    border: 1px solid rgba(80, 80, 255, 0.4);
+}
+
+.compare-color-indicator.compare-c .color-dot {
+    background: rgb(80, 80, 255);
+}
+
+.compare-color-indicator.compare-c:hover {
+    background: rgba(80, 80, 255, 0.25);
+    box-shadow: 0 0 12px rgba(80, 80, 255, 0.3);
+}
+
+/* 激活状态（有轨道选中） */
+.compare-color-indicator.active {
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.2);
+}
+
+.compare-color-indicator.compare-a.active {
+    box-shadow: 0 0 16px rgba(255, 80, 80, 0.4);
+}
+
+.compare-color-indicator.compare-b.active {
+    box-shadow: 0 0 16px rgba(80, 255, 80, 0.4);
+}
+
+.compare-color-indicator.compare-c.active {
+    box-shadow: 0 0 16px rgba(80, 80, 255, 0.4);
+}
+
+/* 隐藏状态（轨道被隐藏）- 增强变暗效果 */
+.compare-color-indicator.orbital-hidden {
+    opacity: 0.3;
+    filter: grayscale(80%);
+    box-shadow: none !important;
+}
+
+.compare-color-indicator.orbital-hidden .color-dot {
+    opacity: 0.3;
+    filter: grayscale(100%);
+}
+
+/* 下拉框样式 - 复用现有的 select 样式，使其紧凑 */
+.compare-orbital-select,
+.compare-atom-select {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    border-radius: var(--radius-md) !important;
+    background: var(--control-bg) !important;
+    border: var(--control-border) !important;
+    color: var(--color-text-primary) !important;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.compare-orbital-select {
+    flex: 2;
+}
+
+.compare-atom-select {
+    flex: 1;
+    max-width: 50px;
+}
+
+.compare-orbital-select:hover,
+.compare-atom-select:hover {
+    background: var(--color-bg-hover) !important;
+    border-color: var(--color-border-hover) !important;
+}
+
+.compare-orbital-select:focus,
+.compare-atom-select:focus {
+    outline: none;
+    border-color: var(--color-border-focus) !important;
+}
+
+.compare-orbital-select:disabled,
+.compare-atom-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

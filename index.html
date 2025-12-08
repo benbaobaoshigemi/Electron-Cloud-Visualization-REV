@@ -244,6 +244,96 @@
                         <button id="clear-all-selections" class="clear-selections-btn">清
                             空</button>
                     </div>
+                    <!-- 比照模式专用：三行轨道/原子选择器 -->
+                    <div id="compare-orbital-selectors" style="display: none;">
+                        <!-- 第一行：红色 -->
+                        <div class="compare-row" data-index="0">
+                            <div class="compare-color-indicator compare-a" data-index="0" title="点击开关轨道显示">
+                                <span class="color-dot"></span>
+                            </div>
+                            <select class="compare-orbital-select" data-index="0">
+                                <option value="" selected>无</option>
+                            </select>
+                            <select class="compare-atom-select" data-index="0">
+                                <option value="H" selected>H</option>
+                                <option value="He">He</option>
+                                <option value="Li">Li</option>
+                                <option value="Be">Be</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="N">N</option>
+                                <option value="O">O</option>
+                                <option value="F">F</option>
+                                <option value="Ne">Ne</option>
+                                <option value="Na">Na</option>
+                                <option value="Mg">Mg</option>
+                                <option value="Al">Al</option>
+                                <option value="Si">Si</option>
+                                <option value="P">P</option>
+                                <option value="S">S</option>
+                                <option value="Cl">Cl</option>
+                                <option value="Ar">Ar</option>
+                            </select>
+                        </div>
+                        <!-- 第二行：绿色 -->
+                        <div class="compare-row" data-index="1">
+                            <div class="compare-color-indicator compare-b" data-index="1" title="点击开关轨道显示">
+                                <span class="color-dot"></span>
+                            </div>
+                            <select class="compare-orbital-select" data-index="1">
+                                <option value="" selected>无</option>
+                            </select>
+                            <select class="compare-atom-select" data-index="1">
+                                <option value="H" selected>H</option>
+                                <option value="He">He</option>
+                                <option value="Li">Li</option>
+                                <option value="Be">Be</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="N">N</option>
+                                <option value="O">O</option>
+                                <option value="F">F</option>
+                                <option value="Ne">Ne</option>
+                                <option value="Na">Na</option>
+                                <option value="Mg">Mg</option>
+                                <option value="Al">Al</option>
+                                <option value="Si">Si</option>
+                                <option value="P">P</option>
+                                <option value="S">S</option>
+                                <option value="Cl">Cl</option>
+                                <option value="Ar">Ar</option>
+                            </select>
+                        </div>
+                        <!-- 第三行：蓝色 -->
+                        <div class="compare-row" data-index="2">
+                            <div class="compare-color-indicator compare-c" data-index="2" title="点击开关轨道显示">
+                                <span class="color-dot"></span>
+                            </div>
+                            <select class="compare-orbital-select" data-index="2">
+                                <option value="" selected>无</option>
+                            </select>
+                            <select class="compare-atom-select" data-index="2">
+                                <option value="H" selected>H</option>
+                                <option value="He">He</option>
+                                <option value="Li">Li</option>
+                                <option value="Be">Be</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="N">N</option>
+                                <option value="O">O</option>
+                                <option value="F">F</option>
+                                <option value="Ne">Ne</option>
+                                <option value="Na">Na</option>
+                                <option value="Mg">Mg</option>
+                                <option value="Al">Al</option>
+                                <option value="Si">Si</option>
+                                <option value="P">P</option>
+                                <option value="S">S</option>
+                                <option value="Cl">Cl</option>
+                                <option value="Ar">Ar</option>
+                            </select>
+                        </div>
+                    </div>
                     <!-- 原生 select 隐藏，用于逻辑同步 -->
                     <select id="orbital-select" multiple style="display: none;">
                         <!-- n=1 -->
@@ -417,15 +507,15 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <script src="physics.js?v=4"></script>
     <script src="marching_cubes.js"></script>
-    <script src="data_panel.js"></script>
+    <script src="data_panel.js?v=2"></script>
     <script src="slater_basis.js?v=2"></script>
     <!-- 模块化脚本文件 -->
     <script src="core.js?v=33"></script>
     <script src="scene.js?v=34"></script>
-    <script src="orbital.js?v=34"></script>
-    <script src="sampling.js?v=33"></script>
+    <script src="orbital.js?v=35"></script>
+    <script src="sampling.js?v=36"></script>
     <script src="visualization.js?v=48"></script>
-    <script src="ui.js?v=37"></script>
+    <script src="ui.js?v=88"></script>
     <script src="one_euro_filter.js"></script>
     <!-- gesture_v2.js v4.0: 捏合旋转模式 - 更稳定的手势控制 -->
     <script type="module" src="gesture_v2.js?v=4.1"></script>

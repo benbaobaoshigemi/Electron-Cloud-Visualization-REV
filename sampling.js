@@ -138,13 +138,30 @@ window.ElectronCloud.Sampling.handleWorkerResult = function (result, taskId, ses
         state.angularSamples.push(sample.theta);
 
         if (sample.orbitalKey) {
-            if (!state.orbitalSamplesMap[sample.orbitalKey]) {
-                state.orbitalSamplesMap[sample.orbitalKey] = [];
+            // 【关键修复】比照模式下使用slot索引+原子类型作为唯一键，避免同轨道覆盖
+            const ui = window.ElectronCloud.ui;
+            const isCompareMode = ui.compareToggle && ui.compareToggle.checked;
+            let sampleKey = sample.orbitalKey;
+
+            if (isCompareMode && state.compareMode && state.compareMode.activeSlots) {
+                // 使用orbitalIndex找到对应的slot配置
+                const slotConfig = state.compareMode.activeSlots[sample.orbitalIndex];
+                console.log(`比照模式数据键构建: orbitalIndex=${sample.orbitalIndex}, activeSlots长度=${state.compareMode.activeSlots.length}, slotConfig=`, slotConfig);
+                if (slotConfig) {
+                    // 使用"原子_轨道_slot索引"作为唯一键
+                    sampleKey = `${slotConfig.atom}_${sample.orbitalKey}_slot${slotConfig.slotIndex}`;
+                    console.log(`sampleKey=${sampleKey}`);
+                }
             }
-            state.orbitalSamplesMap[sample.orbitalKey].push({
+
+            if (!state.orbitalSamplesMap[sampleKey]) {
+                state.orbitalSamplesMap[sampleKey] = [];
+            }
+            state.orbitalSamplesMap[sampleKey].push({
                 r: sample.r,
                 theta: sample.theta,
-                probability: 0 // Worker 中已计算过
+                probability: 0, // Worker 中已计算过
+                orbitalIndex: sample.orbitalIndex // 保存slot索引用于后续处理
             });
         }
     }
@@ -238,10 +255,13 @@ window.ElectronCloud.Sampling.submitSamplingTask = function () {
                 targetPoints: pointsPerWorker,
                 isIndependentMode: !isHybridMode && (isCompareMode || isMultiselectMode),
                 isMultiselectMode: !isHybridMode && isMultiselectMode,
-                isHybridMode: isHybridMode, // 【新增】传递杂化模式标志
+                isCompareMode: isCompareMode, // 【新增】明确传递比照模式标志
+                isHybridMode: isHybridMode,
                 phaseOn: phaseOn,
                 compareColors: compareColors,
-                atomType: state.currentAtom || 'H' // 【关键修复】传递当前原子类型
+                atomType: state.currentAtom || 'H',
+                // 【重构】比照模式使用slotConfigs，每个slot独立处理
+                slotConfigs: isCompareMode && state.compareMode ? state.compareMode.slotConfigs : null
             }
         };
 
@@ -428,8 +448,13 @@ window.ElectronCloud.Sampling.processIndependentModePoint = function (x, y, z, r
     const orbitalIndex = state.roundRobinIndex % paramsList.length;
     state.roundRobinIndex++;
     const p = paramsList[orbitalIndex];
-    // 获取当前原子类型
-    const currentAtom = state.currentAtom || 'H';
+
+    // 【关键修复】获取当前轨道对应的原子类型（比照模式支持不同原子）
+    const orbitalKey = state.currentOrbitals[orbitalIndex];
+    let currentAtom = state.currentAtom || 'H';
+    if (state.compareMode && state.compareMode.orbitalAtomMap && state.compareMode.orbitalAtomMap[orbitalKey]) {
+        currentAtom = state.compareMode.orbitalAtomMap[orbitalKey];
+    }
     const density = Hydrogen.density3D_real(p.angKey, p.n, p.l, r, theta, phi, 1, 1, currentAtom);
 
     // 【关键】为每个轨道独立计算scaleFactor
@@ -671,8 +696,15 @@ window.ElectronCloud.Sampling.processImportanceSamplingPoint = function (
 
     const p = paramsList[orbitalIndex];
 
+    // 【关键修复】获取当前轨道对应的原子类型（比照模式支持不同原子）
+    const orbitalKey = state.currentOrbitals[orbitalIndex];
+    let currentAtom = state.currentAtom || 'H';
+    if (state.compareMode && state.compareMode.orbitalAtomMap && state.compareMode.orbitalAtomMap[orbitalKey]) {
+        currentAtom = state.compareMode.orbitalAtomMap[orbitalKey];
+    }
+
     // 使用重要性采样生成点（针对当前轨道优化）
-    const result = Hydrogen.importanceSample(p.n, p.l, p.angKey, state.samplingBoundary);
+    const result = Hydrogen.importanceSample(p.n, p.l, p.angKey, state.samplingBoundary, currentAtom);
 
     if (!result || !result.accepted) {
         return false;

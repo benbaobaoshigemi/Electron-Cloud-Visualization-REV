@@ -258,6 +258,9 @@ window.ElectronCloud.UI.init = function () {
         window.ElectronCloud.UI.onAxesSizeChange({ target: window.ElectronCloud.ui.axesSizeRange });
     }
 
+    // 初始化比照模式选择器
+    window.ElectronCloud.UI.initCompareOrbitalSelectors();
+
     // 视图面板折叠逻辑
     const viewPanel = document.getElementById('view-panel');
     const viewCollapseBtn = document.getElementById('view-collapse-btn');
@@ -1284,6 +1287,11 @@ window.ElectronCloud.UI.resetOrbitalSelections = function () {
 
     // 更新选择计数
     window.ElectronCloud.UI.updateSelectionCount();
+
+    // 【新增】重置比照模式选择器
+    if (ui.compareToggle && ui.compareToggle.checked) {
+        window.ElectronCloud.UI.resetCompareOrbitalSelectors();
+    }
 };
 
 // 重置所有场景对象的旋转状态（公共函数，避免重复代码）
@@ -2064,12 +2072,33 @@ window.ElectronCloud.UI.onCompareToggle = function () {
         // 禁用显示开关功能，避免造成bug
         window.ElectronCloud.UI.disableAngular3DToggle();
 
+        // 【新增】比照模式下禁用实验面板的原子选择
+        const atomSubmenu = document.getElementById('atom-submenu');
+        const atomSelectMain = document.getElementById('atom-select');
+        if (atomSubmenu) {
+            atomSubmenu.classList.add('disabled');
+            atomSubmenu.style.pointerEvents = 'none';
+            atomSubmenu.style.opacity = '0.5';
+            atomSubmenu.title = '比照模式下请在左侧选择器中单独设置每个轨道的原子';
+        }
+        if (atomSelectMain) {
+            atomSelectMain.disabled = true;
+        }
+
         if (controlPanel) {
             controlPanel.classList.add('multiselect-active');
             controlPanel.classList.add('compare-active');
         }
-        if (multiselectControls) multiselectControls.classList.add('visible');
+        // 隐藏多选标签，显示新的比照选择器
+        if (multiselectControls) multiselectControls.classList.remove('visible');
         if (label) label.style.display = 'none';
+
+        // 【新增】显示比照模式专用选择器，隐藏原有列表
+        window.ElectronCloud.UI.toggleCompareOrbitalSelectors(true);
+
+        // 重置比照选择器状态
+        window.ElectronCloud.UI.resetCompareOrbitalSelectors();
+
         if (ui.orbitalSelect) {
             ui.orbitalSelect.style.pointerEvents = 'auto';
             ui.orbitalSelect.multiple = true;
@@ -2078,7 +2107,6 @@ window.ElectronCloud.UI.onCompareToggle = function () {
 
         window.ElectronCloud.UI.updateSelectionCount();
         window.ElectronCloud.UI.refreshSelectStyles();
-        window.ElectronCloud.UI.updateCustomListVisuals();
 
         // 更新清空按钮状态
         window.ElectronCloud.UI.updateClearAllSelectionsState();
@@ -2096,6 +2124,19 @@ window.ElectronCloud.UI.onCompareToggle = function () {
         // 重新启用显示开关功能
         window.ElectronCloud.UI.enableAngular3DToggle();
 
+        // 【新增】退出比照模式时恢复实验面板的原子选择
+        const atomSubmenu = document.getElementById('atom-submenu');
+        const atomSelectMain = document.getElementById('atom-select');
+        if (atomSubmenu) {
+            atomSubmenu.classList.remove('disabled');
+            atomSubmenu.style.pointerEvents = '';
+            atomSubmenu.style.opacity = '';
+            atomSubmenu.title = '';
+        }
+        if (atomSelectMain) {
+            atomSelectMain.disabled = false;
+        }
+
         if (label) {
             label.textContent = '选择轨道';
             label.style.display = '';
@@ -2105,6 +2146,9 @@ window.ElectronCloud.UI.onCompareToggle = function () {
             controlPanel.classList.remove('compare-active');
         }
         if (multiselectControls) multiselectControls.classList.remove('visible');
+
+        // 【新增】隐藏比照模式专用选择器，恢复原有列表
+        window.ElectronCloud.UI.toggleCompareOrbitalSelectors(false);
         if (ui.orbitalSelect) {
             ui.orbitalSelect.style.pointerEvents = 'auto';
             ui.orbitalSelect.multiple = false; // 关闭多选模式
@@ -2956,7 +3000,8 @@ window.ElectronCloud.UI.updateCustomListVisualsWithVisibility = function () {
 
 window.ElectronCloud.UI.initCustomSelects = function () {
     // 查找所有非 orbital-select 的 select 元素（包括 max-points-select）
-    const selects = document.querySelectorAll('select:not(#orbital-select)');
+    // 【重要】排除比照模式选择器，它们由 initCompareOrbitalSelectors 单独处理
+    const selects = document.querySelectorAll('select:not(#orbital-select):not(.compare-orbital-select):not(.compare-atom-select)');
     selects.forEach(select => {
         // 避免重复初始化
         if (select.classList.contains('hidden-native')) return;
@@ -3542,4 +3587,325 @@ window.ElectronCloud.UI.updateOrbitalSelector = function (atomSymbol) {
             }
         }
     });
+};
+
+// ========== 比照模式专用选择器逻辑 ==========
+
+/**
+ * 初始化比照模式的三行轨道/原子选择器
+ */
+window.ElectronCloud.UI.initCompareOrbitalSelectors = function () {
+    const state = window.ElectronCloud.state;
+    const mainOrbitalSelect = document.getElementById('orbital-select');
+
+    // 获取所有轨道选项
+    const orbitalOptions = Array.from(mainOrbitalSelect.options);
+
+    // 填充每个比照行的轨道下拉框
+    const orbitalSelects = document.querySelectorAll('.compare-orbital-select');
+    orbitalSelects.forEach(select => {
+        // 跳过已初始化的
+        if (select.classList.contains('hidden-native')) return;
+
+        // 清空现有选项（保留"无"选项）
+        select.innerHTML = '<option value="" selected>无</option>';
+
+        // 添加所有轨道选项
+        orbitalOptions.forEach(opt => {
+            const newOpt = document.createElement('option');
+            newOpt.value = opt.value;
+            newOpt.textContent = opt.text;
+            select.appendChild(newOpt);
+        });
+
+        // 添加change事件（在创建自定义下拉框之前）
+        select.addEventListener('change', window.ElectronCloud.UI.onCompareOrbitalChange);
+
+        // 【关键】填充完选项后，为这个select创建自定义下拉框
+        window.ElectronCloud.UI.createCustomSelect(select);
+    });
+
+    // 为原子选择框创建自定义下拉框
+    const atomSelects = document.querySelectorAll('.compare-atom-select');
+    atomSelects.forEach(select => {
+        // 跳过已初始化的
+        if (select.classList.contains('hidden-native')) return;
+
+        select.addEventListener('change', window.ElectronCloud.UI.onCompareAtomChange);
+
+        // 【关键】为原子选择器创建自定义下拉框
+        window.ElectronCloud.UI.createCustomSelect(select);
+    });
+
+    // 为颜色指示器添加点击事件
+    const indicators = document.querySelectorAll('.compare-color-indicator');
+    indicators.forEach(indicator => {
+        indicator.addEventListener('click', window.ElectronCloud.UI.onCompareIndicatorClick);
+    });
+
+    // 初始化状态
+    window.ElectronCloud.UI.updateCompareSelectorsState();
+};
+
+/**
+ * 比照模式轨道选择变更处理
+ */
+window.ElectronCloud.UI.onCompareOrbitalChange = function (event) {
+    const state = window.ElectronCloud.state;
+    const select = event.target;
+    const index = parseInt(select.dataset.index, 10);
+    const orbitalValue = select.value;
+
+    // 更新state中的配置
+    state.compareMode.slots[index].orbital = orbitalValue;
+
+    // 同步到主选择器
+    window.ElectronCloud.UI.syncCompareToMainSelect();
+
+    // 更新视觉状态
+    window.ElectronCloud.UI.updateCompareSelectorsState();
+};
+
+/**
+ * 比照模式原子选择变更处理
+ */
+window.ElectronCloud.UI.onCompareAtomChange = function (event) {
+    const state = window.ElectronCloud.state;
+    const select = event.target;
+    const index = parseInt(select.dataset.index, 10);
+    const atomValue = select.value;
+
+    // 更新state中的配置
+    state.compareMode.slots[index].atom = atomValue;
+
+    // 【关键修复】同步到主选择器，确保slotConfigs被更新
+    window.ElectronCloud.UI.syncCompareToMainSelect();
+
+    // 更新该行的轨道下拉框可用性（根据原子类型过滤轨道）
+    window.ElectronCloud.UI.updateCompareOrbitalAvailability(index);
+};
+
+/**
+ * 根据原子类型更新某一行的轨道可用性
+ */
+window.ElectronCloud.UI.updateCompareOrbitalAvailability = function (index) {
+    const orbitalSelect = document.querySelector(`.compare-orbital-select[data-index="${index}"]`);
+    const atomSelect = document.querySelector(`.compare-atom-select[data-index="${index}"]`);
+    if (!orbitalSelect || !atomSelect) return;
+
+    const atomSymbol = atomSelect.value;
+    const atomData = window.SlaterBasis ? window.SlaterBasis[atomSymbol] : null;
+
+    Array.from(orbitalSelect.options).forEach((option, optIndex) => {
+        if (optIndex === 0) return; // 跳过"无"选项
+
+        const val = option.value;
+        const match = val.match(/^(\d+[spdfg])/);
+        const key = match ? match[1] : val;
+
+        let enabled = true;
+        if (atomSymbol === 'H') {
+            enabled = true;
+        } else if (atomData && atomData.orbitals && atomData.orbitals[key]) {
+            enabled = true;
+        } else {
+            enabled = false;
+        }
+
+        option.disabled = !enabled;
+        option.style.color = enabled ? '' : 'rgba(255,255,255,0.3)';
+    });
+};
+
+/**
+ * 颜色指示器点击处理（开关轨道显示）
+ * 【重构】使用slot索引控制可见性，避免相同轨道同灭同亮
+ */
+window.ElectronCloud.UI.onCompareIndicatorClick = function (event) {
+    const state = window.ElectronCloud.state;
+    const indicator = event.currentTarget;
+    const uiSlotIndex = parseInt(indicator.dataset.index, 10);
+
+    // 只有在渲染完成后才能开关轨道显示
+    if (!state.renderingCompleted) {
+        return;
+    }
+
+    const slot = state.compareMode.slots[uiSlotIndex];
+    if (!slot.orbital) return; // 没有选择轨道，不处理
+
+    // 【关键修复】将UI slot索引映射到activeSlots数组索引（Worker中的orbitalIndex）
+    // 因为Worker中的orbitalIndex是在过滤空slot后的activeSlots数组中的位置
+    const activeSlots = state.compareMode.activeSlots || [];
+    const workerOrbitalIndex = activeSlots.findIndex(s => s.slotIndex === uiSlotIndex);
+
+    if (workerOrbitalIndex < 0) {
+        console.log(`无法找到UI slot ${uiSlotIndex} 对应的activeSlot`);
+        return;
+    }
+
+    // 【重构】使用slot索引控制可见性，而非轨道键
+    // 初始化slotVisibility对象（如果不存在）
+    if (!state.compareMode.slotVisibility) {
+        state.compareMode.slotVisibility = {};
+    }
+
+    // 切换该slot的可见性（使用UI slot索引记录状态）
+    const currentVisible = state.compareMode.slotVisibility[uiSlotIndex] !== false;  // 默认为可见
+    state.compareMode.slotVisibility[uiSlotIndex] = !currentVisible;
+
+    // 调用场景更新函数来同步点的显示（使用Worker的orbitalIndex来匹配点）
+    window.ElectronCloud.Orbital.updateCompareSlotVisibility(workerOrbitalIndex, !currentVisible);
+
+    // 更新视觉状态
+    window.ElectronCloud.UI.updateCompareSelectorsState();
+};
+
+/**
+ * 同步比照模式选择到主选择器
+ * 【重构】使用slot索引作为标识，支持相同轨道不同原子
+ */
+window.ElectronCloud.UI.syncCompareToMainSelect = function () {
+    const state = window.ElectronCloud.state;
+    const mainSelect = document.getElementById('orbital-select');
+    if (!mainSelect) return;
+
+    // 清除所有选中
+    Array.from(mainSelect.options).forEach(opt => opt.selected = false);
+
+    // 【重构】构建slot配置数组，每个slot独立（即使轨道相同）
+    const activeSlots = [];  // [{slotIndex, orbital, atom}]
+    const selectedOrbitalKeys = new Set();  // 用于更新主选择器的显示
+
+    state.compareMode.slots.forEach((slot, index) => {
+        if (slot.orbital) {
+            activeSlots.push({
+                slotIndex: index,
+                orbital: slot.orbital,
+                atom: slot.atom || 'H'
+            });
+            selectedOrbitalKeys.add(slot.orbital);
+        }
+    });
+
+    // 在主选择器中选中这些轨道（仅用于UI显示）
+    selectedOrbitalKeys.forEach(orbital => {
+        const option = mainSelect.querySelector(`option[value="${orbital}"]`);
+        if (option) option.selected = true;
+    });
+
+    // 【重构】保存activeSlots到state（供采样使用）
+    state.compareMode.activeSlots = activeSlots;
+
+    // 构建用于Worker的配置：每个slot独立的轨道+原子
+    // 格式：[{orbital: '2s', atom: 'H'}, {orbital: '2s', atom: 'C'}, ...]
+    state.compareMode.slotConfigs = activeSlots.map(s => ({
+        orbital: s.orbital,
+        atom: s.atom,
+        slotIndex: s.slotIndex
+    }));
+
+    // 更新 currentOrbitals（用于兼容其他代码）
+    state.currentOrbitals = activeSlots.map(s => s.orbital);
+
+    // 更新选择计数
+    window.ElectronCloud.UI.updateSelectionCount();
+
+    // 触发change事件更新相关状态
+    mainSelect.dispatchEvent(new Event('change'));
+};
+
+/**
+ * 更新比照选择器的视觉状态
+ * 【重构】使用slotVisibility而非orbitalVisibility
+ */
+window.ElectronCloud.UI.updateCompareSelectorsState = function () {
+    const state = window.ElectronCloud.state;
+
+    const indicators = document.querySelectorAll('.compare-color-indicator');
+    indicators.forEach(indicator => {
+        const slotIndex = parseInt(indicator.dataset.index, 10);
+        const slot = state.compareMode.slots[slotIndex];
+
+        // 根据是否有轨道选中来设置激活状态
+        if (slot.orbital) {
+            indicator.classList.add('active');
+
+            // 【重构】根据slotVisibility设置隐藏状态
+            const slotVisibility = state.compareMode.slotVisibility || {};
+            if (state.renderingCompleted && slotVisibility[slotIndex] === false) {
+                indicator.classList.add('orbital-hidden');
+            } else {
+                indicator.classList.remove('orbital-hidden');
+            }
+        } else {
+            indicator.classList.remove('active');
+            indicator.classList.remove('orbital-hidden');
+        }
+    });
+
+    // 更新下拉框的禁用状态（渲染中禁用）
+    const hasStarted = state.pointCount > 0 || state.isDrawing;
+    const isRendering = hasStarted && !state.renderingCompleted;
+
+    const orbitalSelects = document.querySelectorAll('.compare-orbital-select');
+    const atomSelects = document.querySelectorAll('.compare-atom-select');
+
+    orbitalSelects.forEach(select => {
+        select.disabled = isRendering;
+    });
+    atomSelects.forEach(select => {
+        select.disabled = isRendering;
+    });
+};
+
+/**
+ * 重置比照模式选择器
+ */
+window.ElectronCloud.UI.resetCompareOrbitalSelectors = function () {
+    const state = window.ElectronCloud.state;
+
+    // 重置state中的配置
+    state.compareMode.slots = [
+        { orbital: '', atom: 'H' },
+        { orbital: '', atom: 'H' },
+        { orbital: '', atom: 'H' }
+    ];
+    state.compareMode.orbitalAtomMap = {};
+
+    // 重置UI
+    const orbitalSelects = document.querySelectorAll('.compare-orbital-select');
+    orbitalSelects.forEach(select => {
+        select.value = '';
+    });
+
+    const atomSelects = document.querySelectorAll('.compare-atom-select');
+    atomSelects.forEach(select => {
+        select.value = 'H';
+    });
+
+    // 更新视觉状态
+    window.ElectronCloud.UI.updateCompareSelectorsState();
+};
+
+/**
+ * 显示/隐藏比照模式选择器
+ */
+window.ElectronCloud.UI.toggleCompareOrbitalSelectors = function (show) {
+    const container = document.getElementById('compare-orbital-selectors');
+    const customList = document.getElementById('custom-orbital-list');
+    const multiselectLabel = document.getElementById('multiselect-label');
+
+    if (container) {
+        container.style.display = show ? 'flex' : 'none';
+    }
+
+    if (customList) {
+        customList.style.display = show ? 'none' : 'block';
+    }
+
+    // 比照模式下隐藏"已选"计数标签
+    if (multiselectLabel) {
+        multiselectLabel.style.display = show ? 'none' : '';
+    }
 };

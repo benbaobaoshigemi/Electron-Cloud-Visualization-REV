@@ -61,6 +61,16 @@ window.ElectronCloud.state = {
         pendingEnabled: false, // 渲染前预设的状态
         lastUpdateTime: 0,     // 上次更新时间（节流用）
         highlightedPoints: []  // 需要高亮的点：{ index, startTime }
+    },
+
+    // 比照模式配置（支持不同原子的轨道比较）
+    compareMode: {
+        // 每个槽位的轨道配置：{ orbital: '1s', atom: 'H' }
+        slots: [
+            { orbital: '', atom: 'H' },
+            { orbital: '', atom: 'H' },
+            { orbital: '', atom: 'H' }
+        ]
     }
 };
 

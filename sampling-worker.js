@@ -865,13 +865,32 @@ function performSampling(config) {
         targetPoints,       // 目标点数
         isIndependentMode,  // 是否为独立模式（多选/比照）
         isMultiselectMode,  // 是否为多选模式
-        isHybridMode,       // 【新增】是否为杂化模式
+        isCompareMode,      // 【新增】是否为比照模式
+        isHybridMode,       // 是否为杂化模式
         phaseOn,            // 是否显示相位
         compareColors,      // 比照模式颜色
-        atomType            // 【新增】原子类型
+        atomType,           // 原子类型
+        slotConfigs         // 【重构】比照模式slot配置数组 [{orbital, atom, slotIndex}]
     } = config;
 
-    const paramsList = orbitals.map(k => orbitalParamsFromKey(k)).filter(Boolean);
+    // 【重构】比照模式使用slotConfigs构建paramsList
+    let paramsList;
+    let slotAtomTypes = [];  // 每个slot对应的原子类型
+    let effectiveOrbitals; // 【关键修复】与paramsList一一对应的轨道键数组
+
+    if (isCompareMode && slotConfigs && slotConfigs.length > 0) {
+        // 比照模式：每个slot独立
+        paramsList = slotConfigs.map(s => orbitalParamsFromKey(s.orbital)).filter(Boolean);
+        slotAtomTypes = slotConfigs.map(s => s.atom || 'H');
+        // 【关键修复】使用slotConfigs中的orbital作为轨道键，确保长度与paramsList一致
+        effectiveOrbitals = slotConfigs.map(s => s.orbital);
+    } else {
+        // 其他模式：使用orbitals数组
+        paramsList = orbitals.map(k => orbitalParamsFromKey(k)).filter(Boolean);
+        slotAtomTypes = paramsList.map(() => atomType || 'H');
+        effectiveOrbitals = orbitals;
+    }
+
     if (!paramsList.length) {
         return { points: [], samples: [], farthestDistance: 0 };
     }
@@ -888,7 +907,6 @@ function performSampling(config) {
     let attempts = 0;
 
     // 【关键修复】多轨道模式下，确保每个轨道获得相同数量的最终采样点
-    // 而不是相同数量的尝试次数（因为不同轨道的接受率不同）
     const numOrbitals = paramsList.length;
     const orbitalPointCounts = new Array(numOrbitals).fill(0); // 每个轨道已采样的点数
     const targetPointsPerOrbital = Math.ceil(targetPoints / numOrbitals); // 每个轨道的目标点数
@@ -920,9 +938,12 @@ function performSampling(config) {
         }
         const p = paramsList[orbitalIndex];
 
+        // 【重构】使用slotAtomTypes数组获取该slot对应的原子类型
+        const currentAtomType = slotAtomTypes[orbitalIndex] || atomType || 'H';
+
         // 使用重要性采样（针对当前轨道优化）
         if (useImportanceSampling) {
-            const result = importanceSample(p.n, p.l, p.angKey, samplingBoundary, atomType);
+            const result = importanceSample(p.n, p.l, p.angKey, samplingBoundary, currentAtomType);
 
             if (result && result.accepted) {
                 x = result.x;
@@ -946,7 +967,7 @@ function performSampling(config) {
             phi = Math.atan2(y, x);
 
             if (isIndependentMode) {
-                const density = density3D_real(p.angKey, p.n, p.l, r, theta, phi, 1, 1, atomType);
+                const density = density3D_real(p.angKey, p.n, p.l, r, theta, phi, 1, 1, currentAtomType);
                 const scaleFactor = Math.min(200, 3.0 * Math.pow(p.n, 3));
                 accepted = Math.random() < density * scaleFactor;
             } else {
@@ -1006,7 +1027,9 @@ function performSampling(config) {
             }
 
             point = { x, y, z, r: r_color, g: g_color, b: b_color, orbitalIndex: isIndependentMode ? orbitalIndex : -1 };
-            samples.push({ r, theta, orbitalKey: isIndependentMode ? orbitals[orbitalIndex] : null });
+            // 【关键修复】添加orbitalIndex到samples，用于比照模式构建唯一键
+            // 【关键修复】使用effectiveOrbitals确保比照模式下每个slot都有正确的轨道键
+            samples.push({ r, theta, orbitalKey: isIndependentMode ? effectiveOrbitals[orbitalIndex] : null, orbitalIndex: isIndependentMode ? orbitalIndex : -1 });
             points.push(point);
 
             // 【关键】更新该轨道的已采样点数计数

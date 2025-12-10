@@ -1383,7 +1383,13 @@ window.ElectronCloud.Sampling.performRollingUpdate = function () {
             const p = paramsList[orbitalIndex];
             if (!p) continue; // 【修复】防止 undefined 参数导致的 crash
 
-            orbitalKey = state.currentOrbitals[orbitalIndex];
+            // 【关键修复】比照模式下从 activeSlots 获取 orbitalKey，确保与 handleWorkerResult 完全一致
+            if (isCompareMode && state.compareMode && state.compareMode.activeSlots) {
+                const slot = state.compareMode.activeSlots[orbitalIndex];
+                orbitalKey = slot ? slot.orbital : state.currentOrbitals[orbitalIndex];
+            } else {
+                orbitalKey = state.currentOrbitals[orbitalIndex];
+            }
 
             // 【关键修复】比照模式下使用正确的原子类型
             let atomType = currentAtom;

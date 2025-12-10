@@ -15,8 +15,8 @@ window.ElectronCloud.state = {
     angularOverlay: null,
 
     // 轨道状态
-    currentOrbital: '1s',
-    currentOrbitals: ['1s'],
+    currentOrbital: '',
+    currentOrbitals: [],
     currentAtom: 'H', // 当前选择的原子类型（默认氢）
 
     // 采样状态
@@ -169,13 +169,7 @@ window.ElectronCloud.init = function () {
     // 初始化角向分布3D开关状态
     window.ElectronCloud.UI.updateAngular3DToggleState();
 
-    // 确保初始状态下轨道选择正常工作
-    const orbitalSelect = window.ElectronCloud.ui.orbitalSelect;
-    if (orbitalSelect && orbitalSelect.selectedOptions.length === 0) {
-        orbitalSelect.options[0].selected = true;
-        const changeEvent = new Event('change', { bubbles: true });
-        orbitalSelect.dispatchEvent(changeEvent);
-    }
+    // 【修改】启动时所有模式均无默认轨道选择，与多选/比照模式保持一致
 
     console.log('ElectronCloud 核心模块初始化完成');
 };

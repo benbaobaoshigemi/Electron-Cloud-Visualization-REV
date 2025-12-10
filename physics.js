@@ -590,7 +590,7 @@
     return { r: rs, Pr: ps };
   }
 
-  function histogramRadialFromSamples(rArray, bins = 80, rmax = null, normalize = true, smooth = true) {
+  function histogramRadialFromSamples(rArray, bins = 160, rmax = null, normalize = true, smooth = true) {
     const N = rArray.length; if (N === 0) return { edges: [], counts: [] };
     // 【性能修复】使用循环替代Math.max(...array)，避免大数组栈溢出
     let maxr;
@@ -670,7 +670,7 @@
     return { edges, counts, dr, rmax: effectiveMaxr };
   }
 
-  function histogramThetaFromSamples(thetaArray, bins = 90, normalize = true) {
+  function histogramThetaFromSamples(thetaArray, bins = 180, normalize = true) {
     const N = thetaArray.length; if (N === 0) return { edges: [], counts: [] };
     const edges = new Float32Array(bins + 1);
     const counts = new Float32Array(bins);

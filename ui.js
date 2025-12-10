@@ -127,6 +127,16 @@ window.ElectronCloud.UI.init = function () {
                 if (savedIsHybridMode && window.ElectronCloud.UI.resetHybridPanel) {
                     window.ElectronCloud.UI.resetHybridPanel();
                 }
+            } else {
+                // 【新增】单选模式下，重置时清除所有选择
+                // 确保用户需要重新选择轨道才能启动渲染
+                if (ui.orbitalSelect) {
+                    Array.from(ui.orbitalSelect.options).forEach(option => {
+                        option.selected = false;
+                    });
+                }
+                state.currentOrbitals = [];
+                window.ElectronCloud.UI.updateCustomListVisuals();
             }
 
             if (window.DataPanel && window.DataPanel.reset) {
@@ -865,6 +875,112 @@ window.ElectronCloud.UI.init = function () {
         }
     };
 
+    /**
+     * 从轨道键中提取基础轨道类型（如 '2p_x' -> '2p', '3d_xy' -> '3d'）
+     * @param {string} orbitalKey - 轨道键
+     * @returns {string} - 基础轨道键
+     */
+    window.ElectronCloud.UI.getBaseOrbitalKey = function (orbitalKey) {
+        if (!orbitalKey) return '';
+        // 匹配 'nl' 部分，如 '1s', '2p', '3d', '4f' 等
+        const match = orbitalKey.match(/^(\d+[spdf])/);
+        return match ? match[1] : orbitalKey;
+    };
+
+    /**
+     * 检测原子是否支持指定轨道
+     * @param {string} atomSymbol - 原子符号（如 'H', 'C', 'Fe'）
+     * @param {string} orbitalKey - 轨道键（如 '2p_x', '3d_xy'）
+     * @returns {boolean} - 是否支持
+     */
+    window.ElectronCloud.UI.atomHasOrbital = function (atomSymbol, orbitalKey) {
+        if (!window.SlaterBasis || !window.SlaterBasis[atomSymbol]) {
+            // 对于H原子，特殊处理：只支持类氢轨道（任意n,l满足l<n）
+            if (atomSymbol === 'H') {
+                return true; // 氢原子支持所有轨道（类氢模型）
+            }
+            return false;
+        }
+
+        const atomData = window.SlaterBasis[atomSymbol];
+        const orbitals = atomData.orbitals;
+        if (!orbitals) return false;
+
+        // 获取基础轨道键
+        const baseKey = window.ElectronCloud.UI.getBaseOrbitalKey(orbitalKey);
+
+        // 检查原子是否有该轨道
+        return baseKey in orbitals;
+    };
+
+    /**
+     * 更新原子下拉列表中各选项的禁用状态
+     * 根据当前选中的轨道，禁用不支持这些轨道的原子
+     */
+    window.ElectronCloud.UI.updateAtomOptionsDisableState = function () {
+        const state = window.ElectronCloud.state;
+        const ui = window.ElectronCloud.ui;
+        const atomSelect = document.getElementById('atom-select');
+
+        if (!atomSelect || !window.SlaterBasis) return;
+
+        // 获取当前选中的轨道列表
+        const selectedOrbitals = state.currentOrbitals && state.currentOrbitals.length > 0
+            ? state.currentOrbitals
+            : [state.currentOrbital || '1s'];
+
+        // 检查是否在比照模式（比照模式下不禁用，因为每个slot有自己的原子选择）
+        const isCompareMode = ui.compareToggle && ui.compareToggle.checked;
+        if (isCompareMode) {
+            // 比照模式下恢复所有原子可选
+            Array.from(atomSelect.options).forEach(option => {
+                option.disabled = false;
+                option.style.opacity = '';
+                option.style.color = '';
+            });
+            return;
+        }
+
+        // 遍历所有原子选项
+        Array.from(atomSelect.options).forEach(option => {
+            const atomSymbol = option.value;
+
+            // 检查该原子是否支持所有选中的轨道
+            let supportsAll = true;
+            for (const orbitalKey of selectedOrbitals) {
+                if (!window.ElectronCloud.UI.atomHasOrbital(atomSymbol, orbitalKey)) {
+                    supportsAll = false;
+                    break;
+                }
+            }
+
+            // 更新禁用状态
+            if (supportsAll) {
+                option.disabled = false;
+                option.style.opacity = '';
+                option.style.color = '';
+            } else {
+                option.disabled = true;
+                option.style.opacity = '0.4';
+                option.style.color = '#666';
+            }
+        });
+
+        // 如果当前选中的原子被禁用了，自动切换到第一个可用的原子
+        const currentOption = atomSelect.options[atomSelect.selectedIndex];
+        if (currentOption && currentOption.disabled) {
+            // 找到第一个可用的原子
+            for (const option of atomSelect.options) {
+                if (!option.disabled) {
+                    atomSelect.value = option.value;
+                    // 触发change事件更新状态
+                    atomSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    break;
+                }
+            }
+        }
+    };
+
 };
 
 // 锁定摄像机到指定轴视角
@@ -1421,13 +1537,9 @@ window.ElectronCloud.UI.onOrbitalSelectChange = function () {
 
     const opts = Array.from(ui.orbitalSelect.selectedOptions || []).map(o => o.value);
 
-    // 在多选或比照模式下，使用选中的选项
-    // 在普通模式下，如果没有选中任何选项，默认使用第一个选项
-    if ((ui.multiselectToggle && ui.multiselectToggle.checked) || (ui.compareToggle && ui.compareToggle.checked)) {
-        state.currentOrbitals = opts.length ? opts : [];
-    } else {
-        state.currentOrbitals = opts.length ? opts : [ui.orbitalSelect.value || '1s'];
-    }
+    // 所有模式下统一处理：有选中则使用选中的，没有则为空数组
+    // 【修改】单选模式现在也不再默认选择 '1s'，与多选/比照模式保持一致
+    state.currentOrbitals = opts.length ? opts : [];
 
     // 单选模式下手动更新选中样式（因为浏览器不会自动更新 option:checked 背景）
     if (!(ui.multiselectToggle && ui.multiselectToggle.checked) && !(ui.compareToggle && ui.compareToggle.checked)) {
@@ -1455,6 +1567,11 @@ window.ElectronCloud.UI.onOrbitalSelectChange = function () {
 
         // 更新清空按钮状态
         window.ElectronCloud.UI.updateClearAllSelectionsState();
+    }
+
+    // 【新增】更新原子选项禁用状态（根据选中轨道禁用不支持的原子）
+    if (window.ElectronCloud.UI.updateAtomOptionsDisableState) {
+        window.ElectronCloud.UI.updateAtomOptionsDisableState();
     }
 };
 
@@ -1995,12 +2112,12 @@ window.ElectronCloud.UI.onMultiselectToggle = function () {
                     option.selected = (option === firstSelected);
                 });
             } else if (selectedCount === 0) {
-                // 没有选中任何选项时，默认选中第一个选项（1s）
-                ui.orbitalSelect.options[0].selected = true;
+                // 【修改】没有选中时保持空选择状态，与启动时行为一致
+                // 不再默认选中第一个选项
             }
             // 同步state.currentOrbitals
             const selected = Array.from(ui.orbitalSelect.selectedOptions).map(o => o.value);
-            state.currentOrbitals = selected.length ? selected : ['1s'];
+            state.currentOrbitals = selected;
 
             const changeEvent = new Event('change', { bubbles: true });
             ui.orbitalSelect.dispatchEvent(changeEvent);
@@ -2169,12 +2286,12 @@ window.ElectronCloud.UI.onCompareToggle = function () {
                     option.selected = (option === firstSelected);
                 });
             } else if (selectedCount === 0) {
-                // 没有选中任何选项时，默认选中第一个选项（1s）
-                ui.orbitalSelect.options[0].selected = true;
+                // 【修改】没有选中时保持空选择状态，与启动时行为一致
+                // 不再默认选中第一个选项
             }
             // 同步state.currentOrbitals
             const selected = Array.from(ui.orbitalSelect.selectedOptions).map(o => o.value);
-            state.currentOrbitals = selected.length ? selected : ['1s'];
+            state.currentOrbitals = selected;
 
             const changeEvent = new Event('change', { bubbles: true });
             ui.orbitalSelect.dispatchEvent(changeEvent);
@@ -2848,6 +2965,13 @@ window.ElectronCloud.UI.initCustomOrbitalList = function () {
 
         container.appendChild(item);
     });
+
+    // 【关键修复】初始化时显式清除所有选中状态
+    // 确保单选模式与多选/比照模式一样，启动时没有默认选中的轨道
+    Array.from(select.options).forEach(option => {
+        option.selected = false;
+    });
+    window.ElectronCloud.state.currentOrbitals = [];
 
     // 初始化视觉状态
     window.ElectronCloud.UI.updateCustomListVisuals();

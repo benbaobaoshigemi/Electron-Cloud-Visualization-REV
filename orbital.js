@@ -15,11 +15,9 @@ window.ElectronCloud.Orbital.startDrawing = function () {
     // 读取轨道参数
     const selected = Array.from(ui.orbitalSelect.selectedOptions || []).map(o => o.value);
 
-    // 【关键检查】在多选或比照模式下，必须选择至少一个轨道才能开始渲染
-    const isMultiselectMode = ui.multiselectToggle && ui.multiselectToggle.checked;
-    const isCompareMode = ui.compareToggle && ui.compareToggle.checked;
-
-    if ((isMultiselectMode || isCompareMode) && selected.length === 0) {
+    // 【修改】所有模式下都必须选择至少一个轨道才能开始渲染
+    // 启动时不再有默认轨道选择，与多选/比照模式保持一致
+    if (selected.length === 0) {
         alert('请先选择至少一个轨道再启动渲染');
         return;
     }
@@ -40,9 +38,9 @@ window.ElectronCloud.Orbital.startDrawing = function () {
     // 重置角向更新标记
     state.angularUpdated = false;
 
-    // 设置当前轨道
-    state.currentOrbitals = selected.length ? selected : [ui.orbitalSelect.value || '1s'];
-    state.currentOrbital = state.currentOrbitals[0];
+    // 设置当前轨道（不再有 fallback，因为上面已经检查过 selected.length）
+    state.currentOrbitals = selected;
+    state.currentOrbital = selected[0];
 
     // 动态调整采样边界：根据所选轨道的最大 n 值
     let maxN = 1;
@@ -528,12 +526,12 @@ window.ElectronCloud.Orbital.initTheoryData = function () {
 
         console.log('initTheoryData: 计算理论曲线，轨道列表:', orbitals);
 
-        const angularBins = 90;
+        const angularBins = 180;
 
         // 使用最大的 n 来计算预估最大半径
         const maxN = Math.max(...paramsList.map(p => p.n));
         const estimatedRmax = Hydrogen.recommendRmax(maxN);
-        const radialBins = 240;
+        const radialBins = 480;
 
         // 创建空的径向直方图（零值）
         const radialEdges = new Float32Array(radialBins + 1);
@@ -620,7 +618,7 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
     if (!window.Hydrogen || state.radialSamples.length === 0) return;
 
     try {
-        const angularBins = 90;
+        const angularBins = 180;
 
         // 【关键修复】直接使用 state.currentOrbitals，不依赖 UI 状态判断
         const orbitals = state.currentOrbitals && state.currentOrbitals.length > 0
@@ -777,7 +775,7 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
 
     // 如果没有后台数据，则重新计算
     console.log('后台数据不可用，重新计算图表数据');
-    const angularBins = 90;
+    const angularBins = 180;
 
     // 【关键修复】使用所有选中的轨道计算理论曲线，而不是单个轨道
     const orbitals = state.currentOrbitals && state.currentOrbitals.length > 0

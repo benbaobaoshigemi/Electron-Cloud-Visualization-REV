@@ -550,6 +550,91 @@
     chart.update('none'); // 使用无动画更新，避免曲线跳动
   }
 
+  function renderChartPhi(hist, theory) {
+    const ctx = document.getElementById('probability-chart');
+    if (!ctx || !window.Chart) return;
+    // 如当前不是柱状图，销毁后用柱状图重建
+    if (state.chart && (!state.chart.config || state.chart.config.type !== 'bar')) {
+      try { state.chart.destroy(); } catch (e) { console.warn('图表销毁失败:', e); }
+      state.chart = null;
+    }
+    const bins = hist.counts.length;
+    const centers = (theory && theory.centers) || (() => { const n = hist.counts.length; const a = new Array(n); for (let i = 0; i < n; i++) a[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]); return a; })();
+
+    const chart = ensureChart();
+    if (!chart) return;
+
+    // 捕获φ角向理论曲线的可见性状态
+    if (chart.data && chart.data.datasets) {
+      const theoryIndex = chart.data.datasets.findIndex(ds => ds.label && ds.label.includes('理论曲线'));
+      if (theoryIndex !== -1) {
+        state.phiTheoryHidden = !chart.isDatasetVisible(theoryIndex);
+      }
+    }
+
+    chart.data.labels = centers.map(v => v.toFixed(2));
+    const datasets = [
+      {
+        label: '方位角概率密度 (归一化)',
+        data: Array.from(hist.counts),
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        borderColor: 'rgba(255,255,255,0.95)',
+        borderWidth: 1,
+        borderRadius: 2,
+        borderSkipped: false,
+        order: 10
+      }
+    ];
+
+    if (theory && theory.values && theory.values.length) {
+      datasets.push({
+        type: 'line',
+        label: '理论曲线',
+        data: theory.values.map((y, i) => ({ x: i, y })),
+        borderColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        borderWidth: 2.5,
+        yAxisID: 'y',
+        tension: 0.2,
+        order: 0,
+        hidden: state.phiTheoryHidden
+      });
+    }
+    chart.data.datasets = datasets;
+
+    // 强制设置全局元素配置，确保线条不显示点
+    if (!chart.options.elements) chart.options.elements = {};
+    chart.options.elements.point = { radius: 0, hoverRadius: 0 };
+
+    // 添加坐标轴标题
+    if (chart.options.scales) {
+      if (chart.options.scales.x) {
+        chart.options.scales.x.title = {
+          display: true,
+          text: '角度 φ (弧度)',
+          color: '#d0d0d0',
+          font: { size: 12, weight: '500' }
+        };
+        // 优化x轴显示
+        chart.options.scales.x.ticks.autoSkip = true;
+        chart.options.scales.x.ticks.maxTicksLimit = 15;
+        delete chart.options.scales.x.ticks.callback;
+      }
+      if (chart.options.scales.y) {
+        chart.options.scales.y.title = {
+          display: true,
+          text: '概率密度 P(φ)',
+          color: '#d0d0d0',
+          font: { size: 12, weight: '500' }
+        };
+      }
+    }
+
+    chart.update('none'); // 使用无动画更新，避免曲线跳动
+  }
+
   // 对比模式专用：渲染散点图
   function renderChartCompare(orbitalDataMap, type) {
     console.log('renderChartCompare 被调用，类型:', type); // 调试信息
@@ -738,15 +823,26 @@
         for (let i = 0; i < adaptiveBins; i++) {
           centers[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
         }
-      } else {
-        // 角向数据
-        const angularBins = 90;
+      } else if (type === 'angular') {
+        // θ角向数据
+        const angularBins = 180;
         const angularData = samples.map(s => s.theta);
         hist = window.Hydrogen.histogramThetaFromSamples(angularData, angularBins, true);
 
         // 计算bin中心
         centers = new Array(angularBins);
         for (let i = 0; i < angularBins; i++) {
+          centers[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
+        }
+      } else {
+        // φ角向数据 (azimuthal)
+        const phiBins = 180;
+        const phiData = samples.map(s => s.phi);
+        hist = window.Hydrogen.histogramPhiFromSamples(phiData, phiBins, true);
+
+        // 计算bin中心
+        centers = new Array(phiBins);
+        for (let i = 0; i < phiBins; i++) {
           centers[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
         }
       }
@@ -797,6 +893,7 @@
     reset, // 暴露重置方法
     renderChartRadial,
     renderChartAngular,
+    renderChartPhi, // 新增φ角向分布API
     renderChartCompare, // 新增对比模式API
     state, // 暴露状态对象
   };

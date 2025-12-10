@@ -971,19 +971,9 @@ window.ElectronCloud.UI.init = function () {
             }
         });
 
-        // 如果当前选中的原子被禁用了，自动切换到第一个可用的原子
-        const currentOption = atomSelect.options[atomSelect.selectedIndex];
-        if (currentOption && currentOption.disabled) {
-            // 找到第一个可用的原子
-            for (const option of atomSelect.options) {
-                if (!option.disabled) {
-                    atomSelect.value = option.value;
-                    // 触发change事件更新状态
-                    atomSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                    break;
-                }
-            }
-        }
+        // 【移除】不再自动切换原子
+        // 用户可能故意选择一个原子不支持的轨道（使用氢原子的解析波函数）
+        // 仅通过禁用状态提示用户，不强制更改
     };
 
 };

@@ -34,6 +34,7 @@ window.ElectronCloud.state = {
     // 采样数据
     radialSamples: [],
     angularSamples: [],
+    phiSamples: [],
 
     // 轨道显示状态管理
     orbitalVisibility: {},
@@ -224,6 +225,7 @@ window.ElectronCloud.resetState = function () {
     // 清空数据数组
     state.radialSamples = [];
     state.angularSamples = [];
+    state.phiSamples = [];
 
     // 重置轨道状态
     state.orbitalVisibility = {};
@@ -337,6 +339,7 @@ window.ElectronCloud.resetSamplingState = function () {
     // 清空数据数组
     state.radialSamples = [];
     state.angularSamples = [];
+    state.phiSamples = [];
 
     // 重置轨道状态
     state.orbitalVisibility = {};

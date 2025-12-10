@@ -839,7 +839,8 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
 
         // 绘制直方图和理论曲线
         DataPanel.renderChartRadial(hist, { centers, values, wave });
-    } else {
+    } else if (type === 'angular') {
+        // θ角向分布
         const hist = Hydrogen.histogramThetaFromSamples(state.angularSamples, angularBins, true);
 
         // 【关键修复】计算角向理论值 - 多轨道时加和
@@ -856,6 +857,29 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
         }
 
         DataPanel.renderChartAngular(hist, { centers, values });
+    } else {
+        // φ角向分布 (azimuthal)
+        const phiBins = 180;
+        const hist = Hydrogen.histogramPhiFromSamples(state.phiSamples, phiBins, true);
+
+        // 【修复】φ方向理论值应根据轨道的m值和类型（cos/sin）计算
+        // 对于m=0：均匀分布(1/2π)
+        // 对于m≠0 cos型：cos²(mφ)/π
+        // 对于m≠0 sin型：sin²(mφ)/π
+        const centers = new Array(phiBins);
+        const values = new Array(phiBins);
+        for (let i = 0; i < phiBins; i++) {
+            centers[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
+
+            // 多轨道时取平均
+            let sumPhiPDF = 0;
+            for (const params of paramsList) {
+                sumPhiPDF += Hydrogen.angularPDF_Phi(params.angKey.m, params.angKey.t, centers[i]);
+            }
+            values[i] = sumPhiPDF / paramsList.length;
+        }
+
+        DataPanel.renderChartPhi(hist, { centers, values });
     }
 };
 

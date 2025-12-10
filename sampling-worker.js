@@ -1056,7 +1056,8 @@ function performSampling(config) {
             point = { x, y, z, r: r_color, g: g_color, b: b_color, orbitalIndex: isIndependentMode ? orbitalIndex : -1 };
             // 【关键修复】添加orbitalIndex到samples，用于比照模式构建唯一键
             // 【关键修复】使用effectiveOrbitals确保比照模式下每个slot都有正确的轨道键
-            samples.push({ r, theta, orbitalKey: isIndependentMode ? effectiveOrbitals[orbitalIndex] : null, orbitalIndex: isIndependentMode ? orbitalIndex : -1 });
+            // 【新增】添加phi用于φ角向分布图表
+            samples.push({ r, theta, phi, orbitalKey: isIndependentMode ? effectiveOrbitals[orbitalIndex] : null, orbitalIndex: isIndependentMode ? orbitalIndex : -1 });
             points.push(point);
 
             // 【关键】更新该轨道的已采样点数计数

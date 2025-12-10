@@ -136,6 +136,7 @@ window.ElectronCloud.Sampling.handleWorkerResult = function (result, taskId, ses
     for (const sample of result.samples) {
         state.radialSamples.push(sample.r);
         state.angularSamples.push(sample.theta);
+        state.phiSamples.push(sample.phi);
 
         if (sample.orbitalKey) {
             // 【关键修复】比照模式下使用slot索引+原子类型作为唯一键，避免同轨道覆盖
@@ -160,6 +161,7 @@ window.ElectronCloud.Sampling.handleWorkerResult = function (result, taskId, ses
             state.orbitalSamplesMap[sampleKey].push({
                 r: sample.r,
                 theta: sample.theta,
+                phi: sample.phi,
                 probability: 0, // Worker 中已计算过
                 orbitalIndex: sample.orbitalIndex // 保存slot索引用于后续处理
             });
@@ -542,6 +544,7 @@ window.ElectronCloud.Sampling.processIndependentModePoint = function (x, y, z, r
         state.pointCount++;
         state.radialSamples.push(r);
         state.angularSamples.push(theta);
+        state.phiSamples.push(phi);
 
         window.ElectronCloud.Sampling.updateFarthestDistance(r);
 
@@ -623,6 +626,7 @@ window.ElectronCloud.Sampling.processNormalModePoint = function (x, y, z, r, the
         state.pointCount++;
         state.radialSamples.push(r);
         state.angularSamples.push(theta);
+        state.phiSamples.push(phi);
 
         window.ElectronCloud.Sampling.updateFarthestDistance(r);
 
@@ -810,6 +814,7 @@ window.ElectronCloud.Sampling.processImportanceSamplingPoint = function (
     state.pointCount++;
     state.radialSamples.push(r);
     state.angularSamples.push(theta);
+    state.phiSamples.push(phi);
 
     window.ElectronCloud.Sampling.updateFarthestDistance(r);
 
@@ -1003,6 +1008,7 @@ function addHybridPoint(result, paramsList, positions, colors) {
     state.pointCount++;
     state.radialSamples.push(result.r);
     state.angularSamples.push(result.theta);
+    state.phiSamples.push(result.phi);
 
     window.ElectronCloud.Sampling.updateFarthestDistance(result.r);
 
@@ -1171,6 +1177,7 @@ function addHybridPointAll(result, paramsList, positions, colors) {
     state.pointCount++;
     state.radialSamples.push(result.r);
     state.angularSamples.push(result.theta);
+    state.phiSamples.push(result.phi);
 
     window.ElectronCloud.Sampling.updateFarthestDistance(result.r);
 
@@ -1440,7 +1447,7 @@ window.ElectronCloud.Sampling.performRollingUpdate = function () {
                 }
 
                 if (!state.orbitalSamplesMap[chartDataKey]) state.orbitalSamplesMap[chartDataKey] = [];
-                state.orbitalSamplesMap[chartDataKey].push({ r, theta, probability: 0, orbitalIndex });
+                state.orbitalSamplesMap[chartDataKey].push({ r, theta, phi, probability: 0, orbitalIndex });
 
             }
         }
@@ -1553,6 +1560,9 @@ window.ElectronCloud.Sampling.performRollingUpdate = function () {
         }
         if (state.angularSamples && targetIndex < state.angularSamples.length) {
             state.angularSamples[targetIndex] = theta;
+        }
+        if (state.phiSamples && targetIndex < state.phiSamples.length) {
+            state.phiSamples[targetIndex] = phi;
         }
     }
 

@@ -684,6 +684,54 @@
     return { edges, counts, dθ: dth };
   }
 
+  /**
+   * 从采样数据生成 φ (方位角) 直方图
+   * φ 范围是 [0, 2π]
+   * @param {Array} phiArray - φ 值数组
+   * @param {number} bins - 直方图的 bin 数量
+   * @param {boolean} normalize - 是否归一化
+   * @returns {Object} { edges, counts, dφ }
+   */
+  function histogramPhiFromSamples(phiArray, bins = 180, normalize = true) {
+    const N = phiArray.length;
+    if (N === 0) return { edges: [], counts: [] };
+
+    const edges = new Float32Array(bins + 1);
+    const counts = new Float32Array(bins);
+    const dphi = TWO_PI / bins;
+
+    // 生成边缘 [0, 2π]
+    for (let i = 0; i <= bins; i++) {
+      edges[i] = i * dphi;
+    }
+
+    // 计算直方图
+    for (let i = 0; i < N; i++) {
+      let p = phiArray[i];
+      // 确保 phi 在 [0, 2π) 范围内
+      if (p === undefined || isNaN(p)) continue;
+      while (p < 0) p += TWO_PI;
+      while (p >= TWO_PI) p -= TWO_PI;
+      const b = Math.min(bins - 1, Math.floor(p / dphi));
+      counts[b] += 1;
+    }
+
+    // 归一化
+    if (normalize) {
+      let area = 0;
+      for (let i = 0; i < bins; i++) {
+        area += counts[i] * dphi;
+      }
+      if (area > 0) {
+        for (let i = 0; i < bins; i++) {
+          counts[i] /= area;
+        }
+      }
+    }
+
+    return { edges, counts, dφ: dphi };
+  }
+
   function orbitalKey(params) {
     return `${params.n}${params.l}${params.angKey.m}${params.angKey.t}`;
   }
@@ -695,6 +743,38 @@
     const Plm = associatedLegendre(l, mm, Math.cos(theta));
     const N2 = ((2 * l + 1) / (4 * PI)) * (factorial(l - mm) / factorial(l + mm));
     return 2 * PI * N2 * Plm * Plm * Math.sin(theta);
+  }
+
+  /**
+   * 计算方位角边缘概率密度 P(φ) = ∫|Y|² sin(θ) dθ
+   * 对于实球谐函数：
+   * - m=0 时：P(φ) = 1/(2π)，均匀分布
+   * - m≠0 且 cos型：P(φ) = cos²(mφ)/π
+   * - m≠0 且 sin型：P(φ) = sin²(mφ)/π
+   * 
+   * @param {number} m - 磁量子数
+   * @param {string} t - 轨道类型：'c'=cos型, 's'=sin型, ''=m=0
+   * @param {number} phi - 方位角 [0, 2π]
+   * @returns {number} 概率密度
+   */
+  function angularPDF_Phi(m, t, phi) {
+    const mm = Math.abs(m);
+
+    if (mm === 0) {
+      // m=0: 均匀分布
+      return 1 / TWO_PI;
+    }
+
+    // m≠0: 依赖于轨道类型
+    if (t === 'c' || t === 'cos') {
+      // cos型：P(φ) = cos²(mφ)/π
+      const cosMphi = Math.cos(mm * phi);
+      return cosMphi * cosMphi / PI;
+    } else {
+      // sin型：P(φ) = sin²(mφ)/π
+      const sinMphi = Math.sin(mm * phi);
+      return sinMphi * sinMphi / PI;
+    }
   }
 
   // ==================== 精确逆CDF采样 (Inverse CDF Sampling) ====================
@@ -1976,10 +2056,12 @@
     radialGrid,
     histogramRadialFromSamples,
     histogramThetaFromSamples,
+    histogramPhiFromSamples,
     recommendRmax,
     orbitalParamsFromKey,
     orbitalKey,
     angularPDF_Theta,
+    angularPDF_Phi,
     // 精确逆CDF采样
     buildRadialCDF,
     sampleRadialExact,

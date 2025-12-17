@@ -2096,6 +2096,86 @@
     getOrbitalSymmetryAxis,
     getRotationToAxis,
     slaterRadialR, // Export STO function
-    estimateOrbitalRadius95, // 轨道半径估算（用于自动缩放）
+    // 轨道半径估算（用于自动缩放）
+    estimateOrbitalRadius95,
+
+    // === 势能积分曲线相关 ===
+
+    /**
+     * 计算理论势能积分曲线
+     * E(r) = -Z * ∫[0->r] x * R(x)^2 dx
+     * 
+     * @param {number} n - 主量子数
+     * @param {number} l - 角量子数
+     * @param {number} Z - 核电荷数
+     * @param {string} atomType - 原子类型
+     * @param {number} rMax - 最大半径
+     * @param {number} steps - 积分步数
+     * @returns {Object} { r: [], E: [] }
+     */
+    calculateCumulativePotential: function (n, l, Z, atomType, rMax, steps = 500) {
+      const dr = rMax / steps;
+      const rValues = new Float32Array(steps);
+      const eValues = new Float32Array(steps); // 累积势能
+
+      let integral = 0;
+      // 使用梯形法则积分
+      // Integrand I(x) = -Z * x * R(x)^2
+      // E(r) = ∫ I(x) dx
+
+      // r=0 处 integrand 为 0 (因为 x term, except for s-orbitals? No, r*R^2 -> 0 as r->0 even for 1s)
+      // For 1s: R ~ exp(-Zr), R^2 ~ exp(-2Zr), x*R^2 -> 0. Safe.
+
+      let prevValue = 0; // I(0) = 0
+
+      for (let i = 0; i < steps; i++) {
+        const r = (i + 1) * dr; //避免 r=0 除法问题，虽然这里不需要除法
+        const R = radialR(n, l, r, Z, A0, atomType);
+        const currentValue = -Z * r * R * R;
+
+        // 梯形面积
+        const area = 0.5 * (prevValue + currentValue) * dr;
+        integral += area;
+
+        rValues[i] = r;
+        eValues[i] = integral;
+        prevValue = currentValue;
+      }
+
+      return { r: rValues, E: eValues };
+    },
+
+    /**
+     * 将概率密度直方图转换为势能积分曲线
+     * 用于处理采样数据
+     * 
+     * @param {Array} counts - 直方图计数
+     * @param {Array} edges - 直方图边界
+     * @param {number} totalSamples - 总样本数
+     * @param {number} Z - 核电荷数
+     * @returns {Array} 累积能量值数组 (与counts长度相同)
+     */
+    transformHistogramToPotential: function (counts, edges, totalSamples, Z) {
+      if (totalSamples === 0) return new Float32Array(counts.length);
+
+      const eValues = new Float32Array(counts.length);
+      let cumulativeE = 0;
+
+      for (let i = 0; i < counts.length; i++) {
+        const count = counts[i];
+        if (count > 0) {
+          // Bin center r
+          const r = 0.5 * (edges[i] + edges[i + 1]);
+          // 概率 P_i = count / totalSamples
+          const prob = count / totalSamples;
+          // 该 bin 的平均势能贡献贡献: P_i * (-Z / r)
+          // 注意：这里我们用 bin 中心的势能近似整个 bin 的平均势能
+          const contribution = prob * (-Z / r);
+          cumulativeE += contribution;
+        }
+        eValues[i] = cumulativeE;
+      }
+      return eValues;
+    }
   };
 })();

@@ -771,6 +771,63 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
         console.log('使用后台准备的角向图表数据进行渲染');
         DataPanel.renderChartAngular(state.backgroundChartData.angular.hist, state.backgroundChartData.angular.theory);
         return;
+    } else if (type === 'potential' && state.backgroundChartData.radial) {
+        // 使用后台准备的径向数据计算势能曲线
+        const hist = state.backgroundChartData.radial.hist;
+
+        // 【关键修复】如果后台直方图为空（尚未累积数据），则回退到实时计算
+        let totalSamples = 0;
+        if (hist.counts) {
+            for (let i = 0; i < hist.counts.length; i++) totalSamples += hist.counts[i];
+        }
+
+        if (totalSamples === 0) {
+            console.log('后台径向数据样本数为0，转为实时计算');
+            // Fallthrough to recalculate logic via return skipping? 
+            // We need to NOT return here.
+        } else {
+            console.log('使用后台准备的径向数据计算势能曲线, 样本数:', totalSamples);
+
+            // 1. 实验数据（采样）
+            const atomType = state.currentAtom || 'H';
+            const Z = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
+
+            // 【关键修复】hist.counts 是归一化的概率密度 P(r)，而不是原始计数 N_i
+            // 我们需要 bin 概率 P_bin = P(r) * dr
+            // transformHistogramToPotential 计算 prob = count / totalSamples
+            // 令 count = P(r), totalSamples = 1/dr => prob = P(r) * dr
+            const dr = hist.edges[1] - hist.edges[0];
+            const scaleFactor = (dr > 0) ? (1.0 / dr) : 1.0;
+
+            const expE = window.Hydrogen.transformHistogramToPotential(hist.counts, hist.edges, scaleFactor, Z);
+
+            const centers = state.backgroundChartData.radial.theory.centers;
+            const expPoints = centers.map((r, i) => ({ x: r, y: expE[i] }));
+
+            // 2. 理论数据 - 【关键修复】在相同的 centers 点上计算，确保对齐
+            const orbitals = state.currentOrbitals && state.currentOrbitals.length > 0
+                ? state.currentOrbitals
+                : [state.currentOrbital || '1s'];
+            const paramsList = orbitals.map(key => Hydrogen.orbitalParamsFromKey(key)).filter(Boolean);
+
+            const rMax = centers[centers.length - 1] || 10;
+            const numBins = centers.length;
+
+            // 在每个 center 点上计算理论势能积分值
+            const theoryE = new Float32Array(numBins);
+            if (paramsList.length > 0) {
+                for (const params of paramsList) {
+                    const res = window.Hydrogen.calculateCumulativePotential(params.n, params.l, Z, atomType, rMax, numBins);
+                    for (let j = 0; j < numBins; j++) theoryE[j] += res.E[j];
+                }
+                for (let j = 0; j < numBins; j++) theoryE[j] /= paramsList.length;
+            }
+
+            const theoryPoints = centers.map((r, i) => ({ x: r, y: theoryE[i] }));
+
+            DataPanel.renderChartPotential({ points: expPoints }, { points: theoryPoints });
+            return;
+        }
     }
 
     // 如果没有后台数据，则重新计算
@@ -785,7 +842,7 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
 
     if (paramsList.length === 0) return;
 
-    if (type === 'radial') {
+    if (type === 'radial' || type === 'potential' || type === 'dEdr' || type === 'potentialLog' || type === 'dEdrLog') {
         // 动态调整横轴宽度：仅略宽于最远采样点距离
         // 【性能修复】使用循环替代Math.max(...array)，避免大数组栈溢出
         let maxSampleDistance = 0;
@@ -838,7 +895,118 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
         }
 
         // 绘制直方图和理论曲线
-        DataPanel.renderChartRadial(hist, { centers, values, wave });
+        if (type === 'radial') {
+            DataPanel.renderChartRadial(hist, { centers, values, wave });
+        } else if (type === 'potential') {
+            // 势能积分 E(r)
+            const atomType = state.currentAtom || 'H';
+            const Z = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
+
+            // 【关键修复】hist.counts 是归一化的，需要使用 1/dr 作为缩放因子
+            const dr = hist.edges[1] - hist.edges[0];
+            const scaleFactor = (dr > 0) ? (1.0 / dr) : 1.0;
+            const expE = window.Hydrogen.transformHistogramToPotential(hist.counts, hist.edges, scaleFactor, Z);
+            const expPoints = centers.map((r, i) => ({ x: r, y: expE[i] }));
+
+            // 【关键修复】理论曲线必须在相同的 centers 点上计算，确保 X 轴完美对齐
+            const rMax = centers[centers.length - 1];
+            const numBins = centers.length;
+
+            // 在每个 center 点上计算理论势能积分值
+            const theoryE = new Float32Array(numBins);
+            if (paramsList.length > 0) {
+                for (const params of paramsList) {
+                    const res = window.Hydrogen.calculateCumulativePotential(params.n, params.l, Z, atomType, rMax, numBins);
+                    for (let j = 0; j < numBins; j++) theoryE[j] += res.E[j];
+                }
+                for (let j = 0; j < numBins; j++) theoryE[j] /= paramsList.length;
+            }
+
+            const theoryPoints = centers.map((r, i) => ({ x: r, y: theoryE[i] }));
+            DataPanel.renderChartPotential({ points: expPoints }, { points: theoryPoints });
+        } else if (type === 'dEdr') {
+            // dEdr: 势能密度 = -Z/r * P(r)
+            const atomType = state.currentAtom || 'H';
+            const Z = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
+
+            // 采样数据的 dE/dr: hist.counts 是归一化的 P(r)
+            const expDEdr = centers.map((r, i) => {
+                const Pr = hist.counts[i] || 0;
+                return r > 0.01 ? (-Z / r) * Pr : 0;
+            });
+            const expPoints = centers.map((r, i) => ({ x: r, y: expDEdr[i] }));
+
+            // 理论 dE/dr: 使用 radialPDF 计算 P(r)，然后乘以 -Z/r
+            const numBins = centers.length;
+            const theoryDEdr = new Float32Array(numBins);
+            if (paramsList.length > 0) {
+                for (let j = 0; j < numBins; j++) {
+                    const r = centers[j];
+                    if (r > 0.01) {
+                        let sumPDF = 0;
+                        for (const params of paramsList) {
+                            sumPDF += window.Hydrogen.radialPDF(params.n, params.l, r, 1, 1, atomType);
+                        }
+                        theoryDEdr[j] = (-Z / r) * (sumPDF / paramsList.length);
+                    }
+                }
+            }
+
+            const theoryPoints = centers.map((r, i) => ({ x: r, y: theoryDEdr[i] }));
+            DataPanel.renderChartDEdr({ points: expPoints }, { points: theoryPoints });
+        } else if (type === 'potentialLog') {
+            // 势能积分 vs log(r)：复用 potential 计算但使用对数 x 轴
+            const atomType = state.currentAtom || 'H';
+            const Z = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
+
+            const dr = hist.edges[1] - hist.edges[0];
+            const scaleFactor = (dr > 0) ? (1.0 / dr) : 1.0;
+            const expE = window.Hydrogen.transformHistogramToPotential(hist.counts, hist.edges, scaleFactor, Z);
+            // 使用 log10(r) 作为 x 轴，过滤 r <= 0 的点
+            const expPoints = centers.filter(r => r > 0).map((r, i) => ({ x: Math.log10(r), y: expE[i] }));
+
+            const rMax = centers[centers.length - 1];
+            const numBins = centers.length;
+            const theoryE = new Float32Array(numBins);
+            if (paramsList.length > 0) {
+                for (const params of paramsList) {
+                    const res = window.Hydrogen.calculateCumulativePotential(params.n, params.l, Z, atomType, rMax, numBins);
+                    for (let j = 0; j < numBins; j++) theoryE[j] += res.E[j];
+                }
+                for (let j = 0; j < numBins; j++) theoryE[j] /= paramsList.length;
+            }
+
+            const theoryPoints = centers.filter(r => r > 0).map((r, i) => ({ x: Math.log10(r), y: theoryE[i] }));
+            DataPanel.renderChartPotentialLog({ points: expPoints }, { points: theoryPoints });
+        } else {
+            // dEdrLog: dE/d(log r) = r * dE/dr = -Z * P(r)
+            const atomType = state.currentAtom || 'H';
+            const Z = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
+
+            // dE/d(log r) = r * dE/dr = r * (-Z/r) * P(r) = -Z * P(r)
+            const expDEdrLog = centers.map((r, i) => {
+                const Pr = hist.counts[i] || 0;
+                return -Z * Pr;
+            });
+            const expPoints = centers.filter(r => r > 0).map((r, i) => ({ x: Math.log10(r), y: expDEdrLog[i] }));
+
+            // 理论 dE/d(log r) = -Z * radialPDF
+            const numBins = centers.length;
+            const theoryDEdrLog = new Float32Array(numBins);
+            if (paramsList.length > 0) {
+                for (let j = 0; j < numBins; j++) {
+                    const r = centers[j];
+                    let sumPDF = 0;
+                    for (const params of paramsList) {
+                        sumPDF += window.Hydrogen.radialPDF(params.n, params.l, r, 1, 1, atomType);
+                    }
+                    theoryDEdrLog[j] = -Z * (sumPDF / paramsList.length);
+                }
+            }
+
+            const theoryPoints = centers.filter(r => r > 0).map((r, i) => ({ x: Math.log10(r), y: theoryDEdrLog[i] }));
+            DataPanel.renderChartDEdrLog({ points: expPoints }, { points: theoryPoints });
+        }
     } else if (type === 'angular') {
         // θ角向分布
         const hist = Hydrogen.histogramThetaFromSamples(state.angularSamples, angularBins, true);

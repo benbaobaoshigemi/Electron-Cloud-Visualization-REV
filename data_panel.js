@@ -9,6 +9,11 @@
     waveHidden: true, // 记录波函数曲线的隐藏状态（默认隐藏）
     angularTheoryHidden: false, // 记录角向理论曲线的隐藏状态
     compareTheoryHidden: true, // 记录比照模式理论曲线的隐藏状态（默认隐藏）
+    potentialTheoryHidden: false, // 记录势能图理论曲线的隐藏状态（默认显示）
+    phiTheoryHidden: false, // 记录φ角向理论曲线的隐藏状态
+    dEdrTheoryHidden: false, // 记录dE/dr理论曲线的隐藏状态（默认显示）
+    potentialLogTheoryHidden: false, // 记录E(log r)理论曲线的隐藏状态
+    dEdrLogTheoryHidden: false, // 记录dE/d(log r)理论曲线的隐藏状态
   };
 
   function init() {
@@ -636,6 +641,382 @@
     chart.update('none'); // 使用无动画更新，避免曲线跳动
   }
 
+  function renderChartPotential(experimental, theory) {
+    const ctx = document.getElementById('probability-chart');
+    if (!ctx || !window.Chart) {
+      return;
+    }
+
+    // 保存理论曲线可见性状态
+    if (state.chart && state.chart.data && state.chart.data.datasets) {
+      const theoryIndex = state.chart.data.datasets.findIndex(ds => ds.label === '理论积分曲线');
+      if (theoryIndex !== -1) {
+        state.potentialTheoryHidden = !state.chart.isDatasetVisible(theoryIndex);
+      }
+    }
+
+    // 若当前不是柱状图，需销毁后重新创建
+    if (state.chart && state.chart.config && state.chart.config.type !== 'bar') {
+      try { state.chart.destroy(); } catch (e) { console.warn('图表销毁失败:', e); }
+      state.chart = null;
+    }
+
+    const chart = ensureChart();
+    if (!chart) {
+      return;
+    }
+
+    // 准备 X 轴标签和数据集
+    const datasets = [];
+    let labels = [];
+
+    // 从实验数据中提取X轴标签 (使用points的x值)
+    if (experimental && experimental.points && experimental.points.length > 0) {
+      labels = experimental.points.map(p => p.x.toFixed(2));
+
+      // 采样积分数据 - 柱状图（Y值可能是负数，所以用累积值）
+      datasets.push({
+        label: '采样积分曲线',
+        data: experimental.points.map(p => p.y),
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        borderColor: 'rgba(255,255,255,0.95)',
+        borderWidth: 0,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+        borderRadius: 2,
+        borderSkipped: false,
+        order: 10, // 柱状图放在最底层
+      });
+    }
+
+    // 理论曲线 - 折线叠加
+    if (theory && theory.points && theory.points.length > 0) {
+      // 如果labels还没设置，从theory中提取
+      if (labels.length === 0) {
+        labels = theory.points.map(p => p.x.toFixed(2));
+      }
+
+      datasets.push({
+        type: 'line',
+        label: '理论积分曲线',
+        data: theory.points.map((p, i) => ({ x: i, y: p.y })),
+        borderColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        borderWidth: 2.5,
+        yAxisID: 'y',
+        tension: 0.2,
+        order: 5, // 理论曲线在上层
+        hidden: state.potentialTheoryHidden || false
+      });
+    }
+
+    chart.data.labels = labels;
+    chart.data.datasets = datasets;
+
+    // 更新坐标轴标题
+    if (chart.options.scales) {
+      if (chart.options.scales.x) {
+        chart.options.scales.x.title = {
+          display: true,
+          text: '距离 r (a₀)',
+          color: '#d0d0d0',
+          font: { size: 12, weight: '500' }
+        };
+        chart.options.scales.x.ticks.autoSkip = true;
+        chart.options.scales.x.ticks.maxTicksLimit = 15;
+      }
+      if (chart.options.scales.y) {
+        chart.options.scales.y.title = {
+          display: true,
+          text: '累积势能 E(r) (Hartree)',
+          color: '#d0d0d0',
+          font: { size: 12, weight: '500' }
+        };
+      }
+    }
+
+    chart.update('none');
+  }
+
+  // 渲染势能密度 dE/dr 曲线（类似 renderChartPotential）
+  function renderChartDEdr(experimental, theory) {
+    const ctx = document.getElementById('probability-chart');
+    if (!ctx || !window.Chart) {
+      return;
+    }
+
+    // 保存理论曲线可见性状态
+    if (state.chart && state.chart.data && state.chart.data.datasets) {
+      const theoryIndex = state.chart.data.datasets.findIndex(ds => ds.label === '理论 dE/dr');
+      if (theoryIndex !== -1) {
+        state.dEdrTheoryHidden = !state.chart.isDatasetVisible(theoryIndex);
+      }
+    }
+
+    // 若当前不是柱状图，需销毁后重新创建
+    if (state.chart && state.chart.config && state.chart.config.type !== 'bar') {
+      try { state.chart.destroy(); } catch (e) { console.warn('图表销毁失败:', e); }
+      state.chart = null;
+    }
+
+    const chart = ensureChart();
+    if (!chart) {
+      return;
+    }
+
+    // 准备 X 轴标签和数据集
+    const datasets = [];
+    let labels = [];
+
+    // 从实验数据中提取X轴标签 (使用points的x值)
+    if (experimental && experimental.points && experimental.points.length > 0) {
+      labels = experimental.points.map(p => p.x.toFixed(2));
+
+      // 采样 dE/dr 数据 - 柱状图
+      datasets.push({
+        label: '采样 dE/dr',
+        data: experimental.points.map(p => p.y),
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        borderColor: 'rgba(255,255,255,0.95)',
+        borderWidth: 0,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+        borderRadius: 2,
+        borderSkipped: false,
+        order: 10,
+      });
+    }
+
+    // 理论曲线 - 折线叠加
+    if (theory && theory.points && theory.points.length > 0) {
+      if (labels.length === 0) {
+        labels = theory.points.map(p => p.x.toFixed(2));
+      }
+
+      datasets.push({
+        type: 'line',
+        label: '理论 dE/dr',
+        data: theory.points.map((p, i) => ({ x: i, y: p.y })),
+        borderColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        borderWidth: 2.5,
+        yAxisID: 'y',
+        tension: 0.2,
+        order: 5,
+        hidden: state.dEdrTheoryHidden || false
+      });
+    }
+
+    chart.data.labels = labels;
+    chart.data.datasets = datasets;
+
+    // 更新坐标轴标题
+    if (chart.options.scales) {
+      if (chart.options.scales.x) {
+        chart.options.scales.x.title = {
+          display: true,
+          text: '距离 r (a₀)',
+          color: '#d0d0d0',
+          font: { size: 12, weight: '500' }
+        };
+        chart.options.scales.x.ticks.autoSkip = true;
+        chart.options.scales.x.ticks.maxTicksLimit = 15;
+      }
+      if (chart.options.scales.y) {
+        chart.options.scales.y.title = {
+          display: true,
+          text: '势能密度 dE/dr (Hartree/a₀)',
+          color: '#d0d0d0',
+          font: { size: 12, weight: '500' }
+        };
+      }
+    }
+
+    chart.update('none');
+  }
+
+  // 渲染势能积分 vs log(r) 曲线
+  function renderChartPotentialLog(experimental, theory) {
+    const ctx = document.getElementById('probability-chart');
+    if (!ctx || !window.Chart) return;
+
+    // 保存理论曲线可见性状态
+    if (state.chart && state.chart.data && state.chart.data.datasets) {
+      const theoryIndex = state.chart.data.datasets.findIndex(ds => ds.label === '理论 E(log r)');
+      if (theoryIndex !== -1) {
+        state.potentialLogTheoryHidden = !state.chart.isDatasetVisible(theoryIndex);
+      }
+    }
+
+    // 使用折线图
+    if (!ensureChartLine()) return;
+    const chart = state.chart;
+
+    const datasets = [];
+    let labels = [];
+
+    if (experimental && experimental.points && experimental.points.length > 0) {
+      labels = experimental.points.map(p => p.x.toFixed(2));
+      datasets.push({
+        label: '采样 E(log r)',
+        data: experimental.points.map(p => p.y),
+        borderColor: 'rgba(255,255,255,0.8)',
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.2
+      });
+    }
+
+    if (theory && theory.points && theory.points.length > 0) {
+      if (labels.length === 0) {
+        labels = theory.points.map(p => p.x.toFixed(2));
+      }
+      datasets.push({
+        label: '理论 E(log r)',
+        data: theory.points.map(p => p.y),
+        borderColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        borderWidth: 2.5,
+        tension: 0.2,
+        hidden: state.potentialLogTheoryHidden || false
+      });
+    }
+
+    chart.data.labels = labels;
+    chart.data.datasets = datasets;
+
+    if (chart.options.scales) {
+      if (chart.options.scales.x) {
+        chart.options.scales.x.title = { display: true, text: 'log₁₀(r) (r in a₀)', color: '#d0d0d0', font: { size: 12 } };
+      }
+      if (chart.options.scales.y) {
+        chart.options.scales.y.title = { display: true, text: '累积势能 E(r) (Hartree)', color: '#d0d0d0', font: { size: 12 } };
+      }
+    }
+
+    chart.update('none');
+  }
+
+  // 渲染势能密度 dE/d(log r) 曲线
+  function renderChartDEdrLog(experimental, theory) {
+    const ctx = document.getElementById('probability-chart');
+    if (!ctx || !window.Chart) return;
+
+    // 保存理论曲线可见性状态
+    if (state.chart && state.chart.data && state.chart.data.datasets) {
+      const theoryIndex = state.chart.data.datasets.findIndex(ds => ds.label === '理论 dE/d(log r)');
+      if (theoryIndex !== -1) {
+        state.dEdrLogTheoryHidden = !state.chart.isDatasetVisible(theoryIndex);
+      }
+    }
+
+    // 使用折线图
+    if (!ensureChartLine()) return;
+    const chart = state.chart;
+
+    const datasets = [];
+    let labels = [];
+
+    if (experimental && experimental.points && experimental.points.length > 0) {
+      labels = experimental.points.map(p => p.x.toFixed(2));
+      datasets.push({
+        label: '采样 dE/d(log r)',
+        data: experimental.points.map(p => p.y),
+        borderColor: 'rgba(255,255,255,0.8)',
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.2
+      });
+    }
+
+    if (theory && theory.points && theory.points.length > 0) {
+      if (labels.length === 0) {
+        labels = theory.points.map(p => p.x.toFixed(2));
+      }
+      datasets.push({
+        label: '理论 dE/d(log r)',
+        data: theory.points.map(p => p.y),
+        borderColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        borderWidth: 2.5,
+        tension: 0.2,
+        hidden: state.dEdrLogTheoryHidden || false
+      });
+    }
+
+    chart.data.labels = labels;
+    chart.data.datasets = datasets;
+
+    if (chart.options.scales) {
+      if (chart.options.scales.x) {
+        chart.options.scales.x.title = { display: true, text: 'log₁₀(r) (r in a₀)', color: '#d0d0d0', font: { size: 12 } };
+      }
+      if (chart.options.scales.y) {
+        chart.options.scales.y.title = { display: true, text: '势能密度 dE/d(log r) (Hartree)', color: '#d0d0d0', font: { size: 12 } };
+      }
+    }
+
+    chart.update('none');
+  }
+
+  // 确保创建一个折线图实例
+  function ensureChartLine() {
+    const ctx = document.getElementById('probability-chart');
+    if (!ctx || !window.Chart) return false;
+
+    if (state.chart && state.chart.config.type === 'line') return true;
+    if (state.chart) {
+      state.chart.destroy();
+      state.chart = null;
+    }
+
+    // 创建新图表
+    state.chart = new Chart(ctx, {
+      type: 'line',
+      data: { datasets: [] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 0 },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              label: function (context) {
+                return context.dataset.label + ': ' + context.parsed.y.toFixed(4);
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            title: { display: true, text: 'r (a0)', color: '#d0d0d0' },
+            min: 0,
+            ticks: { color: '#d0d0d0', maxTicksLimit: 10 },
+            grid: { color: 'rgba(255,255,255,0.08)' }
+          },
+          y: {
+            position: 'left',
+            title: { display: true, text: 'Value', color: '#d0d0d0' },
+            ticks: { color: '#d0d0d0' },
+            grid: { color: 'rgba(255,255,255,0.08)' }
+          }
+        }
+      }
+    });
+    return true;
+  }
+
   // 对比模式专用：渲染散点图
   function renderChartCompare(orbitalDataMap, type) {
     console.log('renderChartCompare 被调用，类型:', type); // 调试信息
@@ -645,15 +1026,13 @@
       return;
     }
 
-    // 仅在当前已经是折线图（比照模式）时捕获状态
-    // 避免从柱状图（其他模式）继承可见性状态，确保"默认关闭"生效
-    if (state.chart && state.chart.config && state.chart.config.type === 'line') {
-      const chart = state.chart;
-      if (chart.data && chart.data.datasets) {
-        const theoryIndex = chart.data.datasets.findIndex(ds => ds.label && ds.label.includes('理论'));
-        if (theoryIndex !== -1) {
-          state.compareTheoryHidden = !chart.isDatasetVisible(theoryIndex);
-        }
+    // 【修复】在任何图表存在时都尝试捕获理论曲线状态
+    // 检查当前图表中是否有理论曲线数据集，保存其可见性状态
+    if (state.chart && state.chart.data && state.chart.data.datasets) {
+      const theoryIndex = state.chart.data.datasets.findIndex(ds => ds.label && ds.label.includes('理论'));
+      if (theoryIndex !== -1) {
+        // isDatasetVisible返回true表示可见，取反得到hidden状态
+        state.compareTheoryHidden = !state.chart.isDatasetVisible(theoryIndex);
       }
     }
 
@@ -714,7 +1093,7 @@
               type: 'linear',
               title: {
                 display: true,
-                text: type === 'radial' ? '径向距离 (a₀)' : '角度 (弧度)',
+                text: type === 'radial' ? '径向距离 (a₀)' : (type === 'potential' ? '距离 r (a₀)' : '角度 (弧度)'),
                 color: '#d0d0d0',
                 font: { size: 12, weight: '500' }
               },
@@ -734,7 +1113,7 @@
               type: 'linear',
               title: {
                 display: true,
-                text: '概率密度',
+                text: type === 'potential' ? '累积势能贡献 E(r) (Hartree)' : '概率密度',
                 color: '#d0d0d0',
                 font: { size: 12, weight: '500' }
               },
@@ -764,8 +1143,27 @@
       });
     } else {
       // 如果图表已存在，更新坐标轴标题
-      if (state.chart.options.scales && state.chart.options.scales.x && state.chart.options.scales.x.title) {
-        state.chart.options.scales.x.title.text = type === 'radial' ? '径向距离 (a₀)' : '角度 (弧度)';
+      if (state.chart.options.scales) {
+        if (state.chart.options.scales.x && state.chart.options.scales.x.title) {
+          if (type === 'potentialLog' || type === 'dEdrLog') {
+            state.chart.options.scales.x.title.text = 'log₁₀(r) (r in a₀)';
+          } else if (type === 'radial' || type === 'potential' || type === 'dEdr') {
+            state.chart.options.scales.x.title.text = '距离 r (a₀)';
+          } else {
+            state.chart.options.scales.x.title.text = '角度 (弧度)';
+          }
+        }
+        if (state.chart.options.scales.y && state.chart.options.scales.y.title) {
+          if (type === 'potential' || type === 'potentialLog') {
+            state.chart.options.scales.y.title.text = '累积势能 E(r) (Hartree)';
+          } else if (type === 'dEdr') {
+            state.chart.options.scales.y.title.text = '势能密度 dE/dr (Hartree/a₀)';
+          } else if (type === 'dEdrLog') {
+            state.chart.options.scales.y.title.text = '势能密度 dE/d(log r) (Hartree)';
+          } else {
+            state.chart.options.scales.y.title.text = '概率密度';
+          }
+        }
       }
     }
 
@@ -790,7 +1188,7 @@
     for (const [orbitalKey, samples] of Object.entries(orbitalDataMap)) {
       if (!samples || samples.length === 0) continue;
       totalSamples += samples.length;
-      if (type === 'radial') {
+      if (type === 'radial' || type === 'potential' || type === 'dEdr' || type === 'potentialLog' || type === 'dEdrLog') {
         // 【性能修复】使用循环替代Math.max(...array)，避免大数组栈溢出
         for (let i = 0; i < samples.length; i++) {
           if (samples[i].r > maxDistance) {
@@ -819,6 +1217,7 @@
       // 【关键修复】标签中显示原子类型
       const displayName = `${slotConfig.atom} ${orbitalDisplayNameMap[slotConfig.orbital] || slotConfig.orbital}`;
       let hist, centers;
+      let potentialValues; // 存储势能值
 
       if (type === 'radial') {
         // 使用与普通模式相同的参数
@@ -847,6 +1246,98 @@
         for (let i = 0; i < angularBins; i++) {
           centers[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
         }
+      } else if (type === 'potential') {
+        // 势能积分曲线
+        const dynamicRmax = Math.max(1, maxDistance * 1.08);
+        const baseBins = 240;
+        const sampleDensity = totalSamples / Math.max(1, dynamicRmax);
+        const adaptiveBins = Math.min(400, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
+
+        const radialData = samples.map(s => s.r);
+        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true);
+
+        centers = new Array(adaptiveBins);
+        for (let i = 0; i < adaptiveBins; i++) {
+          centers[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
+        }
+
+        // 计算核电荷数
+        const Z = window.SlaterBasis && window.SlaterBasis[slotConfig.atom] ? window.SlaterBasis[slotConfig.atom].Z : 1;
+
+        // 转换直方图为势能积分
+        // 【关键修复】hist.counts 是归一化的概率密度，需用 1/dr 缩放
+        const dr = hist.edges[1] - hist.edges[0];
+        const scaleFactor = (dr > 0) ? (1.0 / dr) : 1.0;
+        potentialValues = window.Hydrogen.transformHistogramToPotential(hist.counts, hist.edges, scaleFactor, Z);
+      } else if (type === 'dEdr') {
+        // 势能密度 dE/dr = -Z/r * P(r)
+        const dynamicRmax = Math.max(1, maxDistance * 1.08);
+        const baseBins = 240;
+        const sampleDensity = totalSamples / Math.max(1, dynamicRmax);
+        const adaptiveBins = Math.min(400, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
+
+        const radialData = samples.map(s => s.r);
+        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true);
+
+        centers = new Array(adaptiveBins);
+        for (let i = 0; i < adaptiveBins; i++) {
+          centers[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
+        }
+
+        const Z = window.SlaterBasis && window.SlaterBasis[slotConfig.atom] ? window.SlaterBasis[slotConfig.atom].Z : 1;
+
+        // 计算 dE/dr = -Z/r * P(r)
+        potentialValues = centers.map((r, i) => {
+          const Pr = hist.counts[i] || 0;
+          return r > 0.01 ? (-Z / r) * Pr : 0;
+        });
+      } else if (type === 'potentialLog') {
+        // 势能积分 vs log(r)
+        const dynamicRmax = Math.max(1, maxDistance * 1.08);
+        const baseBins = 240;
+        const sampleDensity = totalSamples / Math.max(1, dynamicRmax);
+        const adaptiveBins = Math.min(400, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
+
+        const radialData = samples.map(s => s.r);
+        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true);
+
+        centers = new Array(adaptiveBins);
+        for (let i = 0; i < adaptiveBins; i++) {
+          centers[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
+        }
+
+        const Z = window.SlaterBasis && window.SlaterBasis[slotConfig.atom] ? window.SlaterBasis[slotConfig.atom].Z : 1;
+        const dr = hist.edges[1] - hist.edges[0];
+        const scaleFactor = (dr > 0) ? (1.0 / dr) : 1.0;
+        potentialValues = window.Hydrogen.transformHistogramToPotential(hist.counts, hist.edges, scaleFactor, Z);
+
+        // 转换 x 轴为 log10(r)
+        centers = centers.map(r => r > 0 ? Math.log10(r) : -2);
+      } else if (type === 'dEdrLog') {
+        // dE/d(log r) = -Z * P(r)
+        const dynamicRmax = Math.max(1, maxDistance * 1.08);
+        const baseBins = 240;
+        const sampleDensity = totalSamples / Math.max(1, dynamicRmax);
+        const adaptiveBins = Math.min(400, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
+
+        const radialData = samples.map(s => s.r);
+        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true);
+
+        const linearCenters = new Array(adaptiveBins);
+        for (let i = 0; i < adaptiveBins; i++) {
+          linearCenters[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
+        }
+
+        const Z = window.SlaterBasis && window.SlaterBasis[slotConfig.atom] ? window.SlaterBasis[slotConfig.atom].Z : 1;
+
+        // dE/d(log r) = r * dE/dr = -Z * P(r)
+        potentialValues = linearCenters.map((r, i) => {
+          const Pr = hist.counts[i] || 0;
+          return -Z * Pr;
+        });
+
+        // 转换 x 轴为 log10(r)
+        centers = linearCenters.map(r => r > 0 ? Math.log10(r) : -2);
       } else {
         // φ角向数据 (azimuthal)
         const phiBins = 180;
@@ -860,11 +1351,12 @@
         }
       }
 
-      // 将直方图转为折线数据（bin中心为x，概率密度为y）
+      // 将数据转为折线数据
+      // 对于势能相关模式，y是potentialValues；其他模式是hist.counts
       const data = centers.map((center, index) => ({
         x: center,
-        y: hist.counts[index]
-      })).sort((a, b) => a.x - b.x); // 确保按x坐标排序
+        y: (type === 'potential' || type === 'dEdr' || type === 'potentialLog' || type === 'dEdrLog') ? potentialValues[index] : hist.counts[index]
+      })).sort((a, b) => a.x - b.x);
 
       // 将颜色值从[0,1]范围转换为[0,255]范围
       const colorValues = color.value.map(v => Math.round(v * 255));
@@ -899,6 +1391,46 @@
             x: theta,
             y: window.Hydrogen.angularPDF_Theta(orbitalParams.l, orbitalParams.angKey.m, theta)
           }));
+        } else if (type === 'potential') {
+          // 势能理论曲线
+          const Z = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
+          // 重新计算全范围的理论曲线以匹配渲染范围
+          const rMax = Math.max(centers[centers.length - 1], 10);
+          const theoryRes = window.Hydrogen.calculateCumulativePotential(orbitalParams.n, orbitalParams.l, Z, atomType, rMax, 500);
+
+          // 为了与 sample data 对齐，我们需要插值或者直接使用 theoryRes 的点
+          // 直接使用 theoryRes 的点即可，因为是在同一个x轴上绘制
+          theoryData = theoryRes.r.map((r, i) => ({
+            x: r,
+            y: theoryRes.E[i]
+          }));
+        } else if (type === 'dEdr') {
+          // dE/dr 理论曲线 = -Z/r * radialPDF
+          const Z = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
+          theoryData = centers.map(r => ({
+            x: r,
+            y: r > 0.01 ? (-Z / r) * window.Hydrogen.radialPDF(orbitalParams.n, orbitalParams.l, r, 1, 1, atomType) : 0
+          }));
+        } else if (type === 'potentialLog') {
+          // potentialLog 理论曲线：E(r) vs log(r)
+          const Z = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
+          const rMax = Math.pow(10, Math.max(...centers)); // centers已经是log值
+          const theoryRes = window.Hydrogen.calculateCumulativePotential(orbitalParams.n, orbitalParams.l, Z, atomType, rMax, 500);
+          theoryData = theoryRes.r.filter(r => r > 0).map((r, i) => ({
+            x: Math.log10(r),
+            y: theoryRes.E[i]
+          }));
+        } else if (type === 'dEdrLog') {
+          // dEdrLog 理论曲线：dE/d(log r) = -Z * radialPDF
+          const Z = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
+          // centers已经是log10(r)值，需要转回线性r
+          theoryData = centers.map(logR => {
+            const r = Math.pow(10, logR);
+            return {
+              x: logR,
+              y: -Z * window.Hydrogen.radialPDF(orbitalParams.n, orbitalParams.l, r, 1, 1, atomType)
+            };
+          });
         } else {
           // φ 方位角理论曲线
           theoryData = centers.map(phi => ({
@@ -948,6 +1480,10 @@
     renderChartRadial,
     renderChartAngular,
     renderChartPhi, // 新增φ角向分布API
+    renderChartPotential, // 新增势能积分曲线API
+    renderChartDEdr, // 新增势能密度dE/dr API
+    renderChartPotentialLog, // 新增势能积分log(r) API
+    renderChartDEdrLog, // 新增势能密度dE/d(log r) API
     renderChartCompare, // 新增对比模式API
     state, // 暴露状态对象
   };

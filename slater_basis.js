@@ -1,4362 +1,10809 @@
-// Clementi-Roetti 1974 Slater-Type Orbital Basis Sets
-// Generated from Clementi-Roetti.txt
-// 兼容 Worker 环境和主线程环境
+// Koga (1999)/Koga (2000) High-Precision Slater-Type Orbital Basis Sets
+// Expanded for Z=1 to Z=103 + Relativistic Gold (Au_R)
+// Compatible with the Electron Cloud Visualization physics engine
+
 const globalScope = typeof self !== 'undefined' ? self : window;
 
 globalScope.SlaterBasis = {
-  version: '1.2',
-  reference: 'Clementi-Roetti (1974)',
-  'H': {
-    Z: 1,
-    name: 'Hydrogen',
-    groundState: '1S(1)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 1.24, coeff: 1.0 },
-      ],
-    }
-  },
-  'He': {
-    Z: 2,
-    name: 'Helium',
-    groundState: '1S(2)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 1.41714, coeff: 0.76838 },
-        { nStar: 1, zeta: 2.37682, coeff: 0.22346 },
-        { nStar: 1, zeta: 4.39628, coeff: 0.04082 },
-        { nStar: 1, zeta: 6.52699, coeff: -0.00994 },
-        { nStar: 1, zeta: 7.94252, coeff: 0.0023 },
-      ],
-    }
-  },
-  'Li': {
-    Z: 3,
-    name: 'Lithium',
-    groundState: '1S(2)2S(1)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 2.47673, coeff: 0.89786 },
-        { nStar: 1, zeta: 4.69873, coeff: 0.11131 },
-        { nStar: 2, zeta: 0.3835, coeff: -8e-05 },
-        { nStar: 2, zeta: 0.66055, coeff: 0.00112 },
-        { nStar: 2, zeta: 1.07, coeff: -0.00216 },
-        { nStar: 2, zeta: 1.632, coeff: 0.00884 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 2.47673, coeff: -0.14629 },
-        { nStar: 1, zeta: 4.69873, coeff: -0.01516 },
-        { nStar: 2, zeta: 0.3835, coeff: 0.00377 },
-        { nStar: 2, zeta: 0.66055, coeff: 0.98053 },
-        { nStar: 2, zeta: 1.07, coeff: 0.10971 },
-        { nStar: 2, zeta: 1.632, coeff: -0.11021 },
-      ],
-    }
-  },
-  'Be': {
-    Z: 4,
-    name: 'Beryllium',
-    groundState: '1S(2)2S(2)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 3.47116, coeff: 0.91796 },
-        { nStar: 1, zeta: 6.36861, coeff: 0.08724 },
-        { nStar: 2, zeta: 0.7782, coeff: 0.00108 },
-        { nStar: 2, zeta: 0.94067, coeff: -0.00199 },
-        { nStar: 2, zeta: 1.48725, coeff: 0.00176 },
-        { nStar: 2, zeta: 2.7183, coeff: 0.00628 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 3.47116, coeff: -0.17092 },
-        { nStar: 1, zeta: 6.36861, coeff: -0.01455 },
-        { nStar: 2, zeta: 0.7782, coeff: 0.21186 },
-        { nStar: 2, zeta: 0.94067, coeff: 0.62499 },
-        { nStar: 2, zeta: 1.48725, coeff: 0.26662 },
-        { nStar: 2, zeta: 2.7183, coeff: -0.09919 },
-      ],
-    }
-  },
-  'B': {
-    Z: 5,
-    name: 'Boron',
-    groundState: '1S(2)2S(2)2P(1)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 4.44561, coeff: 0.92705 },
-        { nStar: 1, zeta: 7.91796, coeff: 0.0778 },
-        { nStar: 2, zeta: 0.86709, coeff: 0.00088 },
-        { nStar: 2, zeta: 1.21924, coeff: -0.002 },
-        { nStar: 2, zeta: 2.07264, coeff: 0.00433 },
-        { nStar: 2, zeta: 3.44332, coeff: 0.0027 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 4.44561, coeff: -0.19484 },
-        { nStar: 1, zeta: 7.91796, coeff: -0.01254 },
-        { nStar: 2, zeta: 0.86709, coeff: 0.06941 },
-        { nStar: 2, zeta: 1.21924, coeff: 0.75234 },
-        { nStar: 2, zeta: 2.07264, coeff: 0.31856 },
-        { nStar: 2, zeta: 3.44332, coeff: -0.12642 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 0.87481, coeff: 0.53622 },
-        { nStar: 2, zeta: 1.36992, coeff: 0.4034 },
-        { nStar: 2, zeta: 2.32262, coeff: 0.11653 },
-        { nStar: 2, zeta: 5.59481, coeff: 0.00821 },
-      ],
-    }
-  },
-  'C': {
-    Z: 6,
-    name: 'Carbon',
-    groundState: '1S(2)2S(2)2P(2)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 5.43599, coeff: 0.93262 },
-        { nStar: 1, zeta: 9.48256, coeff: 0.06931 },
-        { nStar: 2, zeta: 1.05749, coeff: 0.00083 },
-        { nStar: 2, zeta: 1.52427, coeff: -0.00176 },
-        { nStar: 2, zeta: 2.68435, coeff: 0.00559 },
-        { nStar: 2, zeta: 4.20096, coeff: 0.00382 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 5.43599, coeff: -0.20814 },
-        { nStar: 1, zeta: 9.48256, coeff: -0.01071 },
-        { nStar: 2, zeta: 1.05749, coeff: 0.08099 },
-        { nStar: 2, zeta: 1.52427, coeff: 0.75045 },
-        { nStar: 2, zeta: 2.68435, coeff: 0.33549 },
-        { nStar: 2, zeta: 4.20096, coeff: -0.14765 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 0.98073, coeff: 0.28241 },
-        { nStar: 2, zeta: 1.44361, coeff: 0.54697 },
-        { nStar: 2, zeta: 2.60051, coeff: 0.23195 },
-        { nStar: 2, zeta: 6.51003, coeff: 0.01025 },
-      ],
-    }
-  },
-  'N': {
-    Z: 7,
-    name: 'Nitrogen',
-    groundState: '1S(2)2S(2)2P(3)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 6.45739, coeff: 0.9378 },
-        { nStar: 1, zeta: 11.172, coeff: 0.05849 },
-        { nStar: 2, zeta: 1.36405, coeff: 0.00093 },
-        { nStar: 2, zeta: 1.89734, coeff: -0.0017 },
-        { nStar: 2, zeta: 3.25291, coeff: 0.00574 },
-        { nStar: 2, zeta: 5.08238, coeff: 0.00957 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 6.45739, coeff: -0.21677 },
-        { nStar: 1, zeta: 11.172, coeff: -0.00846 },
-        { nStar: 2, zeta: 1.36405, coeff: 0.17991 },
-        { nStar: 2, zeta: 1.89734, coeff: 0.67416 },
-        { nStar: 2, zeta: 3.25291, coeff: 0.31297 },
-        { nStar: 2, zeta: 5.08238, coeff: -0.14497 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 1.16068, coeff: 0.26639 },
-        { nStar: 2, zeta: 1.70472, coeff: 0.52319 },
-        { nStar: 2, zeta: 3.03935, coeff: 0.27353 },
-        { nStar: 2, zeta: 7.17482, coeff: 0.01292 },
-      ],
-    }
-  },
-  'O': {
-    Z: 8,
-    name: 'Oxygen',
-    groundState: '1S(2)2S(2)2P(4)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 7.61413, coeff: 0.94516 },
-        { nStar: 1, zeta: 13.7574, coeff: 0.03391 },
-        { nStar: 2, zeta: 1.69824, coeff: -0.00034 },
-        { nStar: 2, zeta: 2.48022, coeff: 0.00241 },
-        { nStar: 2, zeta: 4.31196, coeff: -0.00486 },
-        { nStar: 2, zeta: 5.86596, coeff: 0.03681 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 7.61413, coeff: -0.22157 },
-        { nStar: 1, zeta: 13.7574, coeff: -0.00476 },
-        { nStar: 2, zeta: 1.69824, coeff: 0.34844 },
-        { nStar: 2, zeta: 2.48022, coeff: 0.60807 },
-        { nStar: 2, zeta: 4.31196, coeff: 0.25365 },
-        { nStar: 2, zeta: 5.86596, coeff: -0.19183 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 1.14394, coeff: 0.16922 },
-        { nStar: 2, zeta: 1.8173, coeff: 0.57974 },
-        { nStar: 2, zeta: 3.44988, coeff: 0.32352 },
-        { nStar: 2, zeta: 7.56484, coeff: 0.0166 },
-      ],
-    }
-  },
-  'F': {
-    Z: 9,
-    name: 'Fluorine',
-    groundState: '1S(2)2S(2)2P(5)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 8.5576, coeff: 0.9471 },
-        { nStar: 1, zeta: 14.9766, coeff: 0.03718 },
-        { nStar: 2, zeta: 1.82142, coeff: 0.00013 },
-        { nStar: 2, zeta: 2.67295, coeff: 0.00093 },
-        { nStar: 2, zeta: 4.90066, coeff: 0.00068 },
-        { nStar: 2, zeta: 6.57362, coeff: 0.02602 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 8.5576, coeff: -0.22694 },
-        { nStar: 1, zeta: 14.9766, coeff: -0.0053 },
-        { nStar: 2, zeta: 1.82142, coeff: 0.23918 },
-        { nStar: 2, zeta: 2.67295, coeff: 0.68592 },
-        { nStar: 2, zeta: 4.90066, coeff: 0.31489 },
-        { nStar: 2, zeta: 6.57362, coeff: -0.21822 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 1.2657, coeff: 0.1783 },
-        { nStar: 2, zeta: 2.05803, coeff: 0.56185 },
-        { nStar: 2, zeta: 3.92853, coeff: 0.33658 },
-        { nStar: 2, zeta: 8.20412, coeff: 0.01903 },
-      ],
-    }
-  },
-  'Ne': {
-    Z: 10,
-    name: 'Neon',
-    groundState: '1S(2)2S(2)2P(6)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 9.48486, coeff: 0.93717 },
-        { nStar: 1, zeta: 15.5659, coeff: 0.04899 },
-        { nStar: 2, zeta: 1.96184, coeff: 0.00058 },
-        { nStar: 2, zeta: 2.86423, coeff: -0.00064 },
-        { nStar: 2, zeta: 4.8253, coeff: 0.00551 },
-        { nStar: 2, zeta: 7.79242, coeff: 0.01999 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 9.48486, coeff: -0.23093 },
-        { nStar: 1, zeta: 15.5659, coeff: -0.00635 },
-        { nStar: 2, zeta: 1.96184, coeff: 0.1862 },
-        { nStar: 2, zeta: 2.86423, coeff: 0.66899 },
-        { nStar: 2, zeta: 4.8253, coeff: 0.3091 },
-        { nStar: 2, zeta: 7.79242, coeff: -0.13871 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 1.45208, coeff: 0.21799 },
-        { nStar: 2, zeta: 2.38168, coeff: 0.53338 },
-        { nStar: 2, zeta: 4.48489, coeff: 0.32933 },
-        { nStar: 2, zeta: 9.13464, coeff: 0.01872 },
-      ],
-    }
-  },
-  'Na': {
-    Z: 11,
-    name: 'Sodium',
-    groundState: 'K(2)L(8)3S(1)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 11.0123, coeff: 0.96179 },
-        { nStar: 3, zeta: 12.6601, coeff: 0.04052 },
-        { nStar: 3, zeta: 8.36156, coeff: 0.01919 },
-        { nStar: 3, zeta: 5.73805, coeff: -0.00298 },
-        { nStar: 3, zeta: 3.61287, coeff: 0.00191 },
-        { nStar: 3, zeta: 2.25096, coeff: -0.00049 },
-        { nStar: 3, zeta: 1.11597, coeff: 0.00016 },
-        { nStar: 3, zeta: 0.71028, coeff: -7e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 11.0123, coeff: -0.23474 },
-        { nStar: 3, zeta: 12.6601, coeff: -0.00606 },
-        { nStar: 3, zeta: 8.36156, coeff: 0.11154 },
-        { nStar: 3, zeta: 5.73805, coeff: 0.43179 },
-        { nStar: 3, zeta: 3.61287, coeff: 0.51701 },
-        { nStar: 3, zeta: 2.25096, coeff: 0.04747 },
-        { nStar: 3, zeta: 1.11597, coeff: -0.00324 },
-        { nStar: 3, zeta: 0.71028, coeff: 0.00124 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 5.54977, coeff: 0.46417 },
-        { nStar: 4, zeta: 8.66846, coeff: 0.03622 },
-        { nStar: 4, zeta: 5.4346, coeff: 0.29282 },
-        { nStar: 4, zeta: 3.55503, coeff: 0.31635 },
-        { nStar: 4, zeta: 2.31671, coeff: 0.07543 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 11.0123, coeff: 0.03527 },
-        { nStar: 3, zeta: 12.6601, coeff: 0.00121 },
-        { nStar: 3, zeta: 8.36156, coeff: -0.01889 },
-        { nStar: 3, zeta: 5.73805, coeff: -0.06808 },
-        { nStar: 3, zeta: 3.61287, coeff: -0.09232 },
-        { nStar: 3, zeta: 2.25096, coeff: 0.00076 },
-        { nStar: 3, zeta: 1.11597, coeff: 0.40764 },
-        { nStar: 3, zeta: 0.71028, coeff: 0.64467 },
-      ],
-    }
-  },
-  'Mg': {
-    Z: 12,
-    name: 'Magnesium',
-    groundState: 'K(2)L(8)3S(2)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 12.0114, coeff: 0.9643 },
-        { nStar: 3, zeta: 13.9162, coeff: 0.03548 },
-        { nStar: 3, zeta: 9.48612, coeff: 0.02033 },
-        { nStar: 3, zeta: 6.72188, coeff: -0.00252 },
-        { nStar: 3, zeta: 4.24466, coeff: 0.00162 },
-        { nStar: 3, zeta: 2.53466, coeff: -0.00038 },
-        { nStar: 3, zeta: 1.4692, coeff: 0.00015 },
-        { nStar: 3, zeta: 0.89084, coeff: -4e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 12.0114, coeff: -0.24357 },
-        { nStar: 3, zeta: 13.9162, coeff: -0.00485 },
-        { nStar: 3, zeta: 9.48612, coeff: 0.08002 },
-        { nStar: 3, zeta: 6.72188, coeff: 0.39902 },
-        { nStar: 3, zeta: 4.24466, coeff: 0.57358 },
-        { nStar: 3, zeta: 2.53466, coeff: 0.05156 },
-        { nStar: 3, zeta: 1.4692, coeff: -0.00703 },
-        { nStar: 3, zeta: 0.89084, coeff: 0.00161 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 5.9258, coeff: 0.52391 },
-        { nStar: 4, zeta: 7.98979, coeff: 0.07012 },
-        { nStar: 4, zeta: 5.32964, coeff: 0.31965 },
-        { nStar: 4, zeta: 3.71678, coeff: 0.2086 },
-        { nStar: 4, zeta: 2.59986, coeff: 0.03888 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 12.0114, coeff: 0.04691 },
-        { nStar: 3, zeta: 13.9162, coeff: 0.00144 },
-        { nStar: 3, zeta: 9.48612, coeff: -0.0185 },
-        { nStar: 3, zeta: 6.72188, coeff: -0.07964 },
-        { nStar: 3, zeta: 4.24466, coeff: -0.13478 },
-        { nStar: 3, zeta: 2.53466, coeff: -0.01906 },
-        { nStar: 3, zeta: 1.4692, coeff: 0.48239 },
-        { nStar: 3, zeta: 0.89084, coeff: 0.60221 },
-      ],
-    }
-  },
-  'Al': {
-    Z: 13,
-    name: 'Aluminum',
-    groundState: 'K(2)L(8)3S(2)3P(1)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 13.0127, coeff: 0.96628 },
-        { nStar: 3, zeta: 15.1509, coeff: 0.03266 },
-        { nStar: 3, zeta: 10.1902, coeff: 0.02155 },
-        { nStar: 3, zeta: 7.25565, coeff: -0.00439 },
-        { nStar: 3, zeta: 4.70291, coeff: 0.00247 },
-        { nStar: 3, zeta: 2.96182, coeff: -0.00081 },
-        { nStar: 3, zeta: 1.7725, coeff: 0.0003 },
-        { nStar: 3, zeta: 1.09108, coeff: -8e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 13.0127, coeff: -0.2511 },
-        { nStar: 3, zeta: 15.1509, coeff: -0.00424 },
-        { nStar: 3, zeta: 10.1902, coeff: 0.09248 },
-        { nStar: 3, zeta: 7.25565, coeff: 0.40331 },
-        { nStar: 3, zeta: 4.70291, coeff: 0.56148 },
-        { nStar: 3, zeta: 2.96182, coeff: 0.03902 },
-        { nStar: 3, zeta: 1.7725, coeff: -0.00231 },
-        { nStar: 3, zeta: 1.09108, coeff: 0.00037 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 6.51941, coeff: 0.53767 },
-        { nStar: 4, zeta: 10.4819, coeff: 0.01909 },
-        { nStar: 4, zeta: 8.0843, coeff: 0.06545 },
-        { nStar: 4, zeta: 5.85779, coeff: 0.32423 },
-        { nStar: 4, zeta: 3.99863, coeff: 0.19557 },
-        { nStar: 4, zeta: 2.01453, coeff: 0.00829 },
-        { nStar: 4, zeta: 1.25016, coeff: -0.00235 },
-        { nStar: 4, zeta: 0.87219, coeff: 0.00101 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 13.0127, coeff: 0.05795 },
-        { nStar: 3, zeta: 15.1509, coeff: 0.00149 },
-        { nStar: 3, zeta: 10.1902, coeff: -0.02529 },
-        { nStar: 3, zeta: 7.25565, coeff: -0.09664 },
-        { nStar: 3, zeta: 4.70291, coeff: -0.16426 },
-        { nStar: 3, zeta: 2.96182, coeff: -0.03278 },
-        { nStar: 3, zeta: 1.7725, coeff: 0.5761 },
-        { nStar: 3, zeta: 1.09108, coeff: 0.52921 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 6.51941, coeff: -0.09633 },
-        { nStar: 4, zeta: 10.4819, coeff: -0.00661 },
-        { nStar: 4, zeta: 8.0843, coeff: -0.00128 },
-        { nStar: 4, zeta: 5.85779, coeff: -0.06987 },
-        { nStar: 4, zeta: 3.99863, coeff: 0.01653 },
-        { nStar: 4, zeta: 2.01453, coeff: 0.35563 },
-        { nStar: 4, zeta: 1.25016, coeff: 0.45241 },
-        { nStar: 4, zeta: 0.87219, coeff: 0.29407 },
-      ],
-    }
-  },
-  'Si': {
-    Z: 14,
-    name: 'Silicon',
-    groundState: 'K(2)L(8)3S(2)3P(2)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 14.0142, coeff: 0.968 },
-        { nStar: 3, zeta: 16.3932, coeff: 0.03033 },
-        { nStar: 3, zeta: 10.8795, coeff: 0.02248 },
-        { nStar: 3, zeta: 7.72709, coeff: -0.00617 },
-        { nStar: 3, zeta: 5.165, coeff: 0.00326 },
-        { nStar: 3, zeta: 2.97451, coeff: -0.00143 },
-        { nStar: 3, zeta: 2.14316, coeff: 0.00081 },
-        { nStar: 3, zeta: 1.31306, coeff: -0.00016 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 14.0142, coeff: -0.25755 },
-        { nStar: 3, zeta: 16.3932, coeff: -0.00446 },
-        { nStar: 3, zeta: 10.8795, coeff: 0.11153 },
-        { nStar: 3, zeta: 7.72709, coeff: 0.40339 },
-        { nStar: 3, zeta: 5.165, coeff: 0.55032 },
-        { nStar: 3, zeta: 2.97451, coeff: 0.03381 },
-        { nStar: 3, zeta: 2.14316, coeff: -0.00815 },
-        { nStar: 3, zeta: 1.31306, coeff: 0.00126 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 7.1436, coeff: 0.5429 },
-        { nStar: 4, zeta: 16.2572, coeff: 0.00234 },
-        { nStar: 4, zeta: 10.7972, coeff: 0.04228 },
-        { nStar: 4, zeta: 6.89724, coeff: 0.32155 },
-        { nStar: 4, zeta: 4.66598, coeff: 0.22474 },
-        { nStar: 4, zeta: 2.32046, coeff: 0.00732 },
-        { nStar: 4, zeta: 1.3347, coeff: -0.00105 },
-        { nStar: 4, zeta: 0.79318, coeff: 0.00041 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 14.0142, coeff: 0.06595 },
-        { nStar: 3, zeta: 16.3932, coeff: 0.00185 },
-        { nStar: 3, zeta: 10.8795, coeff: -0.03461 },
-        { nStar: 3, zeta: 7.72709, coeff: -0.10378 },
-        { nStar: 3, zeta: 5.165, coeff: -0.19229 },
-        { nStar: 3, zeta: 2.97451, coeff: -0.06561 },
-        { nStar: 3, zeta: 2.14316, coeff: 0.59732 },
-        { nStar: 3, zeta: 1.31306, coeff: 0.5539 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 7.1436, coeff: -0.11535 },
-        { nStar: 4, zeta: 16.2572, coeff: -0.00189 },
-        { nStar: 4, zeta: 10.7972, coeff: -0.00473 },
-        { nStar: 4, zeta: 6.89724, coeff: -0.07552 },
-        { nStar: 4, zeta: 4.66598, coeff: 0.01041 },
-        { nStar: 4, zeta: 2.32046, coeff: 0.46075 },
-        { nStar: 4, zeta: 1.3347, coeff: 0.57665 },
-        { nStar: 4, zeta: 0.79318, coeff: 0.06274 },
-      ],
-    }
-  },
-  'P': {
-    Z: 15,
-    name: 'Phosphorus',
-    groundState: 'K(2)L(8)3S(2)3P(3)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 15.0112, coeff: 0.96992 },
-        { nStar: 3, zeta: 17.3152, coeff: 0.02944 },
-        { nStar: 3, zeta: 11.773, coeff: 0.01933 },
-        { nStar: 3, zeta: 8.663, coeff: -0.00403 },
-        { nStar: 3, zeta: 5.90778, coeff: 0.00196 },
-        { nStar: 3, zeta: 3.69253, coeff: -0.00051 },
-        { nStar: 3, zeta: 2.47379, coeff: 0.00016 },
-        { nStar: 3, zeta: 1.51103, coeff: -4e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 15.0112, coeff: -0.26326 },
-        { nStar: 3, zeta: 17.3152, coeff: -0.00434 },
-        { nStar: 3, zeta: 11.773, coeff: 0.10333 },
-        { nStar: 3, zeta: 8.663, coeff: 0.34612 },
-        { nStar: 3, zeta: 5.90778, coeff: 0.58778 },
-        { nStar: 3, zeta: 3.69253, coeff: 0.06043 },
-        { nStar: 3, zeta: 2.47379, coeff: -0.00901 },
-        { nStar: 3, zeta: 1.51103, coeff: 0.00193 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 7.6094, coeff: 0.57352 },
-        { nStar: 4, zeta: 13.9759, coeff: 0.00664 },
-        { nStar: 4, zeta: 11.8939, coeff: 0.02478 },
-        { nStar: 4, zeta: 7.55531, coeff: 0.3046 },
-        { nStar: 4, zeta: 5.17707, coeff: 0.21442 },
-        { nStar: 4, zeta: 2.62934, coeff: 0.00552 },
-        { nStar: 4, zeta: 1.50494, coeff: -0.00045 },
-        { nStar: 4, zeta: 0.77783, coeff: 0.00011 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 15.0112, coeff: 0.0723 },
-        { nStar: 3, zeta: 17.3152, coeff: 0.00186 },
-        { nStar: 3, zeta: 11.773, coeff: -0.03447 },
-        { nStar: 3, zeta: 8.663, coeff: -0.09503 },
-        { nStar: 3, zeta: 5.90778, coeff: -0.21241 },
-        { nStar: 3, zeta: 3.69253, coeff: -0.09001 },
-        { nStar: 3, zeta: 2.47379, coeff: 0.60361 },
-        { nStar: 3, zeta: 1.51103, coeff: 0.56185 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 7.6094, coeff: -0.13569 },
-        { nStar: 4, zeta: 13.9759, coeff: -0.00813 },
-        { nStar: 4, zeta: 11.8939, coeff: 0.00586 },
-        { nStar: 4, zeta: 7.55531, coeff: -0.08424 },
-        { nStar: 4, zeta: 5.17707, coeff: 0.02002 },
-        { nStar: 4, zeta: 2.62934, coeff: 0.51314 },
-        { nStar: 4, zeta: 1.50494, coeff: 0.55176 },
-        { nStar: 4, zeta: 0.77783, coeff: 0.02781 },
-      ],
-    }
-  },
-  'S': {
-    Z: 16,
-    name: 'Sulfur',
-    groundState: 'K(2)L(8)3S(2)3P(4)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 16.0191, coeff: 0.97077 },
-        { nStar: 3, zeta: 19.4529, coeff: 0.02122 },
-        { nStar: 3, zeta: 13.7788, coeff: 0.02511 },
-        { nStar: 3, zeta: 9.8515, coeff: -0.00287 },
-        { nStar: 3, zeta: 6.48374, coeff: 0.00194 },
-        { nStar: 3, zeta: 4.0554, coeff: -0.00068 },
-        { nStar: 3, zeta: 2.67399, coeff: 0.00025 },
-        { nStar: 3, zeta: 1.66032, coeff: -7e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 16.0191, coeff: -0.26808 },
-        { nStar: 3, zeta: 19.4529, coeff: -0.0039 },
-        { nStar: 3, zeta: 13.7788, coeff: 0.04869 },
-        { nStar: 3, zeta: 9.8515, coeff: 0.36323 },
-        { nStar: 3, zeta: 6.48374, coeff: 0.62663 },
-        { nStar: 3, zeta: 4.0554, coeff: 0.05414 },
-        { nStar: 3, zeta: 2.67399, coeff: -0.00517 },
-        { nStar: 3, zeta: 1.66032, coeff: 0.00135 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 8.00375, coeff: 0.61294 },
-        { nStar: 4, zeta: 7.67346, coeff: -0.7536 },
-        { nStar: 4, zeta: 12.0998, coeff: 0.03668 },
-        { nStar: 4, zeta: 7.67727, coeff: 1.07415 },
-        { nStar: 4, zeta: 5.3263, coeff: 0.14538 },
-        { nStar: 4, zeta: 2.8735, coeff: 0.00199 },
-        { nStar: 4, zeta: 1.67242, coeff: 0.00094 },
-        { nStar: 4, zeta: 1.03092, coeff: -0.00014 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 16.0191, coeff: 0.07778 },
-        { nStar: 3, zeta: 19.4529, coeff: 0.00244 },
-        { nStar: 3, zeta: 13.7788, coeff: -0.02131 },
-        { nStar: 3, zeta: 9.8515, coeff: -0.10107 },
-        { nStar: 3, zeta: 6.48374, coeff: -0.25158 },
-        { nStar: 3, zeta: 4.0554, coeff: -0.06277 },
-        { nStar: 3, zeta: 2.67399, coeff: 0.65107 },
-        { nStar: 3, zeta: 1.66032, coeff: 0.50175 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 8.00375, coeff: -0.15586 },
-        { nStar: 4, zeta: 7.67346, coeff: -18.50193 },
-        { nStar: 4, zeta: 12.0998, coeff: -0.01199 },
-        { nStar: 4, zeta: 7.67727, coeff: 18.39285 },
-        { nStar: 4, zeta: 5.3263, coeff: 0.09041 },
-        { nStar: 4, zeta: 2.8735, coeff: 0.52697 },
-        { nStar: 4, zeta: 1.67242, coeff: 0.49465 },
-        { nStar: 4, zeta: 1.03092, coeff: 0.05112 },
-      ],
-    }
-  },
-  'Cl': {
-    Z: 17,
-    name: 'Chlorine',
-    groundState: 'K(2)L(8)3S(2)3P(5)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 17.0014, coeff: 0.97335 },
-        { nStar: 3, zeta: 19.2649, coeff: 0.02682 },
-        { nStar: 3, zeta: 13.4529, coeff: 0.01612 },
-        { nStar: 3, zeta: 10.0429, coeff: -0.00266 },
-        { nStar: 3, zeta: 6.9392, coeff: 0.00129 },
-        { nStar: 3, zeta: 4.4364, coeff: -0.00029 },
-        { nStar: 3, zeta: 2.9057, coeff: 5e-05 },
-        { nStar: 3, zeta: 1.819, coeff: -2e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 17.0014, coeff: -0.27278 },
-        { nStar: 3, zeta: 19.2649, coeff: -0.00266 },
-        { nStar: 3, zeta: 13.4529, coeff: 0.09766 },
-        { nStar: 3, zeta: 10.0429, coeff: 0.34603 },
-        { nStar: 3, zeta: 6.9392, coeff: 0.59594 },
-        { nStar: 3, zeta: 4.4364, coeff: 0.04978 },
-        { nStar: 3, zeta: 2.9057, coeff: -0.00324 },
-        { nStar: 3, zeta: 1.819, coeff: 0.00121 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 8.5, coeff: 0.63254 },
-        { nStar: 4, zeta: 15.0124, coeff: 0.00287 },
-        { nStar: 4, zeta: 12.3257, coeff: 0.03393 },
-        { nStar: 4, zeta: 8.3724, coeff: 0.27156 },
-        { nStar: 4, zeta: 6.1092, coeff: 0.16389 },
-        { nStar: 4, zeta: 3.1931, coeff: 0.00707 },
-        { nStar: 4, zeta: 1.7863, coeff: -0.00034 },
-        { nStar: 4, zeta: 0.9293, coeff: 0.00036 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 17.0014, coeff: 0.08249 },
-        { nStar: 3, zeta: 19.2649, coeff: 0.00237 },
-        { nStar: 3, zeta: 13.4529, coeff: -0.04193 },
-        { nStar: 3, zeta: 10.0429, coeff: -0.08968 },
-        { nStar: 3, zeta: 6.9392, coeff: -0.27243 },
-        { nStar: 3, zeta: 4.4364, coeff: -0.03736 },
-        { nStar: 3, zeta: 2.9057, coeff: 0.67062 },
-        { nStar: 3, zeta: 1.819, coeff: 0.47342 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 8.5, coeff: -0.16954 },
-        { nStar: 4, zeta: 15.0124, coeff: -0.00982 },
-        { nStar: 4, zeta: 12.3257, coeff: 0.0128 },
-        { nStar: 4, zeta: 8.3724, coeff: -0.10925 },
-        { nStar: 4, zeta: 6.1092, coeff: 0.07066 },
-        { nStar: 4, zeta: 3.1931, coeff: 0.56909 },
-        { nStar: 4, zeta: 1.7863, coeff: 0.49144 },
-        { nStar: 4, zeta: 0.9293, coeff: 0.02336 },
-      ],
-    }
-  },
-  'Ar': {
-    Z: 18,
-    name: 'Argon',
-    groundState: '1S(2)2S(2)2P(6)3S(2)3P(6)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 18.0164, coeff: 0.97349 },
-        { nStar: 3, zeta: 22.0465, coeff: 0.01684 },
-        { nStar: 3, zeta: 16.0825, coeff: 0.02422 },
-        { nStar: 3, zeta: 11.6357, coeff: -0.00114 },
-        { nStar: 3, zeta: 7.70365, coeff: 0.00123 },
-        { nStar: 3, zeta: 4.87338, coeff: -0.00039 },
-        { nStar: 3, zeta: 3.32987, coeff: 0.0001 },
-        { nStar: 3, zeta: 2.02791, coeff: -3e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 18.0164, coeff: 0.27635 },
-        { nStar: 3, zeta: 22.0465, coeff: 0.00289 },
-        { nStar: 3, zeta: 16.0825, coeff: -0.03241 },
-        { nStar: 3, zeta: 11.6357, coeff: -0.33229 },
-        { nStar: 3, zeta: 7.70365, coeff: -0.65828 },
-        { nStar: 3, zeta: 4.87338, coeff: -0.06834 },
-        { nStar: 3, zeta: 3.32987, coeff: 0.00623 },
-        { nStar: 3, zeta: 2.02791, coeff: -0.00174 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 9.05477, coeff: 0.64116 },
-        { nStar: 4, zeta: 15.5441, coeff: 0.00865 },
-        { nStar: 4, zeta: 12.3997, coeff: 0.04186 },
-        { nStar: 4, zeta: 8.5612, coeff: 0.31735 },
-        { nStar: 4, zeta: 5.94658, coeff: 0.09642 },
-        { nStar: 4, zeta: 3.42459, coeff: 3e-05 },
-        { nStar: 4, zeta: 1.96709, coeff: 0.00055 },
-        { nStar: 4, zeta: 1.06717, coeff: -0.00013 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 18.0164, coeff: 0.08634 },
-        { nStar: 3, zeta: 22.0465, coeff: 0.00186 },
-        { nStar: 3, zeta: 16.0825, coeff: -0.0154 },
-        { nStar: 3, zeta: 11.6357, coeff: -0.10236 },
-        { nStar: 3, zeta: 7.70365, coeff: -0.27614 },
-        { nStar: 3, zeta: 4.87338, coeff: -0.11879 },
-        { nStar: 3, zeta: 3.32987, coeff: 0.68436 },
-        { nStar: 3, zeta: 2.02791, coeff: 0.5205 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 9.05477, coeff: -0.1785 },
-        { nStar: 4, zeta: 15.5441, coeff: -0.00812 },
-        { nStar: 4, zeta: 12.3997, coeff: 0.0052 },
-        { nStar: 4, zeta: 8.5612, coeff: -0.10986 },
-        { nStar: 4, zeta: 5.94658, coeff: 0.10994 },
-        { nStar: 4, zeta: 3.42459, coeff: 0.56149 },
-        { nStar: 4, zeta: 1.96709, coeff: 0.46314 },
-        { nStar: 4, zeta: 1.06717, coeff: 0.02951 },
-      ],
-    }
-  },
-  'K': {
-    Z: 19,
-    name: 'Potassium',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(1)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 19.135, coeff: -0.93619 },
-        { nStar: 1, zeta: 31.525, coeff: -0.01385 },
-        { nStar: 2, zeta: 16.4986, coeff: -0.06342 },
-        { nStar: 2, zeta: 7.6741, coeff: -0.00014 },
-        { nStar: 3, zeta: 6.68508, coeff: -0.00139 },
-        { nStar: 3, zeta: 4.04102, coeff: 0.00189 },
-        { nStar: 3, zeta: 2.66919, coeff: -0.00212 },
-        { nStar: 4, zeta: 2.59794, coeff: 0.00118 },
-        { nStar: 4, zeta: 0.56203, coeff: -5e-05 },
-        { nStar: 4, zeta: 1.29017, coeff: -0.00015 },
-        { nStar: 4, zeta: 0.76641, coeff: 0.00011 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 19.135, coeff: 0.27612 },
-        { nStar: 1, zeta: 31.525, coeff: 0.00055 },
-        { nStar: 2, zeta: 16.4986, coeff: 0.14725 },
-        { nStar: 2, zeta: 7.6741, coeff: -0.95199 },
-        { nStar: 3, zeta: 6.68508, coeff: -0.19289 },
-        { nStar: 3, zeta: 4.04102, coeff: -0.00059 },
-        { nStar: 3, zeta: 2.66919, coeff: -0.00704 },
-        { nStar: 4, zeta: 2.59794, coeff: 0.00327 },
-        { nStar: 4, zeta: 0.56203, coeff: -0.00016 },
-        { nStar: 4, zeta: 1.29017, coeff: -0.00045 },
-        { nStar: 4, zeta: 0.76641, coeff: 0.00033 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 8.64187, coeff: 0.66743 },
-        { nStar: 2, zeta: 15.1936, coeff: 0.04207 },
-        { nStar: 3, zeta: 6.91359, coeff: 0.34752 },
-        { nStar: 3, zeta: 3.26163, coeff: 0.01398 },
-        { nStar: 3, zeta: 2.00984, coeff: -0.00944 },
-        { nStar: 3, zeta: 1.68876, coeff: 0.00526 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 19.135, coeff: 0.09267 },
-        { nStar: 1, zeta: 31.525, coeff: -0.00066 },
-        { nStar: 2, zeta: 16.4986, coeff: 0.0498 },
-        { nStar: 2, zeta: 7.6741, coeff: -0.33547 },
-        { nStar: 3, zeta: 6.68508, coeff: -0.21345 },
-        { nStar: 3, zeta: 4.04102, coeff: 0.43855 },
-        { nStar: 3, zeta: 2.66919, coeff: 0.652 },
-        { nStar: 4, zeta: 2.59794, coeff: 0.09749 },
-        { nStar: 4, zeta: 0.56203, coeff: 0.0056 },
-        { nStar: 4, zeta: 1.29017, coeff: 0.01932 },
-        { nStar: 4, zeta: 0.76641, coeff: -0.01161 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 8.64187, coeff: -0.20797 },
-        { nStar: 2, zeta: 15.1936, coeff: -0.01176 },
-        { nStar: 3, zeta: 6.91359, coeff: -0.12744 },
-        { nStar: 3, zeta: 3.26163, coeff: 0.56718 },
-        { nStar: 3, zeta: 2.00984, coeff: 0.45273 },
-        { nStar: 3, zeta: 1.68876, coeff: 0.0934 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 19.135, coeff: -0.01825 },
-        { nStar: 1, zeta: 31.525, coeff: 0.00031 },
-        { nStar: 2, zeta: 16.4986, coeff: -0.00899 },
-        { nStar: 2, zeta: 7.6741, coeff: 0.0635 },
-        { nStar: 3, zeta: 6.68508, coeff: 0.05015 },
-        { nStar: 3, zeta: 4.04102, coeff: -0.11346 },
-        { nStar: 3, zeta: 2.66919, coeff: -0.11474 },
-        { nStar: 4, zeta: 2.59794, coeff: -0.03065 },
-        { nStar: 4, zeta: 0.56203, coeff: 0.0519 },
-        { nStar: 4, zeta: 1.29017, coeff: 0.33431 },
-        { nStar: 4, zeta: 0.76641, coeff: 0.70417 },
-      ],
-    }
-  },
-  'Ca': {
-    Z: 20,
-    name: 'Calcium',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(2)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 19.9731, coeff: -0.94194 },
-        { nStar: 1, zeta: 32.15, coeff: -0.01803 },
-        { nStar: 2, zeta: 17.2394, coeff: -0.05072 },
-        { nStar: 2, zeta: 8.40361, coeff: -0.00216 },
-        { nStar: 3, zeta: 7.46907, coeff: 0.00051 },
-        { nStar: 3, zeta: 3.95936, coeff: -0.0001 },
-        { nStar: 3, zeta: 3.01657, coeff: 0.00017 },
-        { nStar: 4, zeta: 3.09105, coeff: -6e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 19.9731, coeff: -0.28216 },
-        { nStar: 1, zeta: 32.15, coeff: -0.00093 },
-        { nStar: 2, zeta: 17.2394, coeff: -0.15034 },
-        { nStar: 2, zeta: 8.40361, coeff: 0.89604 },
-        { nStar: 3, zeta: 7.46907, coeff: 0.25659 },
-        { nStar: 3, zeta: 3.95936, coeff: 0.00978 },
-        { nStar: 3, zeta: 3.01657, coeff: 0.00087 },
-        { nStar: 4, zeta: 3.09105, coeff: -0.00173 },
-        { nStar: 4, zeta: 1.62884, coeff: 0.00051 },
-        { nStar: 4, zeta: 1.01203, coeff: -0.00029 },
-        { nStar: 4, zeta: 0.66733, coeff: 0.0001 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 9.12915, coeff: 0.67837 },
-        { nStar: 2, zeta: 15.9947, coeff: 0.04233 },
-        { nStar: 3, zeta: 7.37779, coeff: 0.33353 },
-        { nStar: 3, zeta: 3.62974, coeff: 0.01241 },
-        { nStar: 3, zeta: 2.34862, coeff: -0.00454 },
-        { nStar: 3, zeta: 1.64038, coeff: 0.00132 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 19.9731, coeff: -0.09896 },
-        { nStar: 1, zeta: 32.15, coeff: 0.00053 },
-        { nStar: 2, zeta: 17.2394, coeff: -0.05334 },
-        { nStar: 2, zeta: 8.40361, coeff: 0.32943 },
-        { nStar: 3, zeta: 7.46907, coeff: 0.2244 },
-        { nStar: 3, zeta: 3.95936, coeff: -0.70524 },
-        { nStar: 3, zeta: 3.01657, coeff: -0.12144 },
-        { nStar: 4, zeta: 3.09105, coeff: -0.35525 },
-        { nStar: 4, zeta: 1.62884, coeff: -0.01549 },
-        { nStar: 4, zeta: 1.01203, coeff: 0.00566 },
-        { nStar: 4, zeta: 0.66733, coeff: -0.00179 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 9.12915, coeff: -0.22553 },
-        { nStar: 2, zeta: 15.9947, coeff: -0.01276 },
-        { nStar: 3, zeta: 7.37779, coeff: -0.13716 },
-        { nStar: 3, zeta: 3.62974, coeff: 0.54465 },
-        { nStar: 3, zeta: 2.34862, coeff: 0.52593 },
-        { nStar: 3, zeta: 1.64038, coeff: 0.04492 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 19.9731, coeff: -0.02394 },
-        { nStar: 1, zeta: 32.15, coeff: 0.00028 },
-        { nStar: 2, zeta: 17.2394, coeff: -0.01223 },
-        { nStar: 2, zeta: 8.40361, coeff: 0.07777 },
-        { nStar: 3, zeta: 7.46907, coeff: 0.06258 },
-        { nStar: 3, zeta: 3.95936, coeff: -0.24085 },
-        { nStar: 3, zeta: 3.01657, coeff: 0.0528 },
-        { nStar: 4, zeta: 3.09105, coeff: -0.15243 },
-        { nStar: 4, zeta: 1.62884, coeff: 0.32699 },
-        { nStar: 4, zeta: 1.01203, coeff: 0.66264 },
-        { nStar: 4, zeta: 0.66733, coeff: 0.1315 },
-      ],
-    }
-  },
-  'Sc': {
-    Z: 21,
-    name: 'Scandium',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(2)3D(1)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 20.8813, coeff: -0.9454 },
-        { nStar: 1, zeta: 33.43, coeff: -0.0201 },
-        { nStar: 2, zeta: 18.1878, coeff: -0.04294 },
-        { nStar: 2, zeta: 8.428, coeff: -0.00497 },
-        { nStar: 3, zeta: 7.4538, coeff: 0.00385 },
-        { nStar: 3, zeta: 4.7824, coeff: -0.00392 },
-        { nStar: 3, zeta: 3.24065, coeff: 0.00457 },
-        { nStar: 4, zeta: 3.25855, coeff: -0.00244 },
-        { nStar: 4, zeta: 1.54276, coeff: 0.00021 },
-        { nStar: 4, zeta: 0.96985, coeff: -0.0002 },
-        { nStar: 4, zeta: 0.76062, coeff: 0.0001 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 20.8813, coeff: 0.28654 },
-        { nStar: 1, zeta: 33.43, coeff: 0.00116 },
-        { nStar: 2, zeta: 18.1878, coeff: 0.14707 },
-        { nStar: 2, zeta: 8.428, coeff: -1.01154 },
-        { nStar: 3, zeta: 7.4538, coeff: -0.12762 },
-        { nStar: 3, zeta: 4.7824, coeff: -0.00992 },
-        { nStar: 3, zeta: 3.24065, coeff: 0.0004 },
-        { nStar: 4, zeta: 3.25855, coeff: -0.00051 },
-        { nStar: 4, zeta: 1.54276, coeff: -8e-05 },
-        { nStar: 4, zeta: 0.96985, coeff: 8e-05 },
-        { nStar: 4, zeta: 0.76062, coeff: -4e-05 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 9.58828, coeff: 0.68933 },
-        { nStar: 2, zeta: 16.636, coeff: 0.04459 },
-        { nStar: 3, zeta: 7.83942, coeff: 0.3166 },
-        { nStar: 3, zeta: 4.10068, coeff: 0.01293 },
-        { nStar: 3, zeta: 2.8671, coeff: -0.00397 },
-        { nStar: 3, zeta: 2.08891, coeff: 0.00096 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 20.8813, coeff: -0.10222 },
-        { nStar: 1, zeta: 33.43, coeff: 0.00026 },
-        { nStar: 2, zeta: 18.1878, coeff: -0.05463 },
-        { nStar: 2, zeta: 8.428, coeff: 0.38509 },
-        { nStar: 3, zeta: 7.4538, coeff: 0.22889 },
-        { nStar: 3, zeta: 4.7824, coeff: -0.45514 },
-        { nStar: 3, zeta: 3.24065, coeff: -0.63181 },
-        { nStar: 4, zeta: 3.25855, coeff: -0.13662 },
-        { nStar: 4, zeta: 1.54276, coeff: -0.01874 },
-        { nStar: 4, zeta: 0.96985, coeff: 0.01435 },
-        { nStar: 4, zeta: 0.76062, coeff: -0.00712 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 9.58828, coeff: -0.23574 },
-        { nStar: 2, zeta: 16.636, coeff: -0.01406 },
-        { nStar: 3, zeta: 7.83942, coeff: -0.14208 },
-        { nStar: 3, zeta: 4.10068, coeff: 0.43727 },
-        { nStar: 3, zeta: 2.8671, coeff: 0.49413 },
-        { nStar: 3, zeta: 2.08891, coeff: 0.19247 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 3.606, coeff: 0.31357 },
-        { nStar: 3, zeta: 8.6319, coeff: 0.02663 },
-        { nStar: 3, zeta: 4.9219, coeff: 0.06141 },
-        { nStar: 3, zeta: 1.8894, coeff: 0.5678 },
-        { nStar: 3, zeta: 1.01, coeff: 0.20271 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 20.8813, coeff: -0.024 },
-        { nStar: 1, zeta: 33.43, coeff: -7e-05 },
-        { nStar: 2, zeta: 18.1878, coeff: -0.01351 },
-        { nStar: 2, zeta: 8.428, coeff: 0.09325 },
-        { nStar: 3, zeta: 7.4538, coeff: 0.05788 },
-        { nStar: 3, zeta: 4.7824, coeff: -0.10274 },
-        { nStar: 3, zeta: 3.24065, coeff: -0.23446 },
-        { nStar: 4, zeta: 3.25855, coeff: 0.02272 },
-        { nStar: 4, zeta: 1.54276, coeff: 0.48631 },
-        { nStar: 4, zeta: 0.96985, coeff: 0.50614 },
-        { nStar: 4, zeta: 0.76062, coeff: 0.10593 },
-      ],
-    }
-  },
-  'Ti': {
-    Z: 22,
-    name: 'Titanium',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(2)3D(2)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 22.0296, coeff: -0.95015 },
-        { nStar: 1, zeta: 37.1133, coeff: -0.01209 },
-        { nStar: 2, zeta: 18.6082, coeff: -0.04928 },
-        { nStar: 2, zeta: 9.39745, coeff: 0.00058 },
-        { nStar: 3, zeta: 8.1728, coeff: -0.0014 },
-        { nStar: 3, zeta: 4.98509, coeff: 0.00187 },
-        { nStar: 3, zeta: 3.62802, coeff: -0.00187 },
-        { nStar: 4, zeta: 3.45561, coeff: 0.0008 },
-        { nStar: 4, zeta: 1.58708, coeff: -9e-05 },
-        { nStar: 4, zeta: 1.00652, coeff: 8e-05 },
-        { nStar: 4, zeta: 0.75064, coeff: -4e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 22.0296, coeff: -0.28972 },
-        { nStar: 1, zeta: 37.1133, coeff: 0.00055 },
-        { nStar: 2, zeta: 18.6082, coeff: -0.16752 },
-        { nStar: 2, zeta: 9.39745, coeff: 0.93056 },
-        { nStar: 3, zeta: 8.1728, coeff: 0.24986 },
-        { nStar: 3, zeta: 4.98509, coeff: -0.02361 },
-        { nStar: 3, zeta: 3.62802, coeff: 0.03254 },
-        { nStar: 4, zeta: 3.45561, coeff: -0.01329 },
-        { nStar: 4, zeta: 1.58708, coeff: 0.00159 },
-        { nStar: 4, zeta: 1.00652, coeff: -0.00137 },
-        { nStar: 4, zeta: 0.75064, coeff: 0.00064 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 9.74943, coeff: 0.71614 },
-        { nStar: 2, zeta: 16.3908, coeff: 0.06307 },
-        { nStar: 3, zeta: 8.15953, coeff: 0.26624 },
-        { nStar: 3, zeta: 4.50482, coeff: 0.01033 },
-        { nStar: 3, zeta: 2.84111, coeff: -0.00126 },
-        { nStar: 3, zeta: 1.5143, coeff: 0.00022 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 22.0296, coeff: 0.1051 },
-        { nStar: 1, zeta: 37.1133, coeff: -0.00094 },
-        { nStar: 2, zeta: 18.6082, coeff: 0.06192 },
-        { nStar: 2, zeta: 9.39745, coeff: -0.35502 },
-        { nStar: 3, zeta: 8.1728, coeff: -0.26666 },
-        { nStar: 3, zeta: 4.98509, coeff: 0.47346 },
-        { nStar: 3, zeta: 3.62802, coeff: 0.50703 },
-        { nStar: 4, zeta: 3.45561, coeff: 0.24381 },
-        { nStar: 4, zeta: 1.58708, coeff: 0.01578 },
-        { nStar: 4, zeta: 1.00652, coeff: -0.01098 },
-        { nStar: 4, zeta: 0.75064, coeff: 0.00487 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 9.74943, coeff: -0.24806 },
-        { nStar: 2, zeta: 16.3908, coeff: -0.02143 },
-        { nStar: 3, zeta: 8.15953, coeff: -0.14149 },
-        { nStar: 3, zeta: 4.50482, coeff: 0.46677 },
-        { nStar: 3, zeta: 2.84111, coeff: 0.64339 },
-        { nStar: 3, zeta: 1.5143, coeff: 0.03031 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 2.179, coeff: 0.52678 },
-        { nStar: 3, zeta: 9.54575, coeff: 0.02539 },
-        { nStar: 3, zeta: 4.81759, coeff: 0.17639 },
-        { nStar: 3, zeta: 3.67072, coeff: 0.21326 },
-        { nStar: 3, zeta: 1.23154, coeff: 0.21819 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 22.0296, coeff: -0.02387 },
-        { nStar: 1, zeta: 37.1133, coeff: -4e-05 },
-        { nStar: 2, zeta: 18.6082, coeff: -0.01572 },
-        { nStar: 2, zeta: 9.39745, coeff: 0.08607 },
-        { nStar: 3, zeta: 8.1728, coeff: 0.05985 },
-        { nStar: 3, zeta: 4.98509, coeff: -0.07272 },
-        { nStar: 3, zeta: 3.62802, coeff: -0.24523 },
-        { nStar: 4, zeta: 3.45561, coeff: 0.02662 },
-        { nStar: 4, zeta: 1.58708, coeff: 0.50408 },
-        { nStar: 4, zeta: 1.00652, coeff: 0.4867 },
-        { nStar: 4, zeta: 0.75064, coeff: 0.10196 },
-      ],
-    }
-  },
-  'V': {
-    Z: 23,
-    name: 'Vanadium',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(2)3D(3)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 23.0574, coeff: -0.94977 },
-        { nStar: 1, zeta: 39.0175, coeff: -0.0118 },
-        { nStar: 2, zeta: 19.8537, coeff: -0.04848 },
-        { nStar: 2, zeta: 9.24671, coeff: -0.00233 },
-        { nStar: 3, zeta: 8.54632, coeff: 0.00137 },
-        { nStar: 3, zeta: 5.11726, coeff: -0.00169 },
-        { nStar: 3, zeta: 4.22281, coeff: 0.00165 },
-        { nStar: 4, zeta: 3.67054, coeff: -0.00038 },
-        { nStar: 4, zeta: 1.76174, coeff: 5e-05 },
-        { nStar: 4, zeta: 1.077, coeff: -4e-05 },
-        { nStar: 4, zeta: 0.73215, coeff: 1e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 23.0574, coeff: -0.29138 },
-        { nStar: 1, zeta: 39.0175, coeff: 0.00046 },
-        { nStar: 2, zeta: 19.8537, coeff: -0.1563 },
-        { nStar: 2, zeta: 9.24671, coeff: 1.05201 },
-        { nStar: 3, zeta: 8.54632, coeff: 0.0767 },
-        { nStar: 3, zeta: 5.11726, coeff: 0.05858 },
-        { nStar: 3, zeta: 4.22281, coeff: -0.04248 },
-        { nStar: 4, zeta: 3.67054, coeff: 0.00932 },
-        { nStar: 4, zeta: 1.76174, coeff: -0.00105 },
-        { nStar: 4, zeta: 1.077, coeff: 0.00069 },
-        { nStar: 4, zeta: 0.73215, coeff: -0.00028 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 10.3361, coeff: 0.72031 },
-        { nStar: 2, zeta: 17.4584, coeff: 0.05657 },
-        { nStar: 3, zeta: 8.65722, coeff: 0.26705 },
-        { nStar: 3, zeta: 4.79067, coeff: 0.01107 },
-        { nStar: 3, zeta: 3.0594, coeff: -0.00158 },
-        { nStar: 3, zeta: 1.85188, coeff: 0.00038 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 23.0574, coeff: 0.10566 },
-        { nStar: 1, zeta: 39.0175, coeff: -0.00031 },
-        { nStar: 2, zeta: 19.8537, coeff: 0.06121 },
-        { nStar: 2, zeta: 9.24671, coeff: -0.41455 },
-        { nStar: 3, zeta: 8.54632, coeff: -0.19175 },
-        { nStar: 3, zeta: 5.11726, coeff: 0.45614 },
-        { nStar: 3, zeta: 4.22281, coeff: 0.42379 },
-        { nStar: 4, zeta: 3.67054, coeff: 0.34028 },
-        { nStar: 4, zeta: 1.76174, coeff: 0.01151 },
-        { nStar: 4, zeta: 1.077, coeff: -0.00529 },
-        { nStar: 4, zeta: 0.73215, coeff: 0.00195 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 10.3361, coeff: -0.25528 },
-        { nStar: 2, zeta: 17.4584, coeff: -0.019 },
-        { nStar: 3, zeta: 8.65722, coeff: -0.1426 },
-        { nStar: 3, zeta: 4.79067, coeff: 0.47076 },
-        { nStar: 3, zeta: 3.0594, coeff: 0.62323 },
-        { nStar: 3, zeta: 1.85188, coeff: 0.04815 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 3.14686, coeff: 0.377 },
-        { nStar: 3, zeta: 10.0535, coeff: 0.02512 },
-        { nStar: 3, zeta: 5.15213, coeff: 0.23791 },
-        { nStar: 3, zeta: 2.01131, coeff: 0.3727 },
-        { nStar: 3, zeta: 1.26881, coeff: 0.14492 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 23.0574, coeff: -0.02384 },
-        { nStar: 1, zeta: 39.0175, coeff: -1e-05 },
-        { nStar: 2, zeta: 19.8537, coeff: -0.01436 },
-        { nStar: 2, zeta: 9.24671, coeff: 0.09588 },
-        { nStar: 3, zeta: 8.54632, coeff: 0.04743 },
-        { nStar: 3, zeta: 5.11726, coeff: -0.08873 },
-        { nStar: 3, zeta: 4.22281, coeff: -0.16412 },
-        { nStar: 4, zeta: 3.67054, coeff: -0.05043 },
-        { nStar: 4, zeta: 1.76174, coeff: 0.4416 },
-        { nStar: 4, zeta: 1.077, coeff: 0.5798 },
-        { nStar: 4, zeta: 0.73215, coeff: 0.08713 },
-      ],
-    }
-  },
-  'Cr': {
-    Z: 24,
-    name: 'Chromium',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(1)3D(5)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 24.0633, coeff: -0.94223 },
-        { nStar: 1, zeta: 37.4769, coeff: -0.01746 },
-        { nStar: 2, zeta: 21.0715, coeff: -0.05043 },
-        { nStar: 2, zeta: 10.6167, coeff: -0.0018 },
-        { nStar: 3, zeta: 9.77606, coeff: 0.00026 },
-        { nStar: 3, zeta: 5.97845, coeff: 0.00023 },
-        { nStar: 3, zeta: 4.31189, coeff: -0.00015 },
-        { nStar: 4, zeta: 3.51959, coeff: 7e-05 },
-        { nStar: 4, zeta: 1.84395, coeff: -2e-05 },
-        { nStar: 4, zeta: 1.13396, coeff: 2e-05 },
-        { nStar: 4, zeta: 0.77174, coeff: -1e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 24.0633, coeff: -0.28657 },
-        { nStar: 1, zeta: 37.4769, coeff: -0.00314 },
-        { nStar: 2, zeta: 21.0715, coeff: -0.16162 },
-        { nStar: 2, zeta: 10.6167, coeff: 0.84808 },
-        { nStar: 3, zeta: 9.77606, coeff: 0.30412 },
-        { nStar: 3, zeta: 5.97845, coeff: 0.02259 },
-        { nStar: 3, zeta: 4.31189, coeff: -0.00091 },
-        { nStar: 4, zeta: 3.51959, coeff: -0.00011 },
-        { nStar: 4, zeta: 1.84395, coeff: 0.00035 },
-        { nStar: 4, zeta: 1.13396, coeff: -0.00026 },
-        { nStar: 4, zeta: 0.77174, coeff: 0.00011 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 9.62465, coeff: 0.84099 },
-        { nStar: 2, zeta: 16.5008, coeff: 0.1062 },
-        { nStar: 3, zeta: 7.58114, coeff: 0.0923 },
-        { nStar: 3, zeta: 5.6392, coeff: -0.005 },
-        { nStar: 3, zeta: 3.37943, coeff: 0.00237 },
-        { nStar: 3, zeta: 2.02801, coeff: -0.00037 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 24.0633, coeff: -0.10811 },
-        { nStar: 1, zeta: 37.4769, coeff: 0.00072 },
-        { nStar: 2, zeta: 21.0715, coeff: -0.05673 },
-        { nStar: 2, zeta: 10.6167, coeff: 0.31797 },
-        { nStar: 3, zeta: 9.77606, coeff: 0.27767 },
-        { nStar: 3, zeta: 5.97845, coeff: -0.19915 },
-        { nStar: 3, zeta: 4.31189, coeff: -0.8111 },
-        { nStar: 4, zeta: 3.51959, coeff: -0.18585 },
-        { nStar: 4, zeta: 1.84395, coeff: -0.00522 },
-        { nStar: 4, zeta: 1.13396, coeff: 0.00249 },
-        { nStar: 4, zeta: 0.77174, coeff: -0.00095 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 9.62465, coeff: -0.30904 },
-        { nStar: 2, zeta: 16.5008, coeff: -0.03502 },
-        { nStar: 3, zeta: 7.58114, coeff: -0.16453 },
-        { nStar: 3, zeta: 5.6392, coeff: 0.47285 },
-        { nStar: 3, zeta: 3.37943, coeff: 0.6989 },
-        { nStar: 3, zeta: 2.02801, coeff: 0.06564 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 3.20848, coeff: 0.44978 },
-        { nStar: 3, zeta: 11.2907, coeff: 0.02041 },
-        { nStar: 3, zeta: 5.57635, coeff: 0.25732 },
-        { nStar: 3, zeta: 2.01453, coeff: 0.30403 },
-        { nStar: 3, zeta: 1.35576, coeff: 0.12567 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 24.0633, coeff: -0.02388 },
-        { nStar: 1, zeta: 37.4769, coeff: 9e-05 },
-        { nStar: 2, zeta: 21.0715, coeff: -0.01287 },
-        { nStar: 2, zeta: 10.6167, coeff: 0.07145 },
-        { nStar: 3, zeta: 9.77606, coeff: 0.06597 },
-        { nStar: 3, zeta: 5.97845, coeff: -0.04135 },
-        { nStar: 3, zeta: 4.31189, coeff: -0.23195 },
-        { nStar: 4, zeta: 3.51959, coeff: -0.01254 },
-        { nStar: 4, zeta: 1.84395, coeff: 0.42719 },
-        { nStar: 4, zeta: 1.13396, coeff: 0.5689 },
-        { nStar: 4, zeta: 0.77174, coeff: 0.11158 },
-      ],
-    }
-  },
-  'Mn': {
-    Z: 25,
-    name: 'Manganese',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(2)3D(5)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 25.3589, coeff: -0.93746 },
-        { nStar: 1, zeta: 40.2285, coeff: -0.01123 },
-        { nStar: 2, zeta: 22.1859, coeff: -0.06458 },
-        { nStar: 2, zeta: 10.1845, coeff: 0.00156 },
-        { nStar: 3, zeta: 9.6356, coeff: -0.00288 },
-        { nStar: 3, zeta: 6.13576, coeff: 0.0031 },
-        { nStar: 3, zeta: 4.43473, coeff: -0.00251 },
-        { nStar: 4, zeta: 3.90249, coeff: 0.00092 },
-        { nStar: 4, zeta: 1.86815, coeff: -0.00017 },
-        { nStar: 4, zeta: 1.15642, coeff: 0.00013 },
-        { nStar: 4, zeta: 0.81912, coeff: -5e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 25.3589, coeff: -0.28436 },
-        { nStar: 1, zeta: 40.2285, coeff: -0.00262 },
-        { nStar: 2, zeta: 22.1859, coeff: -0.16507 },
-        { nStar: 2, zeta: 10.1845, coeff: 1.0438 },
-        { nStar: 3, zeta: 9.6356, coeff: 0.08786 },
-        { nStar: 3, zeta: 6.13576, coeff: 0.02502 },
-        { nStar: 3, zeta: 4.43473, coeff: -0.00473 },
-        { nStar: 4, zeta: 3.90249, coeff: 0.00119 },
-        { nStar: 4, zeta: 1.86815, coeff: 0.00012 },
-        { nStar: 4, zeta: 1.15642, coeff: -0.00012 },
-        { nStar: 4, zeta: 0.81912, coeff: 6e-05 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 9.71579, coeff: 0.86804 },
-        { nStar: 2, zeta: 16.7217, coeff: 0.1292 },
-        { nStar: 3, zeta: 6.51366, coeff: 0.02225 },
-        { nStar: 3, zeta: 5.77096, coeff: 0.01728 },
-        { nStar: 3, zeta: 3.7398, coeff: -0.0092 },
-        { nStar: 3, zeta: 2.67402, coeff: 0.00343 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 25.3589, coeff: -0.10595 },
-        { nStar: 1, zeta: 40.2285, coeff: -0.00022 },
-        { nStar: 2, zeta: 22.1859, coeff: -0.06286 },
-        { nStar: 2, zeta: 10.1845, coeff: 0.40954 },
-        { nStar: 3, zeta: 9.6356, coeff: 0.2202 },
-        { nStar: 3, zeta: 6.13576, coeff: -0.35686 },
-        { nStar: 3, zeta: 4.43473, coeff: -0.65559 },
-        { nStar: 4, zeta: 3.90249, coeff: -0.2192 },
-        { nStar: 4, zeta: 1.86815, coeff: -0.0124 },
-        { nStar: 4, zeta: 1.15642, coeff: 0.00736 },
-        { nStar: 4, zeta: 0.81912, coeff: -0.00303 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 9.71579, coeff: -0.34099 },
-        { nStar: 2, zeta: 16.7217, coeff: -0.03805 },
-        { nStar: 3, zeta: 6.51366, coeff: -0.29351 },
-        { nStar: 3, zeta: 5.77096, coeff: 0.67446 },
-        { nStar: 3, zeta: 3.7398, coeff: 0.52325 },
-        { nStar: 3, zeta: 2.67402, coeff: 0.20373 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 3.63884, coeff: 0.4099 },
-        { nStar: 3, zeta: 11.5566, coeff: 0.02214 },
-        { nStar: 3, zeta: 6.02189, coeff: 0.23736 },
-        { nStar: 3, zeta: 2.2834, coeff: 0.35035 },
-        { nStar: 3, zeta: 1.46766, coeff: 0.13622 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 25.3589, coeff: -0.02239 },
-        { nStar: 1, zeta: 40.2285, coeff: -0.00035 },
-        { nStar: 2, zeta: 22.1859, coeff: -0.01473 },
-        { nStar: 2, zeta: 10.1845, coeff: 0.09217 },
-        { nStar: 3, zeta: 9.6356, coeff: 0.04683 },
-        { nStar: 3, zeta: 6.13576, coeff: -0.05743 },
-        { nStar: 3, zeta: 4.43473, coeff: -0.22417 },
-        { nStar: 4, zeta: 3.90249, coeff: 0.00628 },
-        { nStar: 4, zeta: 1.86815, coeff: 0.45255 },
-        { nStar: 4, zeta: 1.15642, coeff: 0.52136 },
-        { nStar: 4, zeta: 0.81912, coeff: 0.1284 },
-      ],
-    }
-  },
-  'Fe': {
-    Z: 26,
-    name: 'Iron',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(2)3D(6)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 25.7309, coeff: 0.95996 },
-        { nStar: 1, zeta: 41.3841, coeff: 0.01813 },
-        { nStar: 2, zeta: 21.899, coeff: 0.02737 },
-        { nStar: 2, zeta: 10.6188, coeff: 0.00605 },
-        { nStar: 3, zeta: 9.55626, coeff: -0.00773 },
-        { nStar: 3, zeta: 7.45884, coeff: 0.00621 },
-        { nStar: 3, zeta: 5.04693, coeff: -0.00249 },
-        { nStar: 4, zeta: 4.02856, coeff: 0.00072 },
-        { nStar: 4, zeta: 2.0076, coeff: -0.00019 },
-        { nStar: 4, zeta: 1.23271, coeff: 0.00014 },
-        { nStar: 4, zeta: 0.85375, coeff: -6e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 25.7309, coeff: -0.30606 },
-        { nStar: 1, zeta: 41.3841, coeff: 0.0019 },
-        { nStar: 2, zeta: 21.899, coeff: -0.16565 },
-        { nStar: 2, zeta: 10.6188, coeff: 1.09354 },
-        { nStar: 3, zeta: 9.55626, coeff: 0.0369 },
-        { nStar: 3, zeta: 7.45884, coeff: 0.04145 },
-        { nStar: 3, zeta: 5.04693, coeff: -0.0054 },
-        { nStar: 4, zeta: 4.02856, coeff: 0.00242 },
-        { nStar: 4, zeta: 2.0076, coeff: -0.00053 },
-        { nStar: 4, zeta: 1.23271, coeff: 0.00039 },
-        { nStar: 4, zeta: 0.85375, coeff: -0.00016 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 10.2656, coeff: 0.87094 },
-        { nStar: 2, zeta: 17.609, coeff: 0.12008 },
-        { nStar: 3, zeta: 6.91165, coeff: 0.045 },
-        { nStar: 3, zeta: 6.05627, coeff: -0.00315 },
-        { nStar: 3, zeta: 3.76984, coeff: -0.004 },
-        { nStar: 3, zeta: 2.62185, coeff: 0.0019 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 25.7309, coeff: -0.11318 },
-        { nStar: 1, zeta: 41.3841, coeff: 0.00061 },
-        { nStar: 2, zeta: 21.899, coeff: -0.06828 },
-        { nStar: 2, zeta: 10.6188, coeff: 0.44592 },
-        { nStar: 3, zeta: 9.55626, coeff: 0.25239 },
-        { nStar: 3, zeta: 7.45884, coeff: -0.21356 },
-        { nStar: 3, zeta: 5.04693, coeff: -0.81903 },
-        { nStar: 4, zeta: 4.02856, coeff: -0.26346 },
-        { nStar: 4, zeta: 2.0076, coeff: -0.00422 },
-        { nStar: 4, zeta: 1.23271, coeff: 0.00122 },
-        { nStar: 4, zeta: 0.85375, coeff: -0.00037 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 10.2656, coeff: -0.34583 },
-        { nStar: 2, zeta: 17.609, coeff: -0.03518 },
-        { nStar: 3, zeta: 6.91165, coeff: -0.29719 },
-        { nStar: 3, zeta: 6.05627, coeff: 0.70788 },
-        { nStar: 3, zeta: 3.76984, coeff: 0.57147 },
-        { nStar: 3, zeta: 2.62185, coeff: 0.12516 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 3.90292, coeff: 0.39452 },
-        { nStar: 3, zeta: 12.2324, coeff: 0.02192 },
-        { nStar: 3, zeta: 6.37125, coeff: 0.24207 },
-        { nStar: 3, zeta: 2.40608, coeff: 0.3702 },
-        { nStar: 3, zeta: 1.48653, coeff: 0.13365 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 25.7309, coeff: -0.02381 },
-        { nStar: 1, zeta: 41.3841, coeff: -7e-05 },
-        { nStar: 2, zeta: 21.899, coeff: -0.01561 },
-        { nStar: 2, zeta: 10.6188, coeff: 0.09861 },
-        { nStar: 3, zeta: 9.55626, coeff: 0.05201 },
-        { nStar: 3, zeta: 7.45884, coeff: -0.03147 },
-        { nStar: 3, zeta: 5.04693, coeff: -0.23277 },
-        { nStar: 4, zeta: 4.02856, coeff: -0.02645 },
-        { nStar: 4, zeta: 2.0076, coeff: 0.42197 },
-        { nStar: 4, zeta: 1.23271, coeff: 0.53816 },
-        { nStar: 4, zeta: 0.85375, coeff: 0.15172 },
-      ],
-    }
-  },
-  'Co': {
-    Z: 27,
-    name: 'Cobalt',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(2)3D(7)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 26.8321, coeff: -0.96126 },
-        { nStar: 1, zeta: 44.2707, coeff: -0.01419 },
-        { nStar: 2, zeta: 22.9314, coeff: -0.03023 },
-        { nStar: 2, zeta: 12.1136, coeff: -0.00546 },
-        { nStar: 3, zeta: 11.3118, coeff: 0.00399 },
-        { nStar: 3, zeta: 6.72828, coeff: -0.00444 },
-        { nStar: 3, zeta: 5.58191, coeff: 0.00374 },
-        { nStar: 4, zeta: 4.36115, coeff: -0.00068 },
-        { nStar: 4, zeta: 2.15692, coeff: 0.00015 },
-        { nStar: 4, zeta: 1.30768, coeff: -0.0001 },
-        { nStar: 4, zeta: 0.86641, coeff: 4e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 26.8321, coeff: -0.30396 },
-        { nStar: 1, zeta: 44.2707, coeff: 0.00089 },
-        { nStar: 2, zeta: 22.9314, coeff: -0.17098 },
-        { nStar: 2, zeta: 12.1136, coeff: 0.88074 },
-        { nStar: 3, zeta: 11.3118, coeff: 0.27856 },
-        { nStar: 3, zeta: 6.72828, coeff: 0.05672 },
-        { nStar: 3, zeta: 5.58191, coeff: -0.02838 },
-        { nStar: 4, zeta: 4.36115, coeff: 0.00418 },
-        { nStar: 4, zeta: 2.15692, coeff: -0.00064 },
-        { nStar: 4, zeta: 1.30768, coeff: 0.00041 },
-        { nStar: 4, zeta: 0.86641, coeff: -0.00016 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 11.159, coeff: 0.86458 },
-        { nStar: 2, zeta: 19.3477, coeff: 0.08618 },
-        { nStar: 3, zeta: 8.62558, coeff: 0.08273 },
-        { nStar: 3, zeta: 6.06638, coeff: -0.00014 },
-        { nStar: 3, zeta: 3.93006, coeff: -0.00016 },
-        { nStar: 3, zeta: 2.78815, coeff: 0.00071 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 26.8321, coeff: -0.11474 },
-        { nStar: 1, zeta: 44.2707, coeff: 0.00105 },
-        { nStar: 2, zeta: 22.9314, coeff: -0.06499 },
-        { nStar: 2, zeta: 12.1136, coeff: 0.34417 },
-        { nStar: 3, zeta: 11.3118, coeff: 0.2597 },
-        { nStar: 3, zeta: 6.72828, coeff: -0.0269 },
-        { nStar: 3, zeta: 5.58191, coeff: -0.84188 },
-        { nStar: 4, zeta: 4.36115, coeff: -0.32635 },
-        { nStar: 4, zeta: 2.15692, coeff: -0.00831 },
-        { nStar: 4, zeta: 1.30768, coeff: 0.00309 },
-        { nStar: 4, zeta: 0.86641, coeff: -0.00106 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 11.159, coeff: -0.33949 },
-        { nStar: 2, zeta: 19.3477, coeff: -0.02527 },
-        { nStar: 3, zeta: 8.62558, coeff: -0.104 },
-        { nStar: 3, zeta: 6.06638, coeff: 0.52001 },
-        { nStar: 3, zeta: 3.93006, coeff: 0.54134 },
-        { nStar: 3, zeta: 2.78815, coeff: 0.12972 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 4.18799, coeff: 0.38834 },
-        { nStar: 3, zeta: 13.1746, coeff: 0.01895 },
-        { nStar: 3, zeta: 6.85725, coeff: 0.23761 },
-        { nStar: 3, zeta: 2.61143, coeff: 0.36586 },
-        { nStar: 3, zeta: 1.57829, coeff: 0.15535 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 26.8321, coeff: -0.02395 },
-        { nStar: 1, zeta: 44.2707, coeff: 0.00012 },
-        { nStar: 2, zeta: 22.9314, coeff: -0.01425 },
-        { nStar: 2, zeta: 12.1136, coeff: 0.07402 },
-        { nStar: 3, zeta: 11.3118, coeff: 0.05705 },
-        { nStar: 3, zeta: 6.72828, coeff: 0.01936 },
-        { nStar: 3, zeta: 5.58191, coeff: -0.2446 },
-        { nStar: 4, zeta: 4.36115, coeff: -0.04774 },
-        { nStar: 4, zeta: 2.15692, coeff: 0.38442 },
-        { nStar: 4, zeta: 1.30768, coeff: 0.5729 },
-        { nStar: 4, zeta: 0.86641, coeff: 0.16252 },
-      ],
-    }
-  },
-  'Ni': {
-    Z: 28,
-    name: 'Nickel',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(2)3D(8)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 27.7081, coeff: -0.96109 },
-        { nStar: 1, zeta: 43.6082, coeff: -0.01879 },
-        { nStar: 2, zeta: 23.2239, coeff: -0.02605 },
-        { nStar: 2, zeta: 11.9394, coeff: -0.00362 },
-        { nStar: 3, zeta: 10.9683, coeff: 0.00324 },
-        { nStar: 3, zeta: 7.20834, coeff: -0.0038 },
-        { nStar: 3, zeta: 5.86511, coeff: 0.00293 },
-        { nStar: 4, zeta: 4.7209, coeff: -0.00053 },
-        { nStar: 4, zeta: 2.27022, coeff: 9e-05 },
-        { nStar: 4, zeta: 1.34716, coeff: -6e-05 },
-        { nStar: 4, zeta: 0.8648, coeff: 2e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 27.7081, coeff: -0.31249 },
-        { nStar: 1, zeta: 43.6082, coeff: 0.00353 },
-        { nStar: 2, zeta: 23.2239, coeff: -0.17853 },
-        { nStar: 2, zeta: 11.9394, coeff: 1.03779 },
-        { nStar: 3, zeta: 10.9683, coeff: 0.12533 },
-        { nStar: 3, zeta: 7.20834, coeff: 0.04318 },
-        { nStar: 3, zeta: 5.86511, coeff: -0.01953 },
-        { nStar: 4, zeta: 4.7209, coeff: 0.00383 },
-        { nStar: 4, zeta: 2.27022, coeff: -0.0005 },
-        { nStar: 4, zeta: 1.34716, coeff: 0.00031 },
-        { nStar: 4, zeta: 0.8648, coeff: -0.00012 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 11.578, coeff: 0.83639 },
-        { nStar: 2, zeta: 19.2687, coeff: 0.10552 },
-        { nStar: 3, zeta: 10.3132, coeff: 0.06952 },
-        { nStar: 3, zeta: 6.67054, coeff: 0.02932 },
-        { nStar: 3, zeta: 4.58463, coeff: -0.00937 },
-        { nStar: 3, zeta: 3.09195, coeff: 0.00281 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 27.7081, coeff: -0.11762 },
-        { nStar: 1, zeta: 43.6082, coeff: 0.00162 },
-        { nStar: 2, zeta: 23.2239, coeff: -0.07249 },
-        { nStar: 2, zeta: 11.9394, coeff: 0.42204 },
-        { nStar: 3, zeta: 10.9683, coeff: 0.2346 },
-        { nStar: 3, zeta: 7.20834, coeff: -0.19094 },
-        { nStar: 3, zeta: 5.86511, coeff: -0.67309 },
-        { nStar: 4, zeta: 4.7209, coeff: -0.37926 },
-        { nStar: 4, zeta: 2.27022, coeff: -0.0147 },
-        { nStar: 4, zeta: 1.34716, coeff: 0.00597 },
-        { nStar: 4, zeta: 0.8648, coeff: -0.0021 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 11.578, coeff: -0.32814 },
-        { nStar: 2, zeta: 19.2687, coeff: -0.03327 },
-        { nStar: 3, zeta: 10.3132, coeff: -0.07993 },
-        { nStar: 3, zeta: 6.67054, coeff: 0.34694 },
-        { nStar: 3, zeta: 4.58463, coeff: 0.58559 },
-        { nStar: 3, zeta: 3.09195, coeff: 0.22929 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 4.39854, coeff: 0.35554 },
-        { nStar: 3, zeta: 12.8833, coeff: 0.02557 },
-        { nStar: 3, zeta: 6.97998, coeff: 0.25412 },
-        { nStar: 3, zeta: 2.79684, coeff: 0.36406 },
-        { nStar: 3, zeta: 1.67922, coeff: 0.16885 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 27.7081, coeff: -0.02413 },
-        { nStar: 1, zeta: 43.6082, coeff: 0.00021 },
-        { nStar: 2, zeta: 23.2239, coeff: -0.01568 },
-        { nStar: 2, zeta: 11.9394, coeff: 0.08946 },
-        { nStar: 3, zeta: 10.9683, coeff: 0.05112 },
-        { nStar: 3, zeta: 7.20834, coeff: -0.02007 },
-        { nStar: 3, zeta: 5.86511, coeff: -0.20008 },
-        { nStar: 4, zeta: 4.7209, coeff: -0.06158 },
-        { nStar: 4, zeta: 2.27022, coeff: 0.37388 },
-        { nStar: 4, zeta: 1.34716, coeff: 0.60023 },
-        { nStar: 4, zeta: 0.8648, coeff: 0.15044 },
-      ],
-    }
-  },
-  'Cu': {
-    Z: 29,
-    name: 'Copper',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(1)3D(10)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 28.4839, coeff: -0.95789 },
-        { nStar: 1, zeta: 42.5056, coeff: -0.02856 },
-        { nStar: 2, zeta: 23.5478, coeff: -0.01759 },
-        { nStar: 2, zeta: 13.2667, coeff: -0.00457 },
-        { nStar: 3, zeta: 11.5206, coeff: 0.0044 },
-        { nStar: 3, zeta: 8.09772, coeff: -0.00584 },
-        { nStar: 3, zeta: 6.70827, coeff: 0.00407 },
-        { nStar: 4, zeta: 5.07948, coeff: -0.00063 },
-        { nStar: 4, zeta: 3.19095, coeff: 0.00015 },
-        { nStar: 4, zeta: 1.53564, coeff: -3e-05 },
-        { nStar: 4, zeta: 0.87051, coeff: 1e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 28.4839, coeff: -0.31805 },
-        { nStar: 1, zeta: 42.5056, coeff: 0.00412 },
-        { nStar: 2, zeta: 23.5478, coeff: -0.19769 },
-        { nStar: 2, zeta: 13.2667, coeff: 0.93663 },
-        { nStar: 3, zeta: 11.5206, coeff: 0.29775 },
-        { nStar: 3, zeta: 8.09772, coeff: -0.04582 },
-        { nStar: 3, zeta: 6.70827, coeff: 0.04007 },
-        { nStar: 4, zeta: 5.07948, coeff: -0.0046 },
-        { nStar: 4, zeta: 3.19095, coeff: 0.00127 },
-        { nStar: 4, zeta: 1.53564, coeff: -0.00028 },
-        { nStar: 4, zeta: 0.87051, coeff: 0.0001 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 11.8861, coeff: 0.84302 },
-        { nStar: 2, zeta: 19.5806, coeff: 0.11714 },
-        { nStar: 3, zeta: 10.8398, coeff: 0.04499 },
-        { nStar: 3, zeta: 7.3067, coeff: 0.03012 },
-        { nStar: 3, zeta: 4.57017, coeff: -0.00511 },
-        { nStar: 3, zeta: 2.89365, coeff: 0.00182 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 28.4839, coeff: -0.11906 },
-        { nStar: 1, zeta: 42.5056, coeff: 0.0016 },
-        { nStar: 2, zeta: 23.5478, coeff: -0.08169 },
-        { nStar: 2, zeta: 13.2667, coeff: 0.38342 },
-        { nStar: 3, zeta: 11.5206, coeff: 0.28466 },
-        { nStar: 3, zeta: 8.09772, coeff: 0.04973 },
-        { nStar: 3, zeta: 6.70827, coeff: -0.83111 },
-        { nStar: 4, zeta: 5.07948, coeff: -0.44639 },
-        { nStar: 4, zeta: 3.19095, coeff: -0.03257 },
-        { nStar: 4, zeta: 1.53564, coeff: 0.00086 },
-        { nStar: 4, zeta: 0.87051, coeff: -0.00037 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 11.8861, coeff: -0.32074 },
-        { nStar: 2, zeta: 19.5806, coeff: -0.0407 },
-        { nStar: 3, zeta: 10.8398, coeff: -0.10529 },
-        { nStar: 3, zeta: 7.3067, coeff: 0.37164 },
-        { nStar: 3, zeta: 4.57017, coeff: 0.67096 },
-        { nStar: 3, zeta: 2.89365, coeff: 0.14959 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 5.21851, coeff: 0.29853 },
-        { nStar: 3, zeta: 12.9688, coeff: 0.02649 },
-        { nStar: 3, zeta: 7.61139, coeff: 0.18625 },
-        { nStar: 3, zeta: 3.18734, coeff: 0.42214 },
-        { nStar: 3, zeta: 1.66248, coeff: 0.26291 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 28.4839, coeff: -0.02267 },
-        { nStar: 1, zeta: 42.5056, coeff: 0.00143 },
-        { nStar: 2, zeta: 23.5478, coeff: -0.00941 },
-        { nStar: 2, zeta: 13.2667, coeff: 0.05604 },
-        { nStar: 3, zeta: 11.5206, coeff: 0.08953 },
-        { nStar: 3, zeta: 8.09772, coeff: -0.1158 },
-        { nStar: 3, zeta: 6.70827, coeff: -0.03951 },
-        { nStar: 4, zeta: 5.07948, coeff: -0.15751 },
-        { nStar: 4, zeta: 3.19095, coeff: 0.17463 },
-        { nStar: 4, zeta: 1.53564, coeff: 0.66426 },
-        { nStar: 4, zeta: 0.87051, coeff: 0.34469 },
-      ],
-    }
-  },
-  'Zn': {
-    Z: 30,
-    name: 'Zinc',
-    groundState: 'K(2)L(8)3S(2)3P(6)4S(2)3D(10)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 29.486, coeff: -0.95504 },
-        { nStar: 1, zeta: 43.2859, coeff: -0.03057 },
-        { nStar: 2, zeta: 24.7399, coeff: -0.01886 },
-        { nStar: 2, zeta: 13.1551, coeff: -0.00384 },
-        { nStar: 3, zeta: 12.0072, coeff: 0.00264 },
-        { nStar: 3, zeta: 7.19899, coeff: -0.00287 },
-        { nStar: 3, zeta: 5.90512, coeff: 0.00246 },
-        { nStar: 4, zeta: 4.83215, coeff: -0.00049 },
-        { nStar: 4, zeta: 2.30295, coeff: 9e-05 },
-        { nStar: 4, zeta: 1.39478, coeff: -6e-05 },
-        { nStar: 4, zeta: 0.94264, coeff: 2e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 29.486, coeff: -0.31973 },
-        { nStar: 1, zeta: 43.2859, coeff: 0.00458 },
-        { nStar: 2, zeta: 24.7399, coeff: -0.1833 },
-        { nStar: 2, zeta: 13.1551, coeff: 1.00556 },
-        { nStar: 3, zeta: 12.0072, coeff: 0.1777 },
-        { nStar: 3, zeta: 7.19899, coeff: 0.0335 },
-        { nStar: 3, zeta: 5.90512, coeff: -0.01651 },
-        { nStar: 4, zeta: 4.83215, coeff: 0.00305 },
-        { nStar: 4, zeta: 2.30295, coeff: -0.00035 },
-        { nStar: 4, zeta: 1.39478, coeff: 0.00024 },
-        { nStar: 4, zeta: 0.94264, coeff: -0.0001 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 12.3711, coeff: 0.87225 },
-        { nStar: 2, zeta: 20.7182, coeff: 0.10237 },
-        { nStar: 3, zeta: 8.82555, coeff: 0.06399 },
-        { nStar: 3, zeta: 6.89964, coeff: -0.01065 },
-        { nStar: 3, zeta: 4.1366, coeff: 0.00203 },
-        { nStar: 3, zeta: 2.20119, coeff: -7e-05 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 29.486, coeff: -0.1197 },
-        { nStar: 1, zeta: 43.2859, coeff: 0.00113 },
-        { nStar: 2, zeta: 24.7399, coeff: -0.0784 },
-        { nStar: 2, zeta: 13.1551, coeff: 0.41934 },
-        { nStar: 3, zeta: 12.0072, coeff: 0.23499 },
-        { nStar: 3, zeta: 7.19899, coeff: -0.35324 },
-        { nStar: 3, zeta: 5.90512, coeff: -0.58692 },
-        { nStar: 4, zeta: 4.83215, coeff: -0.29127 },
-        { nStar: 4, zeta: 2.30295, coeff: -0.00539 },
-        { nStar: 4, zeta: 1.39478, coeff: 0.00164 },
-        { nStar: 4, zeta: 0.94264, coeff: -0.0005 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 12.3711, coeff: -0.35894 },
-        { nStar: 2, zeta: 20.7182, coeff: -0.02867 },
-        { nStar: 3, zeta: 8.82555, coeff: -0.14269 },
-        { nStar: 3, zeta: 6.89964, coeff: 0.64545 },
-        { nStar: 3, zeta: 4.1366, coeff: 0.58274 },
-        { nStar: 3, zeta: 2.20119, coeff: 0.02297 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 5.02809, coeff: 0.38099 },
-        { nStar: 3, zeta: 14.5574, coeff: 0.02036 },
-        { nStar: 3, zeta: 8.0045, coeff: 0.22908 },
-        { nStar: 3, zeta: 3.05216, coeff: 0.38095 },
-        { nStar: 3, zeta: 1.78869, coeff: 0.16037 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 29.486, coeff: -0.02302 },
-        { nStar: 1, zeta: 43.2859, coeff: -0.00032 },
-        { nStar: 2, zeta: 24.7399, coeff: -0.01758 },
-        { nStar: 2, zeta: 13.1551, coeff: 0.0885 },
-        { nStar: 3, zeta: 12.0072, coeff: 0.04466 },
-        { nStar: 3, zeta: 7.19899, coeff: -0.02731 },
-        { nStar: 3, zeta: 5.90512, coeff: -0.21465 },
-        { nStar: 4, zeta: 4.83215, coeff: -0.00882 },
-        { nStar: 4, zeta: 2.30295, coeff: 0.41428 },
-        { nStar: 4, zeta: 1.39478, coeff: 0.52676 },
-        { nStar: 4, zeta: 0.94264, coeff: 0.17422 },
-      ],
-    }
-  },
-  'Ga': {
-    Z: 31,
-    name: 'Gallium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(1)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 28.8101, coeff: 0.7471 },
-        { nStar: 1, zeta: 35.6121, coeff: 0.25535 },
-        { nStar: 2, zeta: 26.1579, coeff: 8e-05 },
-        { nStar: 2, zeta: 13.2781, coeff: 0.00169 },
-        { nStar: 3, zeta: 12.5424, coeff: -0.00014 },
-        { nStar: 3, zeta: 7.45372, coeff: -0.00033 },
-        { nStar: 3, zeta: 4.91188, coeff: 0.00015 },
-        { nStar: 4, zeta: 2.62926, coeff: -5e-05 },
-        { nStar: 4, zeta: 1.58911, coeff: 4e-05 },
-        { nStar: 4, zeta: 1.03307, coeff: -2e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 28.8101, coeff: 0.30472 },
-        { nStar: 1, zeta: 35.6121, coeff: 0.02593 },
-        { nStar: 2, zeta: 26.1579, coeff: 0.15106 },
-        { nStar: 2, zeta: 13.2781, coeff: -1.03361 },
-        { nStar: 3, zeta: 12.5424, coeff: -0.12909 },
-        { nStar: 3, zeta: 7.45372, coeff: -0.02392 },
-        { nStar: 3, zeta: 4.91188, coeff: 0.00424 },
-        { nStar: 4, zeta: 2.62926, coeff: -0.00119 },
-        { nStar: 4, zeta: 1.58911, coeff: 0.00084 },
-        { nStar: 4, zeta: 1.03307, coeff: -0.00034 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 12.5163, coeff: 0.8911 },
-        { nStar: 2, zeta: 20.9495, coeff: 0.11879 },
-        { nStar: 3, zeta: 12.1529, coeff: -0.01678 },
-        { nStar: 3, zeta: 7.64617, coeff: 0.04239 },
-        { nStar: 3, zeta: 4.93738, coeff: -0.01281 },
-        { nStar: 4, zeta: 3.55119, coeff: 0.00488 },
-        { nStar: 4, zeta: 1.98803, coeff: -0.00227 },
-        { nStar: 4, zeta: 1.18954, coeff: 0.00163 },
-        { nStar: 4, zeta: 0.86212, coeff: -0.00076 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 28.8101, coeff: -0.11978 },
-        { nStar: 1, zeta: 35.6121, coeff: -0.00728 },
-        { nStar: 2, zeta: 26.1579, coeff: -0.06164 },
-        { nStar: 2, zeta: 13.2781, coeff: 0.42524 },
-        { nStar: 3, zeta: 12.5424, coeff: 0.23678 },
-        { nStar: 3, zeta: 7.45372, coeff: -0.54469 },
-        { nStar: 3, zeta: 4.91188, coeff: -0.67749 },
-        { nStar: 4, zeta: 2.62926, coeff: -0.00778 },
-        { nStar: 4, zeta: 1.58911, coeff: 0.00186 },
-        { nStar: 4, zeta: 1.03307, coeff: -0.00049 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 12.5163, coeff: 0.35639 },
-        { nStar: 2, zeta: 20.9495, coeff: 0.04 },
-        { nStar: 3, zeta: 12.1529, coeff: 0.05337 },
-        { nStar: 3, zeta: 7.64617, coeff: -0.37284 },
-        { nStar: 3, zeta: 4.93738, coeff: -0.71286 },
-        { nStar: 4, zeta: 3.55119, coeff: -0.0852 },
-        { nStar: 4, zeta: 1.98803, coeff: 0.0055 },
-        { nStar: 4, zeta: 1.18954, coeff: -0.00441 },
-        { nStar: 4, zeta: 0.86212, coeff: 0.00191 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 3.49966, coeff: 0.42542 },
-        { nStar: 3, zeta: 2.08524, coeff: 0.14613 },
-        { nStar: 3, zeta: 5.57215, coeff: 0.31824 },
-        { nStar: 3, zeta: 8.17656, coeff: 0.23367 },
-        { nStar: 3, zeta: 14.3805, coeff: 0.02762 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 28.8101, coeff: -0.03229 },
-        { nStar: 1, zeta: 35.6121, coeff: 0.00156 },
-        { nStar: 2, zeta: 26.1579, coeff: -0.0115 },
-        { nStar: 2, zeta: 13.2781, coeff: 0.09475 },
-        { nStar: 3, zeta: 12.5424, coeff: 0.07128 },
-        { nStar: 3, zeta: 7.45372, coeff: -0.1671 },
-        { nStar: 3, zeta: 4.91188, coeff: -0.16344 },
-        { nStar: 4, zeta: 2.62926, coeff: 0.44141 },
-        { nStar: 4, zeta: 1.58911, coeff: 0.57985 },
-        { nStar: 4, zeta: 1.03307, coeff: 0.10455 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 12.5163, coeff: 0.05893 },
-        { nStar: 2, zeta: 20.9495, coeff: 0.00634 },
-        { nStar: 3, zeta: 12.1529, coeff: 0.00969 },
-        { nStar: 3, zeta: 7.64617, coeff: -0.06858 },
-        { nStar: 3, zeta: 4.93738, coeff: -0.12982 },
-        { nStar: 4, zeta: 3.55119, coeff: 0.02852 },
-        { nStar: 4, zeta: 1.98803, coeff: 0.39484 },
-        { nStar: 4, zeta: 1.18954, coeff: 0.46618 },
-        { nStar: 4, zeta: 0.86212, coeff: 0.24077 },
-      ],
-    }
-  },
-  'Ge': {
-    Z: 32,
-    name: 'Germanium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(2)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 30.021, coeff: 0.75815 },
-        { nStar: 1, zeta: 36.8058, coeff: 0.23936 },
-        { nStar: 2, zeta: 27.0091, coeff: 0.00627 },
-        { nStar: 2, zeta: 13.7997, coeff: 0.00058 },
-        { nStar: 3, zeta: 12.8837, coeff: 0.00059 },
-        { nStar: 3, zeta: 7.89859, coeff: -0.00062 },
-        { nStar: 3, zeta: 5.27181, coeff: 0.00028 },
-        { nStar: 4, zeta: 2.87538, coeff: -0.0001 },
-        { nStar: 4, zeta: 1.79597, coeff: 9e-05 },
-        { nStar: 4, zeta: 1.29724, coeff: -4e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 30.021, coeff: 0.30153 },
-        { nStar: 1, zeta: 36.8058, coeff: 0.02606 },
-        { nStar: 2, zeta: 27.0091, coeff: 0.16087 },
-        { nStar: 2, zeta: 13.7997, coeff: -1.03666 },
-        { nStar: 3, zeta: 12.8837, coeff: -0.13209 },
-        { nStar: 3, zeta: 7.89859, coeff: -0.02214 },
-        { nStar: 3, zeta: 5.27181, coeff: 0.00323 },
-        { nStar: 4, zeta: 2.87538, coeff: -0.00097 },
-        { nStar: 4, zeta: 1.79597, coeff: 0.00081 },
-        { nStar: 4, zeta: 1.29724, coeff: -0.00036 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 13.3537, coeff: 0.86134 },
-        { nStar: 2, zeta: 22.0988, coeff: 0.10385 },
-        { nStar: 3, zeta: 12.8937, coeff: 0.02927 },
-        { nStar: 3, zeta: 8.12507, coeff: 0.04517 },
-        { nStar: 3, zeta: 5.2667, coeff: -0.01327 },
-        { nStar: 4, zeta: 3.74374, coeff: 0.00507 },
-        { nStar: 4, zeta: 2.16483, coeff: -0.0024 },
-        { nStar: 4, zeta: 1.27537, coeff: 0.00147 },
-        { nStar: 4, zeta: 0.88029, coeff: -0.00063 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 30.021, coeff: 0.11337 },
-        { nStar: 1, zeta: 36.8058, coeff: 0.01215 },
-        { nStar: 2, zeta: 27.0091, coeff: 0.07053 },
-        { nStar: 2, zeta: 13.7997, coeff: -0.43821 },
-        { nStar: 3, zeta: 12.8837, coeff: -0.24038 },
-        { nStar: 3, zeta: 7.89859, coeff: 0.49626 },
-        { nStar: 3, zeta: 5.27181, coeff: 0.72786 },
-        { nStar: 4, zeta: 2.87538, coeff: 0.01467 },
-        { nStar: 4, zeta: 1.79597, coeff: -0.00665 },
-        { nStar: 4, zeta: 1.29724, coeff: 0.0027 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 13.3537, coeff: 0.3459 },
-        { nStar: 2, zeta: 22.0988, coeff: 0.03597 },
-        { nStar: 3, zeta: 12.8937, coeff: 0.07589 },
-        { nStar: 3, zeta: 8.12507, coeff: -0.33604 },
-        { nStar: 3, zeta: 5.2667, coeff: -0.74958 },
-        { nStar: 4, zeta: 3.74374, coeff: -0.0849 },
-        { nStar: 4, zeta: 2.16483, coeff: 0.00762 },
-        { nStar: 4, zeta: 1.27537, coeff: -0.00478 },
-        { nStar: 4, zeta: 0.88029, coeff: 0.0019 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 3.82993, coeff: 0.44017 },
-        { nStar: 3, zeta: 2.34719, coeff: 0.12938 },
-        { nStar: 3, zeta: 6.11651, coeff: 0.3384 },
-        { nStar: 3, zeta: 8.86174, coeff: 0.20172 },
-        { nStar: 3, zeta: 14.9273, coeff: 0.02653 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 30.021, coeff: -0.03022 },
-        { nStar: 1, zeta: 36.8058, coeff: -0.00226 },
-        { nStar: 2, zeta: 27.0091, coeff: -0.01741 },
-        { nStar: 2, zeta: 13.7997, coeff: 0.11165 },
-        { nStar: 3, zeta: 12.8837, coeff: 0.07481 },
-        { nStar: 3, zeta: 7.89859, coeff: -0.16 },
-        { nStar: 3, zeta: 5.27181, coeff: -0.21325 },
-        { nStar: 4, zeta: 2.87538, coeff: 0.46131 },
-        { nStar: 4, zeta: 1.79597, coeff: 0.53115 },
-        { nStar: 4, zeta: 1.29724, coeff: 0.13401 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 13.3537, coeff: 0.06904 },
-        { nStar: 2, zeta: 22.0988, coeff: 0.00684 },
-        { nStar: 3, zeta: 12.8937, coeff: 0.01618 },
-        { nStar: 3, zeta: 8.12507, coeff: -0.07467 },
-        { nStar: 3, zeta: 5.2667, coeff: -0.16721 },
-        { nStar: 4, zeta: 3.74374, coeff: 0.03395 },
-        { nStar: 4, zeta: 2.16483, coeff: 0.48432 },
-        { nStar: 4, zeta: 1.27537, coeff: 0.53214 },
-        { nStar: 4, zeta: 0.88029, coeff: 0.07195 },
-      ],
-    }
-  },
-  'As': {
-    Z: 33,
-    name: 'Arsenic',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(3)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 31.346, coeff: 0.80944 },
-        { nStar: 1, zeta: 38.6077, coeff: 0.1859 },
-        { nStar: 2, zeta: 26.2673, coeff: 0.00949 },
-        { nStar: 2, zeta: 14.9489, coeff: -0.00069 },
-        { nStar: 3, zeta: 13.4536, coeff: 0.00121 },
-        { nStar: 3, zeta: 8.13994, coeff: -0.00083 },
-        { nStar: 3, zeta: 5.53193, coeff: 0.00039 },
-        { nStar: 4, zeta: 3.14867, coeff: -0.00014 },
-        { nStar: 4, zeta: 2.01557, coeff: 0.00012 },
-        { nStar: 4, zeta: 1.42236, coeff: -5e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 31.346, coeff: 0.35297 },
-        { nStar: 1, zeta: 38.6077, coeff: -0.01548 },
-        { nStar: 2, zeta: 26.2673, coeff: 0.18189 },
-        { nStar: 2, zeta: 14.9489, coeff: -0.98989 },
-        { nStar: 3, zeta: 13.4536, coeff: -0.22138 },
-        { nStar: 3, zeta: 8.13994, coeff: -0.01725 },
-        { nStar: 3, zeta: 5.53193, coeff: 0.00209 },
-        { nStar: 4, zeta: 3.14867, coeff: -0.00065 },
-        { nStar: 4, zeta: 2.01557, coeff: 0.0005 },
-        { nStar: 4, zeta: 1.42236, coeff: -0.0002 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 14.0546, coeff: 0.83284 },
-        { nStar: 2, zeta: 22.7843, coeff: 0.10192 },
-        { nStar: 3, zeta: 13.5283, coeff: 0.06278 },
-        { nStar: 3, zeta: 8.37724, coeff: 0.04654 },
-        { nStar: 3, zeta: 5.57821, coeff: -0.01655 },
-        { nStar: 4, zeta: 4.34244, coeff: 0.00612 },
-        { nStar: 4, zeta: 2.42567, coeff: -0.00205 },
-        { nStar: 4, zeta: 1.4514, coeff: 0.00109 },
-        { nStar: 4, zeta: 0.91898, coeff: -0.00039 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 31.346, coeff: -0.13676 },
-        { nStar: 1, zeta: 38.6077, coeff: 0.0055 },
-        { nStar: 2, zeta: 26.2673, coeff: -0.08033 },
-        { nStar: 2, zeta: 14.9489, coeff: 0.42323 },
-        { nStar: 3, zeta: 13.4536, coeff: 0.27579 },
-        { nStar: 3, zeta: 8.13994, coeff: -0.49356 },
-        { nStar: 3, zeta: 5.53193, coeff: -0.72763 },
-        { nStar: 4, zeta: 3.14867, coeff: -0.01353 },
-        { nStar: 4, zeta: 2.01557, coeff: 0.00483 },
-        { nStar: 4, zeta: 1.42236, coeff: -0.00178 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 14.0546, coeff: 0.33887 },
-        { nStar: 2, zeta: 22.7843, coeff: 0.03589 },
-        { nStar: 3, zeta: 13.5283, coeff: 0.08838 },
-        { nStar: 3, zeta: 8.37724, coeff: -0.33676 },
-        { nStar: 3, zeta: 5.57821, coeff: -0.7304 },
-        { nStar: 4, zeta: 4.34244, coeff: -0.09452 },
-        { nStar: 4, zeta: 2.42567, coeff: -0.00136 },
-        { nStar: 4, zeta: 1.4514, coeff: -0.0001 },
-        { nStar: 4, zeta: 0.91898, coeff: 4e-05 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 4.1567, coeff: 0.44874 },
-        { nStar: 3, zeta: 2.5642, coeff: 0.11466 },
-        { nStar: 3, zeta: 6.3617, coeff: 0.306 },
-        { nStar: 3, zeta: 9.09175, coeff: 0.22855 },
-        { nStar: 3, zeta: 15.5461, coeff: 0.0271 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 31.346, coeff: -0.03678 },
-        { nStar: 1, zeta: 38.6077, coeff: 0.00086 },
-        { nStar: 2, zeta: 26.2673, coeff: -0.02303 },
-        { nStar: 2, zeta: 14.9489, coeff: 0.11843 },
-        { nStar: 3, zeta: 13.4536, coeff: 0.08597 },
-        { nStar: 3, zeta: 8.13994, coeff: -0.16171 },
-        { nStar: 3, zeta: 5.53193, coeff: -0.24575 },
-        { nStar: 4, zeta: 3.14867, coeff: 0.45102 },
-        { nStar: 4, zeta: 2.01557, coeff: 0.54525 },
-        { nStar: 4, zeta: 1.42236, coeff: 0.13765 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 14.0546, coeff: 0.07735 },
-        { nStar: 2, zeta: 22.7843, coeff: 0.00736 },
-        { nStar: 3, zeta: 13.5283, coeff: 0.01932 },
-        { nStar: 3, zeta: 8.37724, coeff: -0.08004 },
-        { nStar: 3, zeta: 5.57821, coeff: -0.1943 },
-        { nStar: 4, zeta: 4.34244, coeff: 0.02331 },
-        { nStar: 4, zeta: 2.42567, coeff: 0.50866 },
-        { nStar: 4, zeta: 1.4514, coeff: 0.53655 },
-        { nStar: 4, zeta: 0.91898, coeff: 0.05044 },
-      ],
-    }
-  },
-  'Se': {
-    Z: 34,
-    name: 'Selenium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(4)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 32.0098, coeff: 0.84307 },
-        { nStar: 1, zeta: 40.7954, coeff: 0.16359 },
-        { nStar: 2, zeta: 27.1713, coeff: -0.0079 },
-        { nStar: 2, zeta: 15.1352, coeff: 0.00666 },
-        { nStar: 3, zeta: 13.6203, coeff: -0.00349 },
-        { nStar: 3, zeta: 8.41955, coeff: 0.00127 },
-        { nStar: 3, zeta: 5.75207, coeff: -0.0006 },
-        { nStar: 4, zeta: 3.33167, coeff: 0.00018 },
-        { nStar: 4, zeta: 2.19374, coeff: -0.00013 },
-        { nStar: 4, zeta: 1.45697, coeff: 5e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 32.0098, coeff: 0.34872 },
-        { nStar: 1, zeta: 40.7954, coeff: -0.00786 },
-        { nStar: 2, zeta: 27.1713, coeff: 0.17658 },
-        { nStar: 2, zeta: 15.1352, coeff: -1.03246 },
-        { nStar: 3, zeta: 13.6203, coeff: -0.17253 },
-        { nStar: 3, zeta: 8.41955, coeff: -0.01678 },
-        { nStar: 3, zeta: 5.75207, coeff: 0.00228 },
-        { nStar: 4, zeta: 3.33167, coeff: -0.00069 },
-        { nStar: 4, zeta: 2.19374, coeff: 0.0005 },
-        { nStar: 4, zeta: 1.45697, coeff: -0.00016 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 14.757, coeff: 0.80693 },
-        { nStar: 2, zeta: 23.483, coeff: 0.10012 },
-        { nStar: 3, zeta: 14.1666, coeff: 0.09287 },
-        { nStar: 3, zeta: 8.69278, coeff: 0.0467 },
-        { nStar: 3, zeta: 5.83188, coeff: -0.01717 },
-        { nStar: 4, zeta: 4.54856, coeff: 0.00658 },
-        { nStar: 4, zeta: 2.59061, coeff: -0.00276 },
-        { nStar: 4, zeta: 1.63458, coeff: 0.00213 },
-        { nStar: 4, zeta: 1.25528, coeff: -0.00101 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 32.0098, coeff: -0.1335 },
-        { nStar: 1, zeta: 40.7954, coeff: 0.00048 },
-        { nStar: 2, zeta: 27.1713, coeff: -0.08308 },
-        { nStar: 2, zeta: 15.1352, coeff: 0.45513 },
-        { nStar: 3, zeta: 13.6203, coeff: 0.2608 },
-        { nStar: 3, zeta: 8.41955, coeff: -0.51814 },
-        { nStar: 3, zeta: 5.75207, coeff: -0.71665 },
-        { nStar: 4, zeta: 3.33167, coeff: -0.0082 },
-        { nStar: 4, zeta: 2.19374, coeff: 0.00114 },
-        { nStar: 4, zeta: 1.45697, coeff: -0.00034 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 14.757, coeff: 0.33247 },
-        { nStar: 2, zeta: 23.483, coeff: 0.0358 },
-        { nStar: 3, zeta: 14.1666, coeff: 0.10108 },
-        { nStar: 3, zeta: 8.69278, coeff: -0.33254 },
-        { nStar: 3, zeta: 5.83188, coeff: -0.74258 },
-        { nStar: 4, zeta: 4.54856, coeff: -0.08364 },
-        { nStar: 4, zeta: 2.59061, coeff: -0.00162 },
-        { nStar: 4, zeta: 1.63458, coeff: -0.00034 },
-        { nStar: 4, zeta: 1.25528, coeff: -7e-05 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 4.59417, coeff: 0.15501 },
-        { nStar: 3, zeta: 2.84235, coeff: 0.14364 },
-        { nStar: 3, zeta: 5.27029, coeff: 0.48035 },
-        { nStar: 3, zeta: 9.42659, coeff: 0.32562 },
-        { nStar: 3, zeta: 19.5457, coeff: 0.01261 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 32.0098, coeff: -0.03934 },
-        { nStar: 1, zeta: 40.7954, coeff: 0.00037 },
-        { nStar: 2, zeta: 27.1713, coeff: -0.02419 },
-        { nStar: 2, zeta: 15.1352, coeff: 0.13351 },
-        { nStar: 3, zeta: 13.6203, coeff: 0.0905 },
-        { nStar: 3, zeta: 8.41955, coeff: -0.18446 },
-        { nStar: 3, zeta: 5.75207, coeff: -0.25805 },
-        { nStar: 4, zeta: 3.33167, coeff: 0.47154 },
-        { nStar: 4, zeta: 2.19374, coeff: 0.54954 },
-        { nStar: 4, zeta: 1.45697, coeff: 0.11764 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 14.757, coeff: 0.08386 },
-        { nStar: 2, zeta: 23.483, coeff: 0.00743 },
-        { nStar: 3, zeta: 14.1666, coeff: 0.02171 },
-        { nStar: 3, zeta: 8.69278, coeff: -0.07972 },
-        { nStar: 3, zeta: 5.83188, coeff: -0.22666 },
-        { nStar: 4, zeta: 4.54856, coeff: 0.04165 },
-        { nStar: 4, zeta: 2.59061, coeff: 0.54173 },
-        { nStar: 4, zeta: 1.63458, coeff: 0.36695 },
-        { nStar: 4, zeta: 1.25528, coeff: 0.1834 },
-      ],
-    }
-  },
-  'Br': {
-    Z: 35,
-    name: 'Bromine',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(5)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 32.5864, coeff: 0.81095 },
-        { nStar: 1, zeta: 41.3557, coeff: 0.20011 },
-        { nStar: 2, zeta: 26.5342, coeff: -0.01554 },
-        { nStar: 2, zeta: 15.8792, coeff: 0.0102 },
-        { nStar: 3, zeta: 13.7951, coeff: -0.0054 },
-        { nStar: 3, zeta: 8.78775, coeff: 0.00246 },
-        { nStar: 3, zeta: 6.01958, coeff: -0.00115 },
-        { nStar: 4, zeta: 3.65032, coeff: 0.00037 },
-        { nStar: 4, zeta: 2.39212, coeff: -0.00025 },
-        { nStar: 4, zeta: 1.63837, coeff: 9e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 32.5864, coeff: 0.37448 },
-        { nStar: 1, zeta: 41.3557, coeff: -0.02121 },
-        { nStar: 2, zeta: 26.5342, coeff: 0.19595 },
-        { nStar: 2, zeta: 15.8792, coeff: -1.05505 },
-        { nStar: 3, zeta: 13.7951, coeff: -0.18909 },
-        { nStar: 3, zeta: 8.78775, coeff: -0.00887 },
-        { nStar: 3, zeta: 6.01958, coeff: -0.00028 },
-        { nStar: 4, zeta: 3.65032, coeff: -2e-05 },
-        { nStar: 4, zeta: 2.39212, coeff: 5e-05 },
-        { nStar: 4, zeta: 1.63837, coeff: -1e-05 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 15.8126, coeff: 0.74854 },
-        { nStar: 2, zeta: 24.1267, coeff: 0.09604 },
-        { nStar: 3, zeta: 14.7415, coeff: 0.16709 },
-        { nStar: 3, zeta: 8.64224, coeff: 0.04123 },
-        { nStar: 3, zeta: 5.90145, coeff: -0.01974 },
-        { nStar: 4, zeta: 5.18209, coeff: 0.0078 },
-        { nStar: 4, zeta: 2.82688, coeff: -0.00154 },
-        { nStar: 4, zeta: 1.7019, coeff: 0.0009 },
-        { nStar: 4, zeta: 1.21513, coeff: -0.00039 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 32.5864, coeff: -0.14513 },
-        { nStar: 1, zeta: 41.3557, coeff: 0.00582 },
-        { nStar: 2, zeta: 26.5342, coeff: -0.09653 },
-        { nStar: 2, zeta: 15.8792, coeff: 0.47805 },
-        { nStar: 3, zeta: 13.7951, coeff: 0.27859 },
-        { nStar: 3, zeta: 8.78775, coeff: -0.52656 },
-        { nStar: 3, zeta: 6.01958, coeff: -0.72544 },
-        { nStar: 4, zeta: 3.65032, coeff: -0.00594 },
-        { nStar: 4, zeta: 2.39212, coeff: -0.00099 },
-        { nStar: 4, zeta: 1.63837, coeff: 0.00027 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 15.8126, coeff: 0.31389 },
-        { nStar: 2, zeta: 24.1267, coeff: 0.03407 },
-        { nStar: 3, zeta: 14.7415, coeff: 0.12804 },
-        { nStar: 3, zeta: 8.64224, coeff: -0.41337 },
-        { nStar: 3, zeta: 5.90145, coeff: -0.66876 },
-        { nStar: 4, zeta: 5.18209, coeff: -0.06708 },
-        { nStar: 4, zeta: 2.82688, coeff: -0.01083 },
-        { nStar: 4, zeta: 1.7019, coeff: 0.00362 },
-        { nStar: 4, zeta: 1.21513, coeff: -0.00184 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 4.81505, coeff: 0.47817 },
-        { nStar: 3, zeta: 3.01772, coeff: 0.09572 },
-        { nStar: 3, zeta: 7.36217, coeff: 0.31609 },
-        { nStar: 3, zeta: 10.1971, coeff: 0.19151 },
-        { nStar: 3, zeta: 16.6274, coeff: 0.02657 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 32.5864, coeff: -0.04178 },
-        { nStar: 1, zeta: 41.3557, coeff: -0.00013 },
-        { nStar: 2, zeta: 26.5342, coeff: -0.03333 },
-        { nStar: 2, zeta: 15.8792, coeff: 0.15368 },
-        { nStar: 3, zeta: 13.7951, coeff: 0.09132 },
-        { nStar: 3, zeta: 8.78775, coeff: -0.17533 },
-        { nStar: 3, zeta: 6.01958, coeff: -0.30447 },
-        { nStar: 4, zeta: 3.65032, coeff: 0.46075 },
-        { nStar: 4, zeta: 2.39212, coeff: 0.56685 },
-        { nStar: 4, zeta: 1.63837, coeff: 0.12548 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 15.8126, coeff: 0.08539 },
-        { nStar: 2, zeta: 24.1267, coeff: 0.00721 },
-        { nStar: 3, zeta: 14.7415, coeff: 0.02963 },
-        { nStar: 3, zeta: 8.64224, coeff: -0.1012 },
-        { nStar: 3, zeta: 5.90145, coeff: -0.24356 },
-        { nStar: 4, zeta: 5.18209, coeff: 0.05048 },
-        { nStar: 4, zeta: 2.82688, coeff: 0.565 },
-        { nStar: 4, zeta: 1.7019, coeff: 0.45389 },
-        { nStar: 4, zeta: 1.21513, coeff: 0.08536 },
-      ],
-    }
-  },
-  'Kr': {
-    Z: 36,
-    name: 'Krypton',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 32.8351, coeff: 0.71521 },
-        { nStar: 1, zeta: 40.9447, coeff: 0.29911 },
-        { nStar: 2, zeta: 27.458, coeff: -0.01854 },
-        { nStar: 2, zeta: 16.0666, coeff: 0.00897 },
-        { nStar: 3, zeta: 14.2962, coeff: -0.00464 },
-        { nStar: 3, zeta: 9.10937, coeff: 0.0019 },
-        { nStar: 3, zeta: 6.37181, coeff: -0.00088 },
-        { nStar: 4, zeta: 3.84546, coeff: 0.00026 },
-        { nStar: 4, zeta: 2.57902, coeff: -0.00018 },
-        { nStar: 4, zeta: 1.77192, coeff: 6e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 32.8351, coeff: 0.38139 },
-        { nStar: 1, zeta: 40.9447, coeff: -0.01823 },
-        { nStar: 2, zeta: 27.458, coeff: 0.17175 },
-        { nStar: 2, zeta: 16.0666, coeff: -1.0716 },
-        { nStar: 3, zeta: 14.2962, coeff: -0.14913 },
-        { nStar: 3, zeta: 9.10937, coeff: -0.0192 },
-        { nStar: 3, zeta: 6.37181, coeff: 0.00401 },
-        { nStar: 4, zeta: 3.84546, coeff: -0.00122 },
-        { nStar: 4, zeta: 2.57902, coeff: 0.00092 },
-        { nStar: 4, zeta: 1.77192, coeff: -0.00031 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 17.0366, coeff: 0.72322 },
-        { nStar: 2, zeta: 26.0438, coeff: 0.06774 },
-        { nStar: 3, zeta: 15.51, coeff: 0.22056 },
-        { nStar: 3, zeta: 9.49403, coeff: 0.04478 },
-        { nStar: 3, zeta: 6.57275, coeff: -0.01672 },
-        { nStar: 4, zeta: 5.38507, coeff: 0.00609 },
-        { nStar: 4, zeta: 3.15603, coeff: -0.00195 },
-        { nStar: 4, zeta: 2.02966, coeff: 0.00111 },
-        { nStar: 4, zeta: 1.42733, coeff: -0.0004 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 32.8351, coeff: -0.14543 },
-        { nStar: 1, zeta: 40.9447, coeff: 0.00181 },
-        { nStar: 2, zeta: 27.458, coeff: -0.09037 },
-        { nStar: 2, zeta: 16.0666, coeff: 0.49528 },
-        { nStar: 3, zeta: 14.2962, coeff: 0.25451 },
-        { nStar: 3, zeta: 9.10937, coeff: -0.48504 },
-        { nStar: 3, zeta: 6.37181, coeff: -0.75593 },
-        { nStar: 4, zeta: 3.84546, coeff: -0.01203 },
-        { nStar: 4, zeta: 2.57902, coeff: 0.00218 },
-        { nStar: 4, zeta: 1.77192, coeff: -0.00085 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 17.0366, coeff: 0.30185 },
-        { nStar: 2, zeta: 26.0438, coeff: 0.02508 },
-        { nStar: 3, zeta: 15.51, coeff: 0.15903 },
-        { nStar: 3, zeta: 9.49403, coeff: -0.28475 },
-        { nStar: 3, zeta: 6.57275, coeff: -0.7644 },
-        { nStar: 4, zeta: 5.38507, coeff: -0.1067 },
-        { nStar: 4, zeta: 3.15603, coeff: -0.00562 },
-        { nStar: 4, zeta: 2.02966, coeff: 0.00137 },
-        { nStar: 4, zeta: 1.42733, coeff: -0.00053 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 5.3065, coeff: 0.50854 },
-        { nStar: 3, zeta: 3.3624, coeff: 0.1107 },
-        { nStar: 3, zeta: 7.94963, coeff: 0.24778 },
-        { nStar: 3, zeta: 10.3543, coeff: 0.20584 },
-        { nStar: 3, zeta: 17.1142, coeff: 0.02863 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 32.8351, coeff: -0.04349 },
-        { nStar: 1, zeta: 40.9447, coeff: -0.00148 },
-        { nStar: 2, zeta: 27.458, coeff: -0.03219 },
-        { nStar: 2, zeta: 16.0666, coeff: 0.16451 },
-        { nStar: 3, zeta: 14.2962, coeff: 0.08852 },
-        { nStar: 3, zeta: 9.10937, coeff: -0.16671 },
-        { nStar: 3, zeta: 6.37181, coeff: -0.33291 },
-        { nStar: 4, zeta: 3.84546, coeff: 0.46913 },
-        { nStar: 4, zeta: 2.57902, coeff: 0.55106 },
-        { nStar: 4, zeta: 1.77192, coeff: 0.13572 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 17.0366, coeff: 0.08488 },
-        { nStar: 2, zeta: 26.0438, coeff: 0.00571 },
-        { nStar: 3, zeta: 15.51, coeff: 0.04169 },
-        { nStar: 3, zeta: 9.49403, coeff: -0.07425 },
-        { nStar: 3, zeta: 6.57275, coeff: -0.26866 },
-        { nStar: 4, zeta: 5.38507, coeff: 0.01341 },
-        { nStar: 4, zeta: 3.15603, coeff: 0.51241 },
-        { nStar: 4, zeta: 2.02966, coeff: 0.42557 },
-        { nStar: 4, zeta: 1.42733, coeff: 0.18141 },
-      ],
-    }
-  },
-  'Rb': {
-    Z: 37,
-    name: 'Rubidium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(1)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 38.0589, coeff: 0.84819 },
-        { nStar: 1, zeta: 26.1789, coeff: 0.1695 },
-        { nStar: 2, zeta: 17.8759, coeff: -0.05364 },
-        { nStar: 2, zeta: 15.1376, coeff: 0.0399 },
-        { nStar: 3, zeta: 9.32726, coeff: -0.00642 },
-        { nStar: 3, zeta: 6.80548, coeff: 0.00366 },
-        { nStar: 4, zeta: 3.91418, coeff: -0.00114 },
-        { nStar: 4, zeta: 2.58977, coeff: 0.00087 },
-        { nStar: 5, zeta: 1.88043, coeff: -0.00043 },
-        { nStar: 5, zeta: 1.15468, coeff: 0.00021 },
-        { nStar: 5, zeta: 0.74153, coeff: -8e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 38.0589, coeff: 0.03144 },
-        { nStar: 1, zeta: 26.1789, coeff: 0.46742 },
-        { nStar: 2, zeta: 17.8759, coeff: -0.21527 },
-        { nStar: 2, zeta: 15.1376, coeff: -0.96951 },
-        { nStar: 3, zeta: 9.32726, coeff: -0.03122 },
-        { nStar: 3, zeta: 6.80548, coeff: 0.00888 },
-        { nStar: 4, zeta: 3.91418, coeff: -0.00192 },
-        { nStar: 4, zeta: 2.58977, coeff: 0.00141 },
-        { nStar: 5, zeta: 1.88043, coeff: -0.00065 },
-        { nStar: 5, zeta: 1.15468, coeff: 0.00031 },
-        { nStar: 5, zeta: 0.74153, coeff: -0.00011 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 24.4635, coeff: -0.13089 },
-        { nStar: 2, zeta: 15.2857, coeff: -0.87175 },
-        { nStar: 3, zeta: 8.24457, coeff: -0.03211 },
-        { nStar: 3, zeta: 5.69739, coeff: 0.01381 },
-        { nStar: 4, zeta: 3.64326, coeff: -0.00454 },
-        { nStar: 4, zeta: 2.33347, coeff: 0.00282 },
-        { nStar: 4, zeta: 1.5657, coeff: -0.001 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 38.0589, coeff: -0.00977 },
-        { nStar: 1, zeta: 26.1789, coeff: -0.19461 },
-        { nStar: 2, zeta: 17.8759, coeff: -0.24622 },
-        { nStar: 2, zeta: 15.1376, coeff: 0.91735 },
-        { nStar: 3, zeta: 9.32726, coeff: -0.37076 },
-        { nStar: 3, zeta: 6.80548, coeff: -0.82244 },
-        { nStar: 4, zeta: 3.91418, coeff: -0.02077 },
-        { nStar: 4, zeta: 2.58977, coeff: 0.0072 },
-        { nStar: 5, zeta: 1.88043, coeff: -0.00302 },
-        { nStar: 5, zeta: 1.15468, coeff: 0.0013 },
-        { nStar: 5, zeta: 0.74153, coeff: -0.00044 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 24.4635, coeff: 0.03396 },
-        { nStar: 2, zeta: 15.2857, coeff: 0.42037 },
-        { nStar: 3, zeta: 8.24457, coeff: -0.65799 },
-        { nStar: 3, zeta: 5.69739, coeff: -0.46725 },
-        { nStar: 4, zeta: 3.64326, coeff: -0.00094 },
-        { nStar: 4, zeta: 2.33347, coeff: -0.00215 },
-        { nStar: 4, zeta: 1.5657, coeff: 0.00069 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 12.2982, coeff: 0.21496 },
-        { nStar: 3, zeta: 6.79196, coeff: 0.64623 },
-        { nStar: 3, zeta: 4.05372, coeff: 0.23414 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 38.0589, coeff: -0.0032 },
-        { nStar: 1, zeta: 26.1789, coeff: -0.06591 },
-        { nStar: 2, zeta: 17.8759, coeff: -0.10599 },
-        { nStar: 2, zeta: 15.1376, coeff: 0.34496 },
-        { nStar: 3, zeta: 9.32726, coeff: -0.13569 },
-        { nStar: 3, zeta: 6.80548, coeff: -0.37869 },
-        { nStar: 4, zeta: 3.91418, coeff: 0.5786 },
-        { nStar: 4, zeta: 2.58977, coeff: 0.54775 },
-        { nStar: 5, zeta: 1.88043, coeff: 0.0243 },
-        { nStar: 5, zeta: 1.15468, coeff: -0.00036 },
-        { nStar: 5, zeta: 0.74153, coeff: 0.00032 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 24.4635, coeff: 0.00899 },
-        { nStar: 2, zeta: 15.2857, coeff: 0.12897 },
-        { nStar: 3, zeta: 8.24457, coeff: -0.22816 },
-        { nStar: 3, zeta: 5.69739, coeff: -0.16836 },
-        { nStar: 4, zeta: 3.64326, coeff: 0.47521 },
-        { nStar: 4, zeta: 2.33347, coeff: 0.55302 },
-        { nStar: 4, zeta: 1.5657, coeff: 0.11614 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 38.0589, coeff: 0.00066 },
-        { nStar: 1, zeta: 26.1789, coeff: 0.0139 },
-        { nStar: 2, zeta: 17.8759, coeff: 0.02262 },
-        { nStar: 2, zeta: 15.1376, coeff: -0.07316 },
-        { nStar: 3, zeta: 9.32726, coeff: 0.02802 },
-        { nStar: 3, zeta: 6.80548, coeff: 0.0836 },
-        { nStar: 4, zeta: 3.91418, coeff: -0.14618 },
-        { nStar: 4, zeta: 2.58977, coeff: -0.11134 },
-        { nStar: 5, zeta: 1.88043, coeff: 0.12653 },
-        { nStar: 5, zeta: 1.15468, coeff: 0.53476 },
-        { nStar: 5, zeta: 0.74153, coeff: 0.4682 },
-      ],
-    }
-  },
-  'Sr': {
-    Z: 38,
-    name: 'Strontium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(2)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 39.0888, coeff: 0.8479 },
-        { nStar: 1, zeta: 26.9648, coeff: 0.16977 },
-        { nStar: 2, zeta: 18.3031, coeff: -0.05879 },
-        { nStar: 2, zeta: 15.6991, coeff: 0.04531 },
-        { nStar: 3, zeta: 9.88651, coeff: -0.00684 },
-        { nStar: 3, zeta: 7.19156, coeff: 0.00375 },
-        { nStar: 4, zeta: 4.16674, coeff: -0.00114 },
-        { nStar: 4, zeta: 2.84586, coeff: 0.00078 },
-        { nStar: 5, zeta: 1.83155, coeff: -0.00037 },
-        { nStar: 5, zeta: 1.2042, coeff: 0.00025 },
-        { nStar: 5, zeta: 0.81729, coeff: -9e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 39.0888, coeff: 0.02971 },
-        { nStar: 1, zeta: 26.9648, coeff: 0.46986 },
-        { nStar: 2, zeta: 18.3031, coeff: -0.18491 },
-        { nStar: 2, zeta: 15.6991, coeff: -0.99718 },
-        { nStar: 3, zeta: 9.88651, coeff: -0.03413 },
-        { nStar: 3, zeta: 7.19156, coeff: 0.00908 },
-        { nStar: 4, zeta: 4.16674, coeff: -0.00189 },
-        { nStar: 4, zeta: 2.84586, coeff: 0.00126 },
-        { nStar: 5, zeta: 1.83155, coeff: -0.00055 },
-        { nStar: 5, zeta: 1.2042, coeff: 0.00037 },
-        { nStar: 5, zeta: 0.81729, coeff: -0.00014 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 25.1325, coeff: -0.12972 },
-        { nStar: 2, zeta: 15.767, coeff: -0.87247 },
-        { nStar: 3, zeta: 8.48946, coeff: -0.03347 },
-        { nStar: 3, zeta: 5.91883, coeff: 0.01577 },
-        { nStar: 4, zeta: 3.96255, coeff: -0.00568 },
-        { nStar: 4, zeta: 2.6425, coeff: 0.00338 },
-        { nStar: 4, zeta: 1.77261, coeff: -0.00107 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 39.0888, coeff: 0.00938 },
-        { nStar: 1, zeta: 26.9648, coeff: 0.19693 },
-        { nStar: 2, zeta: 18.3031, coeff: 0.30385 },
-        { nStar: 2, zeta: 15.6991, coeff: -0.98235 },
-        { nStar: 3, zeta: 9.88651, coeff: 0.30498 },
-        { nStar: 3, zeta: 7.19156, coeff: 0.88822 },
-        { nStar: 4, zeta: 4.16674, coeff: 0.02426 },
-        { nStar: 4, zeta: 2.84586, coeff: -0.00773 },
-        { nStar: 5, zeta: 1.83155, coeff: 0.00289 },
-        { nStar: 5, zeta: 1.2042, coeff: -0.0018 },
-        { nStar: 5, zeta: 0.81729, coeff: 0.00064 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 25.1325, coeff: 0.03329 },
-        { nStar: 2, zeta: 15.767, coeff: 0.42673 },
-        { nStar: 3, zeta: 8.48946, coeff: -0.67785 },
-        { nStar: 3, zeta: 5.91883, coeff: -0.44895 },
-        { nStar: 4, zeta: 3.96255, coeff: 0.00118 },
-        { nStar: 4, zeta: 2.6425, coeff: -0.00291 },
-        { nStar: 4, zeta: 1.77261, coeff: 0.00085 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 13.0838, coeff: 0.19034 },
-        { nStar: 3, zeta: 7.35453, coeff: 0.62984 },
-        { nStar: 3, zeta: 4.48799, coeff: 0.26961 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 39.0888, coeff: 0.00295 },
-        { nStar: 1, zeta: 26.9648, coeff: 0.07068 },
-        { nStar: 2, zeta: 18.3031, coeff: 0.13168 },
-        { nStar: 2, zeta: 15.6991, coeff: -0.38559 },
-        { nStar: 3, zeta: 9.88651, coeff: 0.10711 },
-        { nStar: 3, zeta: 7.19156, coeff: 0.44139 },
-        { nStar: 4, zeta: 4.16674, coeff: -0.5703 },
-        { nStar: 4, zeta: 2.84586, coeff: -0.56603 },
-        { nStar: 5, zeta: 1.83155, coeff: -0.01778 },
-        { nStar: 5, zeta: 1.2042, coeff: 0.00438 },
-        { nStar: 5, zeta: 0.81729, coeff: -0.00119 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 25.1325, coeff: 0.00945 },
-        { nStar: 2, zeta: 15.767, coeff: 0.14075 },
-        { nStar: 3, zeta: 8.48946, coeff: -0.24994 },
-        { nStar: 3, zeta: 5.91883, coeff: -0.18689 },
-        { nStar: 4, zeta: 3.96255, coeff: 0.45397 },
-        { nStar: 4, zeta: 2.6425, coeff: 0.57921 },
-        { nStar: 4, zeta: 1.77261, coeff: 0.11558 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 39.0888, coeff: 0.00062 },
-        { nStar: 1, zeta: 26.9648, coeff: 0.01846 },
-        { nStar: 2, zeta: 18.3031, coeff: 0.03309 },
-        { nStar: 2, zeta: 15.6991, coeff: -0.09869 },
-        { nStar: 3, zeta: 9.88651, coeff: 0.02485 },
-        { nStar: 3, zeta: 7.19156, coeff: 0.12228 },
-        { nStar: 4, zeta: 4.16674, coeff: -0.18773 },
-        { nStar: 4, zeta: 2.84586, coeff: -0.13437 },
-        { nStar: 5, zeta: 1.83155, coeff: 0.30164 },
-        { nStar: 5, zeta: 1.2042, coeff: 0.55277 },
-        { nStar: 5, zeta: 0.81729, coeff: 0.28152 },
-      ],
-    }
-  },
-  'Y': {
-    Z: 39,
-    name: 'Yttrium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(2)4D(1)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 40.0853, coeff: 0.85224 },
-        { nStar: 1, zeta: 27.5829, coeff: 0.16531 },
-        { nStar: 2, zeta: 18.6634, coeff: -0.06221 },
-        { nStar: 2, zeta: 16.1329, coeff: 0.04899 },
-        { nStar: 3, zeta: 10.3679, coeff: -0.00696 },
-        { nStar: 3, zeta: 7.50901, coeff: 0.00357 },
-        { nStar: 4, zeta: 4.2862, coeff: -0.001 },
-        { nStar: 4, zeta: 2.93376, coeff: 0.00065 },
-        { nStar: 5, zeta: 1.80195, coeff: -0.00027 },
-        { nStar: 5, zeta: 1.12467, coeff: 0.00021 },
-        { nStar: 5, zeta: 0.80163, coeff: -9e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 40.0853, coeff: -0.02987 },
-        { nStar: 1, zeta: 27.5829, coeff: -0.47339 },
-        { nStar: 2, zeta: 18.6634, coeff: 0.21397 },
-        { nStar: 2, zeta: 16.1329, coeff: 0.97086 },
-        { nStar: 3, zeta: 10.3679, coeff: 0.0339 },
-        { nStar: 3, zeta: 7.50901, coeff: -0.00811 },
-        { nStar: 4, zeta: 4.2862, coeff: 0.00152 },
-        { nStar: 4, zeta: 2.93376, coeff: -0.00098 },
-        { nStar: 5, zeta: 1.80195, coeff: 0.00037 },
-        { nStar: 5, zeta: 1.12467, coeff: -0.00028 },
-        { nStar: 5, zeta: 0.80163, coeff: 0.00013 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 25.7241, coeff: -0.13095 },
-        { nStar: 2, zeta: 16.2279, coeff: -0.8714 },
-        { nStar: 3, zeta: 8.76281, coeff: -0.0323 },
-        { nStar: 3, zeta: 6.20312, coeff: 0.01459 },
-        { nStar: 4, zeta: 3.99693, coeff: -0.00432 },
-        { nStar: 4, zeta: 2.6004, coeff: 0.00241 },
-        { nStar: 4, zeta: 1.63935, coeff: -0.00073 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 40.0853, coeff: -0.0091 },
-        { nStar: 1, zeta: 27.5829, coeff: -0.20077 },
-        { nStar: 2, zeta: 18.6634, coeff: -0.32696 },
-        { nStar: 2, zeta: 16.1329, coeff: 1.01756 },
-        { nStar: 3, zeta: 10.3679, coeff: -0.27826 },
-        { nStar: 3, zeta: 7.50901, coeff: -0.92142 },
-        { nStar: 4, zeta: 4.2862, coeff: -0.02305 },
-        { nStar: 4, zeta: 2.93376, coeff: 0.00706 },
-        { nStar: 5, zeta: 1.80195, coeff: -0.0023 },
-        { nStar: 5, zeta: 1.12467, coeff: 0.00161 },
-        { nStar: 5, zeta: 0.80163, coeff: -0.00071 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 25.7241, coeff: 0.03341 },
-        { nStar: 2, zeta: 16.2279, coeff: 0.43251 },
-        { nStar: 3, zeta: 8.76281, coeff: -0.6836 },
-        { nStar: 3, zeta: 6.20312, coeff: -0.44268 },
-        { nStar: 4, zeta: 3.99693, coeff: -0.0016 },
-        { nStar: 4, zeta: 2.6004, coeff: -0.00105 },
-        { nStar: 4, zeta: 1.63935, coeff: 0.0003 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 12.9207, coeff: 0.23859 },
-        { nStar: 3, zeta: 7.04305, coeff: 0.74282 },
-        { nStar: 4, zeta: 4.66942, coeff: 0.11663 },
-        { nStar: 4, zeta: 2.55392, coeff: -0.00782 },
-        { nStar: 4, zeta: 1.29851, coeff: 0.00217 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 40.0853, coeff: 0.00305 },
-        { nStar: 1, zeta: 27.5829, coeff: 0.07437 },
-        { nStar: 2, zeta: 18.6634, coeff: 0.14901 },
-        { nStar: 2, zeta: 16.1329, coeff: -0.41701 },
-        { nStar: 3, zeta: 10.3679, coeff: 0.09906 },
-        { nStar: 3, zeta: 7.50901, coeff: 0.4754 },
-        { nStar: 4, zeta: 4.2862, coeff: -0.65361 },
-        { nStar: 4, zeta: 2.93376, coeff: -0.49519 },
-        { nStar: 5, zeta: 1.80195, coeff: -0.0074 },
-        { nStar: 5, zeta: 1.12467, coeff: 0.00148 },
-        { nStar: 5, zeta: 0.80163, coeff: -0.00048 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 25.7241, coeff: 0.00961 },
-        { nStar: 2, zeta: 16.2279, coeff: 0.14998 },
-        { nStar: 3, zeta: 8.76281, coeff: -0.26819 },
-        { nStar: 3, zeta: 6.20312, coeff: -0.18882 },
-        { nStar: 4, zeta: 3.99693, coeff: 0.58611 },
-        { nStar: 4, zeta: 2.6004, coeff: 0.52213 },
-        { nStar: 4, zeta: 1.63935, coeff: 0.03958 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 12.9207, coeff: -0.05149 },
-        { nStar: 3, zeta: 7.04305, coeff: -0.16246 },
-        { nStar: 4, zeta: 4.66942, coeff: 0.07689 },
-        { nStar: 4, zeta: 2.55392, coeff: 0.55325 },
-        { nStar: 4, zeta: 1.29851, coeff: 0.5322 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 40.0853, coeff: 0.00053 },
-        { nStar: 1, zeta: 27.5829, coeff: 0.02021 },
-        { nStar: 2, zeta: 18.6634, coeff: 0.03676 },
-        { nStar: 2, zeta: 16.1329, coeff: -0.1077 },
-        { nStar: 3, zeta: 10.3679, coeff: 0.02124 },
-        { nStar: 3, zeta: 7.50901, coeff: 0.13811 },
-        { nStar: 4, zeta: 4.2862, coeff: -0.22997 },
-        { nStar: 4, zeta: 2.93376, coeff: -0.09756 },
-        { nStar: 5, zeta: 1.80195, coeff: 0.45781 },
-        { nStar: 5, zeta: 1.12467, coeff: 0.54223 },
-        { nStar: 5, zeta: 0.80163, coeff: 0.13061 },
-      ],
-    }
-  },
-  'Zr': {
-    Z: 40,
-    name: 'Zirconium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(2)4D(2)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 41.1098, coeff: 0.85252 },
-        { nStar: 1, zeta: 28.3432, coeff: 0.16505 },
-        { nStar: 1, zeta: 9.0909, coeff: -0.069 },
-        { nStar: 2, zeta: 16.7075, coeff: 0.05603 },
-        { nStar: 3, zeta: 10.9386, coeff: -0.00741 },
-        { nStar: 3, zeta: 7.86993, coeff: 0.00367 },
-        { nStar: 4, zeta: 4.49276, coeff: -0.00113 },
-        { nStar: 4, zeta: 3.09333, coeff: 0.00081 },
-        { nStar: 5, zeta: 2.03548, coeff: -0.00039 },
-        { nStar: 5, zeta: 1.35801, coeff: 0.00026 },
-        { nStar: 5, zeta: 0.91842, coeff: -9e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 41.1098, coeff: 0.02848 },
-        { nStar: 1, zeta: 28.3432, coeff: 0.47581 },
-        { nStar: 1, zeta: 9.0909, coeff: -0.17909 },
-        { nStar: 2, zeta: 16.7075, coeff: -1.00333 },
-        { nStar: 3, zeta: 10.9386, coeff: -0.03693 },
-        { nStar: 3, zeta: 7.86993, coeff: 0.00826 },
-        { nStar: 4, zeta: 4.49276, coeff: -0.00168 },
-        { nStar: 4, zeta: 3.09333, coeff: 0.00119 },
-        { nStar: 5, zeta: 2.03548, coeff: -0.00054 },
-        { nStar: 5, zeta: 1.35801, coeff: 0.00035 },
-        { nStar: 5, zeta: 0.91842, coeff: -0.00012 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 26.4118, coeff: -0.12933 },
-        { nStar: 2, zeta: 16.7135, coeff: -0.87254 },
-        { nStar: 3, zeta: 9.0167, coeff: -0.03387 },
-        { nStar: 3, zeta: 6.4497, coeff: 0.0166 },
-        { nStar: 4, zeta: 4.34059, coeff: -0.00523 },
-        { nStar: 4, zeta: 2.88014, coeff: 0.0029 },
-        { nStar: 4, zeta: 1.89469, coeff: -0.00087 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 41.1098, coeff: 0.00869 },
-        { nStar: 1, zeta: 28.3432, coeff: 0.20314 },
-        { nStar: 1, zeta: 9.0909, coeff: 0.39668 },
-        { nStar: 2, zeta: 16.7075, coeff: -1.09311 },
-        { nStar: 3, zeta: 10.9386, coeff: 0.22849 },
-        { nStar: 3, zeta: 7.86993, coeff: 0.97069 },
-        { nStar: 4, zeta: 4.49276, coeff: 0.02614 },
-        { nStar: 4, zeta: 3.09333, coeff: -0.00898 },
-        { nStar: 5, zeta: 2.03548, coeff: 0.00343 },
-        { nStar: 5, zeta: 1.35801, coeff: -0.00208 },
-        { nStar: 5, zeta: 0.91842, coeff: 0.00069 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 26.4118, coeff: 0.03249 },
-        { nStar: 2, zeta: 16.7135, coeff: 0.43852 },
-        { nStar: 3, zeta: 9.0167, coeff: -0.69788 },
-        { nStar: 3, zeta: 6.4497, coeff: -0.42906 },
-        { nStar: 4, zeta: 4.34059, coeff: -0.00089 },
-        { nStar: 4, zeta: 2.88014, coeff: -0.00159 },
-        { nStar: 4, zeta: 1.89469, coeff: 0.0003 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 13.3484, coeff: 0.24019 },
-        { nStar: 3, zeta: 7.30972, coeff: 0.75087 },
-        { nStar: 4, zeta: 4.79321, coeff: 0.10307 },
-        { nStar: 4, zeta: 2.76946, coeff: -0.00893 },
-        { nStar: 4, zeta: 1.36146, coeff: 0.00208 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 41.1098, coeff: -2.30344 },
-        { nStar: 1, zeta: 28.3432, coeff: -0.00283 },
-        { nStar: 1, zeta: 9.0909, coeff: -0.07702 },
-        { nStar: 2, zeta: 16.7075, coeff: -0.17971 },
-        { nStar: 3, zeta: 10.9386, coeff: 0.45523 },
-        { nStar: 3, zeta: 7.86993, coeff: -0.07407 },
-        { nStar: 4, zeta: 4.49276, coeff: -0.51684 },
-        { nStar: 4, zeta: 3.09333, coeff: 0.66283 },
-        { nStar: 5, zeta: 2.03548, coeff: 0.01877 },
-        { nStar: 5, zeta: 1.35801, coeff: -0.00725 },
-        { nStar: 5, zeta: 0.91842, coeff: 0.00042 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 26.4118, coeff: 0.00964 },
-        { nStar: 2, zeta: 16.7135, coeff: 0.15558 },
-        { nStar: 3, zeta: 9.0167, coeff: -0.27429 },
-        { nStar: 3, zeta: 6.4497, coeff: -0.20663 },
-        { nStar: 4, zeta: 4.34059, coeff: 0.53758 },
-        { nStar: 4, zeta: 2.88014, coeff: 0.54273 },
-        { nStar: 4, zeta: 1.89469, coeff: 0.0847 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 13.3484, coeff: -0.05413 },
-        { nStar: 3, zeta: 7.30972, coeff: -0.16609 },
-        { nStar: 4, zeta: 4.79321, coeff: 0.08174 },
-        { nStar: 4, zeta: 2.76946, coeff: 0.53541 },
-        { nStar: 4, zeta: 1.36146, coeff: 0.55698 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 41.1098, coeff: 0.00043 },
-        { nStar: 1, zeta: 28.3432, coeff: 0.02026 },
-        { nStar: 1, zeta: 9.0909, coeff: 0.04284 },
-        { nStar: 2, zeta: 16.7075, coeff: -0.11334 },
-        { nStar: 3, zeta: 10.9386, coeff: 0.01374 },
-        { nStar: 3, zeta: 7.86993, coeff: -0.14493 },
-        { nStar: 4, zeta: 4.49276, coeff: -0.22532 },
-        { nStar: 4, zeta: 3.09333, coeff: 0.0964 },
-        { nStar: 5, zeta: 2.03548, coeff: 0.29705 },
-        { nStar: 5, zeta: 1.35801, coeff: 0.51987 },
-        { nStar: 5, zeta: 0.91842, coeff: 0.3182 },
-      ],
-    }
-  },
-  'Nb': {
-    Z: 41,
-    name: 'Niobium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(1)4D(4)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 42.1166, coeff: 0.85563 },
-        { nStar: 1, zeta: 28.9003, coeff: 0.16249 },
-        { nStar: 2, zeta: 19.6275, coeff: -0.07243 },
-        { nStar: 2, zeta: 17.1741, coeff: 0.05915 },
-        { nStar: 3, zeta: 11.4894, coeff: -0.00791 },
-        { nStar: 3, zeta: 8.2125, coeff: 0.00376 },
-        { nStar: 4, zeta: 4.69787, coeff: -0.0012 },
-        { nStar: 4, zeta: 3.2446, coeff: 0.00089 },
-        { nStar: 5, zeta: 2.19942, coeff: 0.00045 },
-        { nStar: 5, zeta: 1.48175, coeff: 0.00029 },
-        { nStar: 5, zeta: 0.99373, coeff: -0.0001 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 42.1166, coeff: 0.02957 },
-        { nStar: 1, zeta: 28.9003, coeff: 0.47952 },
-        { nStar: 2, zeta: 19.6275, coeff: -0.19002 },
-        { nStar: 2, zeta: 17.1741, coeff: -0.99546 },
-        { nStar: 3, zeta: 11.4894, coeff: -0.03764 },
-        { nStar: 3, zeta: 8.2125, coeff: 0.00758 },
-        { nStar: 4, zeta: 4.69787, coeff: 0.00156 },
-        { nStar: 4, zeta: 3.2446, coeff: 0.00116 },
-        { nStar: 5, zeta: 2.19942, coeff: -0.00054 },
-        { nStar: 5, zeta: 1.48175, coeff: 0.00034 },
-        { nStar: 5, zeta: 0.99373, coeff: -0.00011 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 27.036, coeff: -0.12943 },
-        { nStar: 2, zeta: 17.1858, coeff: -0.87227 },
-        { nStar: 3, zeta: 9.27353, coeff: -0.03434 },
-        { nStar: 3, zeta: 6.70608, coeff: 0.01748 },
-        { nStar: 4, zeta: 4.59632, coeff: -0.00534 },
-        { nStar: 4, zeta: 3.05676, coeff: 0.00281 },
-        { nStar: 4, zeta: 2.0012, coeff: -0.00081 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 42.1166, coeff: 0.00916 },
-        { nStar: 1, zeta: 28.9003, coeff: 0.20609 },
-        { nStar: 2, zeta: 19.6275, coeff: 0.40041 },
-        { nStar: 2, zeta: 17.1741, coeff: -1.10525 },
-        { nStar: 3, zeta: 11.4894, coeff: 0.1928 },
-        { nStar: 3, zeta: 8.2125, coeff: 1.00754 },
-        { nStar: 4, zeta: 4.69787, coeff: 0.0281 },
-        { nStar: 4, zeta: 3.2446, coeff: -0.01005 },
-        { nStar: 5, zeta: 2.19942, coeff: 0.00394 },
-        { nStar: 5, zeta: 1.48175, coeff: -0.00224 },
-        { nStar: 5, zeta: 0.99373, coeff: 0.0007 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 27.036, coeff: 0.03213 },
-        { nStar: 2, zeta: 17.1858, coeff: 0.44402 },
-        { nStar: 3, zeta: 9.27353, coeff: -0.71146 },
-        { nStar: 3, zeta: 6.70608, coeff: -0.41572 },
-        { nStar: 4, zeta: 4.59632, coeff: -0.00177 },
-        { nStar: 4, zeta: 3.05676, coeff: 0.00122 },
-        { nStar: 4, zeta: 2.0012, coeff: 0.00013 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 13.8272, coeff: 0.23751 },
-        { nStar: 3, zeta: 7.61214, coeff: 0.75807 },
-        { nStar: 4, zeta: 4.95791, coeff: 0.09496 },
-        { nStar: 4, zeta: 2.90204, coeff: -0.00966 },
-        { nStar: 4, zeta: 1.46959, coeff: 0.00223 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 42.1166, coeff: -0.00282 },
-        { nStar: 1, zeta: 28.9003, coeff: -0.08032 },
-        { nStar: 2, zeta: 19.6275, coeff: -0.18123 },
-        { nStar: 2, zeta: 17.1741, coeff: 0.46559 },
-        { nStar: 3, zeta: 11.4894, coeff: -0.05325 },
-        { nStar: 3, zeta: 8.2125, coeff: -0.55615 },
-        { nStar: 4, zeta: 4.69787, coeff: 0.68008 },
-        { nStar: 4, zeta: 3.2446, coeff: 0.4754 },
-        { nStar: 5, zeta: 2.19942, coeff: 0.01922 },
-        { nStar: 5, zeta: 1.48175, coeff: -0.0068 },
-        { nStar: 5, zeta: 0.99373, coeff: -0.00039 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 27.036, coeff: 0.00975 },
-        { nStar: 2, zeta: 17.1858, coeff: 0.16206 },
-        { nStar: 3, zeta: 9.27353, coeff: -0.28415 },
-        { nStar: 3, zeta: 6.70608, coeff: -0.21922 },
-        { nStar: 4, zeta: 4.59632, coeff: 0.54274 },
-        { nStar: 4, zeta: 3.05676, coeff: 0.54768 },
-        { nStar: 4, zeta: 2.0012, coeff: 0.08484 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 13.8272, coeff: -0.0586 },
-        { nStar: 3, zeta: 7.61214, coeff: -0.18605 },
-        { nStar: 4, zeta: 4.95791, coeff: 0.11018 },
-        { nStar: 4, zeta: 2.90204, coeff: 0.56843 },
-        { nStar: 4, zeta: 1.46959, coeff: 0.49649 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 42.1166, coeff: 0.00046 },
-        { nStar: 1, zeta: 28.9003, coeff: 0.02113 },
-        { nStar: 2, zeta: 19.6275, coeff: 0.04367 },
-        { nStar: 2, zeta: 17.1741, coeff: -0.11668 },
-        { nStar: 3, zeta: 11.4894, coeff: 0.0085 },
-        { nStar: 3, zeta: 8.2125, coeff: 0.15583 },
-        { nStar: 4, zeta: 4.69787, coeff: -0.23123 },
-        { nStar: 4, zeta: 3.2446, coeff: -0.09812 },
-        { nStar: 5, zeta: 2.19942, coeff: 0.2741 },
-        { nStar: 5, zeta: 1.48175, coeff: 0.48854 },
-        { nStar: 5, zeta: 0.99373, coeff: 0.37851 },
-      ],
-    }
-  },
-  'Mo': {
-    Z: 42,
-    name: 'Molybdenum',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(1)4D(5)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 43.1405, coeff: 0.85545 },
-        { nStar: 1, zeta: 29.7815, coeff: 0.162 },
-        { nStar: 2, zeta: 19.6601, coeff: -0.09989 },
-        { nStar: 2, zeta: 17.8826, coeff: 0.08784 },
-        { nStar: 3, zeta: 12.2299, coeff: -0.00822 },
-        { nStar: 3, zeta: 8.55027, coeff: 0.00345 },
-        { nStar: 4, zeta: 4.85792, coeff: -0.0011 },
-        { nStar: 4, zeta: 3.32874, coeff: 0.00083 },
-        { nStar: 5, zeta: 2.29197, coeff: -0.00042 },
-        { nStar: 5, zeta: 1.51663, coeff: 0.00025 },
-        { nStar: 5, zeta: 1.00605, coeff: -8e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 43.1405, coeff: 0.027 },
-        { nStar: 1, zeta: 29.7815, coeff: 0.48044 },
-        { nStar: 2, zeta: 19.6601, coeff: -0.10944 },
-        { nStar: 2, zeta: 17.8826, coeff: -1.06825 },
-        { nStar: 3, zeta: 12.2299, coeff: -0.04323 },
-        { nStar: 3, zeta: 8.55027, coeff: 0.00731 },
-        { nStar: 4, zeta: 4.85792, coeff: -0.00157 },
-        { nStar: 4, zeta: 3.32874, coeff: 0.00119 },
-        { nStar: 5, zeta: 2.29197, coeff: -0.00056 },
-        { nStar: 5, zeta: 1.51663, coeff: 0.00033 },
-        { nStar: 5, zeta: 1.00605, coeff: -0.00011 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 27.6431, coeff: -0.12999 },
-        { nStar: 2, zeta: 17.6556, coeff: -0.87156 },
-        { nStar: 3, zeta: 9.5887, coeff: -0.03453 },
-        { nStar: 3, zeta: 7.09084, coeff: 0.01752 },
-        { nStar: 4, zeta: 4.79603, coeff: -0.00461 },
-        { nStar: 4, zeta: 3.17901, coeff: 0.00237 },
-        { nStar: 3, zeta: 2.07183, coeff: -0.00067 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 43.1405, coeff: 0.0078 },
-        { nStar: 1, zeta: 29.7815, coeff: 0.20867 },
-        { nStar: 2, zeta: 19.6601, coeff: 0.68779 },
-        { nStar: 2, zeta: 17.8826, coeff: -1.39988 },
-        { nStar: 3, zeta: 12.2299, coeff: 0.15831 },
-        { nStar: 3, zeta: 8.55027, coeff: 1.04572 },
-        { nStar: 4, zeta: 4.85792, coeff: 0.02845 },
-        { nStar: 4, zeta: 3.32874, coeff: -0.01018 },
-        { nStar: 5, zeta: 2.29197, coeff: 0.00398 },
-        { nStar: 5, zeta: 1.51663, coeff: -0.00213 },
-        { nStar: 5, zeta: 1.00605, coeff: 0.00067 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 27.6431, coeff: 0.03174 },
-        { nStar: 2, zeta: 17.6556, coeff: 0.44958 },
-        { nStar: 3, zeta: 9.5887, coeff: -0.69309 },
-        { nStar: 3, zeta: 7.09084, coeff: -0.43147 },
-        { nStar: 4, zeta: 4.79603, coeff: -0.0074 },
-        { nStar: 4, zeta: 3.17901, coeff: 0.0008 },
-        { nStar: 3, zeta: 2.07183, coeff: -0.00042 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 14.0642, coeff: 0.25477 },
-        { nStar: 3, zeta: 7.73842, coeff: 0.76389 },
-        { nStar: 4, zeta: 4.70906, coeff: 0.0685 },
-        { nStar: 4, zeta: 2.85675, coeff: -0.01188 },
-        { nStar: 4, zeta: 1.526, coeff: 0.00254 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 43.1405, coeff: -0.00221 },
-        { nStar: 1, zeta: 29.7815, coeff: -0.08302 },
-        { nStar: 2, zeta: 19.6601, coeff: -0.30793 },
-        { nStar: 2, zeta: 17.8826, coeff: 0.60009 },
-        { nStar: 3, zeta: 12.2299, coeff: -0.03681 },
-        { nStar: 3, zeta: 8.55027, coeff: -0.58811 },
-        { nStar: 4, zeta: 4.85792, coeff: 0.72364 },
-        { nStar: 4, zeta: 3.32874, coeff: 0.44046 },
-        { nStar: 5, zeta: 2.29197, coeff: 0.01389 },
-        { nStar: 5, zeta: 1.51663, coeff: -0.00543 },
-        { nStar: 5, zeta: 1.00605, coeff: -0.00083 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 27.6431, coeff: 0.00971 },
-        { nStar: 2, zeta: 17.6556, coeff: 0.16815 },
-        { nStar: 3, zeta: 9.5887, coeff: -0.28042 },
-        { nStar: 3, zeta: 7.09084, coeff: -0.23806 },
-        { nStar: 4, zeta: 4.79603, coeff: 0.56544 },
-        { nStar: 4, zeta: 3.17901, coeff: 0.5386 },
-        { nStar: 3, zeta: 2.07183, coeff: 0.0756 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 14.0642, coeff: -0.06836 },
-        { nStar: 3, zeta: 7.73842, coeff: -0.19807 },
-        { nStar: 4, zeta: 4.70906, coeff: 0.2045 },
-        { nStar: 4, zeta: 2.85675, coeff: 0.56575 },
-        { nStar: 4, zeta: 1.526, coeff: 0.40851 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 43.1405, coeff: 0.00027 },
-        { nStar: 1, zeta: 29.7815, coeff: 0.02174 },
-        { nStar: 2, zeta: 19.6601, coeff: 0.07347 },
-        { nStar: 2, zeta: 17.8826, coeff: -0.14784 },
-        { nStar: 3, zeta: 12.2299, coeff: 0.00387 },
-        { nStar: 3, zeta: 8.55027, coeff: 0.16365 },
-        { nStar: 4, zeta: 4.85792, coeff: -0.24513 },
-        { nStar: 4, zeta: 3.32874, coeff: -0.08389 },
-        { nStar: 5, zeta: 2.29197, coeff: 0.2857 },
-        { nStar: 5, zeta: 1.51663, coeff: 0.50505 },
-        { nStar: 5, zeta: 1.00605, coeff: 0.35518 },
-      ],
-    }
-  },
-  'Tc': {
-    Z: 43,
-    name: 'Technetium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(2)4D(5)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 44.1528, coeff: 0.8574 },
-        { nStar: 1, zeta: 30.4256, coeff: 0.1603 },
-        { nStar: 2, zeta: 20.1015, coeff: -0.11332 },
-        { nStar: 2, zeta: 18.4472, coeff: 0.10132 },
-        { nStar: 3, zeta: 12.8862, coeff: -0.00848 },
-        { nStar: 3, zeta: 8.88272, coeff: 0.00322 },
-        { nStar: 4, zeta: 5.05896, coeff: -0.00096 },
-        { nStar: 4, zeta: 3.46214, coeff: 0.00066 },
-        { nStar: 5, zeta: 2.25854, coeff: -0.00028 },
-        { nStar: 5, zeta: 1.41055, coeff: 0.00017 },
-        { nStar: 5, zeta: 0.93382, coeff: -7e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 44.1528, coeff: 0.02691 },
-        { nStar: 1, zeta: 30.4256, coeff: 0.48335 },
-        { nStar: 2, zeta: 20.1015, coeff: -0.07213 },
-        { nStar: 2, zeta: 18.4472, coeff: -1.10509 },
-        { nStar: 3, zeta: 12.8862, coeff: -0.04553 },
-        { nStar: 3, zeta: 8.88272, coeff: 0.00634 },
-        { nStar: 4, zeta: 5.05896, coeff: -0.00124 },
-        { nStar: 4, zeta: 3.46214, coeff: 0.00088 },
-        { nStar: 5, zeta: 2.25854, coeff: -0.00035 },
-        { nStar: 5, zeta: 1.41055, coeff: 0.00021 },
-        { nStar: 5, zeta: 0.93382, coeff: -8e-05 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 28.2494, coeff: -0.1305 },
-        { nStar: 2, zeta: 18.1253, coeff: -0.87097 },
-        { nStar: 3, zeta: 9.86474, coeff: -0.03478 },
-        { nStar: 3, zeta: 7.4053, coeff: 0.01795 },
-        { nStar: 4, zeta: 5.00727, coeff: -0.0043 },
-        { nStar: 4, zeta: 3.31663, coeff: 0.00211 },
-        { nStar: 4, zeta: 2.12022, coeff: -0.00057 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 44.1528, coeff: 0.0079 },
-        { nStar: 1, zeta: 30.4256, coeff: 0.21115 },
-        { nStar: 2, zeta: 20.1015, coeff: 0.80441 },
-        { nStar: 2, zeta: 18.4472, coeff: -1.52278 },
-        { nStar: 3, zeta: 12.8862, coeff: 0.1299 },
-        { nStar: 3, zeta: 8.88272, coeff: 1.07483 },
-        { nStar: 4, zeta: 5.05896, coeff: 0.02873 },
-        { nStar: 4, zeta: 3.46214, coeff: -0.00928 },
-        { nStar: 5, zeta: 2.25854, coeff: 0.00306 },
-        { nStar: 5, zeta: 1.41055, coeff: -0.00168 },
-        { nStar: 5, zeta: 0.93382, coeff: 0.00062 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 28.2494, coeff: 0.03142 },
-        { nStar: 2, zeta: 18.1253, coeff: 0.45469 },
-        { nStar: 3, zeta: 9.86474, coeff: -0.69449 },
-        { nStar: 3, zeta: 7.4053, coeff: -0.42907 },
-        { nStar: 4, zeta: 5.00727, coeff: -0.01054 },
-        { nStar: 4, zeta: 3.31663, coeff: 0.00191 },
-        { nStar: 4, zeta: 2.12022, coeff: -0.00063 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 14.5938, coeff: -0.24496 },
-        { nStar: 3, zeta: 8.11647, coeff: -0.76843 },
-        { nStar: 4, zeta: 4.92916, coeff: -0.07475 },
-        { nStar: 4, zeta: 3.05653, coeff: 0.01696 },
-        { nStar: 4, zeta: 1.75674, coeff: -0.00422 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 44.1528, coeff: -0.0019 },
-        { nStar: 1, zeta: 30.4256, coeff: -0.08647 },
-        { nStar: 2, zeta: 20.1015, coeff: -0.35342 },
-        { nStar: 2, zeta: 18.4472, coeff: 0.65277 },
-        { nStar: 3, zeta: 12.8862, coeff: -0.0176 },
-        { nStar: 3, zeta: 8.88272, coeff: -0.62432 },
-        { nStar: 4, zeta: 5.05896, coeff: 0.74588 },
-        { nStar: 4, zeta: 3.46214, coeff: 0.43015 },
-        { nStar: 5, zeta: 2.25854, coeff: 0.00383 },
-        { nStar: 5, zeta: 1.41055, coeff: 0.00037 },
-        { nStar: 5, zeta: 0.93382, coeff: -0.00018 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 28.2494, coeff: 0.00977 },
-        { nStar: 2, zeta: 18.1253, coeff: 0.17528 },
-        { nStar: 3, zeta: 9.86474, coeff: -0.28617 },
-        { nStar: 3, zeta: 7.4053, coeff: -0.25296 },
-        { nStar: 4, zeta: 5.00727, coeff: 0.58857 },
-        { nStar: 4, zeta: 3.31663, coeff: 0.54234 },
-        { nStar: 4, zeta: 2.12022, coeff: 0.05228 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 14.5938, coeff: -0.07374 },
-        { nStar: 3, zeta: 8.11647, coeff: -0.22371 },
-        { nStar: 4, zeta: 4.92916, coeff: 0.23233 },
-        { nStar: 4, zeta: 3.05653, coeff: 0.59271 },
-        { nStar: 4, zeta: 1.75674, coeff: 0.33208 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 44.1528, coeff: 0.00016 },
-        { nStar: 1, zeta: 30.4256, coeff: 0.0226 },
-        { nStar: 2, zeta: 20.1015, coeff: 0.08317 },
-        { nStar: 2, zeta: 18.4472, coeff: -0.15899 },
-        { nStar: 3, zeta: 12.8862, coeff: -0.00167 },
-        { nStar: 3, zeta: 8.88272, coeff: 0.17353 },
-        { nStar: 4, zeta: 5.05896, coeff: -0.25566 },
-        { nStar: 4, zeta: 3.46214, coeff: -0.07102 },
-        { nStar: 5, zeta: 2.25854, coeff: 0.38177 },
-        { nStar: 5, zeta: 1.41055, coeff: 0.55683 },
-        { nStar: 5, zeta: 0.93382, coeff: 0.20792 },
-      ],
-    }
-  },
-  'Ru': {
-    Z: 44,
-    name: 'Ruthenium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(1)4D(7)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 45.1668, coeff: 0.89545 },
-        { nStar: 1, zeta: 31.1029, coeff: 0.15807 },
-        { nStar: 2, zeta: 20.4829, coeff: -0.08804 },
-        { nStar: 2, zeta: 18.0424, coeff: 0.07805 },
-        { nStar: 3, zeta: 13.4985, coeff: -0.01086 },
-        { nStar: 3, zeta: 9.19966, coeff: 0.00363 },
-        { nStar: 4, zeta: 5.24666, coeff: -0.00105 },
-        { nStar: 4, zeta: 3.57817, coeff: 0.0007 },
-        { nStar: 5, zeta: 2.32116, coeff: -0.00029 },
-        { nStar: 5, zeta: 1.43167, coeff: 0.00017 },
-        { nStar: 5, zeta: 0.93706, coeff: -7e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 45.1668, coeff: 0.02311 },
-        { nStar: 1, zeta: 31.1029, coeff: 0.4917 },
-        { nStar: 2, zeta: 20.4829, coeff: -0.4458 },
-        { nStar: 2, zeta: 18.0424, coeff: -0.74818 },
-        { nStar: 3, zeta: 13.4985, coeff: -0.02584 },
-        { nStar: 3, zeta: 9.19966, coeff: -0.00077 },
-        { nStar: 4, zeta: 5.24666, coeff: 0.0008 },
-        { nStar: 4, zeta: 3.57817, coeff: -0.00051 },
-        { nStar: 5, zeta: 2.32116, coeff: 0.00024 },
-        { nStar: 5, zeta: 1.43167, coeff: -0.00015 },
-        { nStar: 5, zeta: 0.93706, coeff: 6e-05 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 28.8424, coeff: -0.13144 },
-        { nStar: 2, zeta: 18.5903, coeff: -0.8701 },
-        { nStar: 3, zeta: 10.0913, coeff: -0.03503 },
-        { nStar: 3, zeta: 7.62287, coeff: 0.01893 },
-        { nStar: 4, zeta: 5.2601, coeff: -0.00477 },
-        { nStar: 4, zeta: 3.51264, coeff: 0.00258 },
-        { nStar: 4, zeta: 2.48583, coeff: -0.00083 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 45.1668, coeff: -0.0035 },
-        { nStar: 1, zeta: 31.1029, coeff: -0.22084 },
-        { nStar: 2, zeta: 20.4829, coeff: -0.36914 },
-        { nStar: 2, zeta: 18.0424, coeff: 1.12104 },
-        { nStar: 3, zeta: 13.4985, coeff: -0.14662 },
-        { nStar: 3, zeta: 9.19966, coeff: -1.08415 },
-        { nStar: 4, zeta: 5.24666, coeff: -0.03258 },
-        { nStar: 4, zeta: 3.57817, coeff: 0.01163 },
-        { nStar: 5, zeta: 2.32116, coeff: -0.00411 },
-        { nStar: 5, zeta: 1.43167, coeff: 0.00231 },
-        { nStar: 5, zeta: 0.93706, coeff: -0.00088 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 28.8424, coeff: 0.03134 },
-        { nStar: 2, zeta: 18.5903, coeff: 0.45927 },
-        { nStar: 3, zeta: 10.0913, coeff: -0.72369 },
-        { nStar: 3, zeta: 7.62287, coeff: -0.40059 },
-        { nStar: 4, zeta: 5.2601, coeff: -0.01104 },
-        { nStar: 4, zeta: 3.51264, coeff: 0.00232 },
-        { nStar: 4, zeta: 2.48583, coeff: -0.00107 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 15.1642, coeff: 0.23583 },
-        { nStar: 3, zeta: 8.46851, coeff: 0.77557 },
-        { nStar: 4, zeta: 5.2, coeff: 0.07205 },
-        { nStar: 4, zeta: 3.2, coeff: -0.01361 },
-        { nStar: 4, zeta: 1.7, coeff: 0.00326 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 45.1668, coeff: -0.00018 },
-        { nStar: 1, zeta: 31.1029, coeff: -0.09107 },
-        { nStar: 2, zeta: 20.4829, coeff: -0.17031 },
-        { nStar: 2, zeta: 18.0424, coeff: 0.48666 },
-        { nStar: 3, zeta: 13.4985, coeff: -0.02406 },
-        { nStar: 3, zeta: 9.19966, coeff: -0.63755 },
-        { nStar: 4, zeta: 5.24666, coeff: 0.75256 },
-        { nStar: 4, zeta: 3.57817, coeff: 0.42448 },
-        { nStar: 5, zeta: 2.32116, coeff: 0.00982 },
-        { nStar: 5, zeta: 1.43167, coeff: -0.00295 },
-        { nStar: 5, zeta: 0.93706, coeff: 0.00023 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 28.8424, coeff: 0.00984 },
-        { nStar: 2, zeta: 18.5903, coeff: 0.17884 },
-        { nStar: 3, zeta: 10.0913, coeff: -0.29614 },
-        { nStar: 3, zeta: 7.62287, coeff: -0.25809 },
-        { nStar: 4, zeta: 5.2601, coeff: 0.58912 },
-        { nStar: 4, zeta: 3.51264, coeff: 0.50524 },
-        { nStar: 4, zeta: 2.48583, coeff: 0.10136 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 15.1642, coeff: -0.06973 },
-        { nStar: 3, zeta: 8.46851, coeff: -0.22449 },
-        { nStar: 4, zeta: 5.2, coeff: 0.22987 },
-        { nStar: 4, zeta: 3.2, coeff: 0.57674 },
-        { nStar: 4, zeta: 1.7, coeff: 0.37794 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 45.1668, coeff: -0.00037 },
-        { nStar: 1, zeta: 31.1029, coeff: 0.02241 },
-        { nStar: 2, zeta: 20.4829, coeff: 0.03301 },
-        { nStar: 2, zeta: 18.0424, coeff: -0.10721 },
-        { nStar: 3, zeta: 13.4985, coeff: -0.00189 },
-        { nStar: 3, zeta: 9.19966, coeff: 0.167 },
-        { nStar: 4, zeta: 5.24666, coeff: -0.24404 },
-        { nStar: 4, zeta: 3.57817, coeff: -0.05795 },
-        { nStar: 5, zeta: 2.32116, coeff: 0.34577 },
-        { nStar: 5, zeta: 1.43167, coeff: 0.55573 },
-        { nStar: 5, zeta: 0.93706, coeff: 0.24706 },
-      ],
-    }
-  },
-  'Rh': {
-    Z: 45,
-    name: 'Rhodium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(1)4D(8)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 46.1609, coeff: 0.86309 },
-        { nStar: 1, zeta: 31.539, coeff: 0.15562 },
-        { nStar: 2, zeta: 21.4005, coeff: -0.10528 },
-        { nStar: 2, zeta: 19.3487, coeff: 0.09282 },
-        { nStar: 3, zeta: 14.1531, coeff: -0.0092 },
-        { nStar: 3, zeta: 9.52913, coeff: 0.00304 },
-        { nStar: 4, zeta: 5.46427, coeff: -0.001 },
-        { nStar: 4, zeta: 3.74091, coeff: 0.00075 },
-        { nStar: 5, zeta: 2.67135, coeff: -0.00033 },
-        { nStar: 5, zeta: 1.6478, coeff: 0.00015 },
-        { nStar: 5, zeta: 1.01924, coeff: -5e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 46.1609, coeff: 0.02782 },
-        { nStar: 1, zeta: 31.539, coeff: 0.491 },
-        { nStar: 2, zeta: 21.4005, coeff: -0.12288 },
-        { nStar: 2, zeta: 19.3487, coeff: -1.05962 },
-        { nStar: 3, zeta: 14.1531, coeff: -0.04684 },
-        { nStar: 3, zeta: 9.52913, coeff: 0.00413 },
-        { nStar: 4, zeta: 5.46427, coeff: -0.00077 },
-        { nStar: 4, zeta: 3.74091, coeff: 0.00062 },
-        { nStar: 5, zeta: 2.67135, coeff: -0.00024 },
-        { nStar: 5, zeta: 1.6478, coeff: 0.00011 },
-        { nStar: 5, zeta: 1.01924, coeff: -3e-05 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 29.4482, coeff: -0.13194 },
-        { nStar: 2, zeta: 19.0591, coeff: -0.86963 },
-        { nStar: 3, zeta: 10.3152, coeff: -0.03534 },
-        { nStar: 3, zeta: 7.8391, coeff: 0.01983 },
-        { nStar: 4, zeta: 5.56514, coeff: -0.00477 },
-        { nStar: 4, zeta: 3.69486, coeff: 0.00211 },
-        { nStar: 4, zeta: 2.40205, coeff: -0.00054 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 46.1609, coeff: -0.00904 },
-        { nStar: 1, zeta: 31.539, coeff: -0.21589 },
-        { nStar: 2, zeta: 21.4005, coeff: -0.66465 },
-        { nStar: 2, zeta: 19.3487, coeff: 1.39443 },
-        { nStar: 3, zeta: 14.1531, coeff: -0.08648 },
-        { nStar: 3, zeta: 9.52913, coeff: -1.11789 },
-        { nStar: 4, zeta: 5.46427, coeff: -0.03095 },
-        { nStar: 4, zeta: 3.74091, coeff: 0.01047 },
-        { nStar: 5, zeta: 2.67135, coeff: -0.00361 },
-        { nStar: 5, zeta: 1.6478, coeff: 0.00143 },
-        { nStar: 5, zeta: 1.01924, coeff: -0.00045 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 29.4482, coeff: 0.03111 },
-        { nStar: 2, zeta: 19.0591, coeff: 0.46375 },
-        { nStar: 3, zeta: 10.3152, coeff: -0.75427 },
-        { nStar: 3, zeta: 7.8391, coeff: -0.37016 },
-        { nStar: 4, zeta: 5.56514, coeff: -0.01184 },
-        { nStar: 4, zeta: 3.69486, coeff: 0.00186 },
-        { nStar: 4, zeta: 2.40205, coeff: -0.00082 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 15.6705, coeff: 0.23157 },
-        { nStar: 3, zeta: 8.78548, coeff: 0.78055 },
-        { nStar: 4, zeta: 5.41999, coeff: 0.06731 },
-        { nStar: 4, zeta: 3.32956, coeff: -0.01165 },
-        { nStar: 4, zeta: 1.78783, coeff: 0.00283 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 46.1609, coeff: 0.00202 },
-        { nStar: 1, zeta: 31.539, coeff: 0.09091 },
-        { nStar: 2, zeta: 21.4005, coeff: 0.28398 },
-        { nStar: 2, zeta: 19.3487, coeff: -0.59171 },
-        { nStar: 3, zeta: 14.1531, coeff: -0.01102 },
-        { nStar: 3, zeta: 9.52913, coeff: 0.67074 },
-        { nStar: 4, zeta: 5.46427, coeff: -0.75276 },
-        { nStar: 4, zeta: 3.74091, coeff: -0.427 },
-        { nStar: 5, zeta: 2.67135, coeff: -0.01385 },
-        { nStar: 5, zeta: 1.6478, coeff: 0.00165 },
-        { nStar: 5, zeta: 1.01924, coeff: -0.00012 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 29.4482, coeff: 0.00978 },
-        { nStar: 2, zeta: 19.0591, coeff: 0.18367 },
-        { nStar: 3, zeta: 10.3152, coeff: -0.30938 },
-        { nStar: 3, zeta: 7.8391, coeff: -0.26353 },
-        { nStar: 4, zeta: 5.56514, coeff: 0.568 },
-        { nStar: 4, zeta: 3.69486, coeff: 0.55902 },
-        { nStar: 4, zeta: 2.40205, coeff: 0.08129 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 15.6705, coeff: -0.07078 },
-        { nStar: 3, zeta: 8.78548, coeff: -0.2366 },
-        { nStar: 4, zeta: 5.41999, coeff: 0.25232 },
-        { nStar: 4, zeta: 3.32956, coeff: 0.57706 },
-        { nStar: 4, zeta: 1.78783, coeff: 0.35745 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 46.1609, coeff: 0.00027 },
-        { nStar: 1, zeta: 31.539, coeff: 0.0211 },
-        { nStar: 2, zeta: 21.4005, coeff: 0.06126 },
-        { nStar: 2, zeta: 19.3487, coeff: -0.13125 },
-        { nStar: 3, zeta: 14.1531, coeff: -0.00706 },
-        { nStar: 3, zeta: 9.52913, coeff: 0.16515 },
-        { nStar: 4, zeta: 5.46427, coeff: -0.22528 },
-        { nStar: 4, zeta: 3.74091, coeff: -0.07709 },
-        { nStar: 5, zeta: 2.67135, coeff: 0.22788 },
-        { nStar: 5, zeta: 1.6478, coeff: 0.55161 },
-        { nStar: 5, zeta: 1.01924, coeff: 0.38449 },
-      ],
-    }
-  },
-  'Pd': {
-    Z: 46,
-    name: 'Palladium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(0)4D(10)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 47.1776, coeff: 0.8638 },
-        { nStar: 1, zeta: 32.3328, coeff: 0.15453 },
-        { nStar: 2, zeta: 21.4355, coeff: -0.1687 },
-        { nStar: 2, zeta: 20.1308, coeff: 0.15729 },
-        { nStar: 3, zeta: 14.8896, coeff: -0.00977 },
-        { nStar: 3, zeta: 9.8375, coeff: 0.00285 },
-        { nStar: 4, zeta: 5.67422, coeff: -0.00095 },
-        { nStar: 4, zeta: 3.89395, coeff: 0.00083 },
-        { nStar: 4, zeta: 2.87094, coeff: -0.00033 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 47.1776, coeff: 0.02643 },
-        { nStar: 1, zeta: 32.3328, coeff: 0.4924 },
-        { nStar: 2, zeta: 21.4355, coeff: 0.05505 },
-        { nStar: 2, zeta: 20.1308, coeff: -1.23058 },
-        { nStar: 3, zeta: 14.8896, coeff: -0.05335 },
-        { nStar: 3, zeta: 9.8375, coeff: 0.00379 },
-        { nStar: 4, zeta: 5.67422, coeff: -0.00073 },
-        { nStar: 4, zeta: 3.89395, coeff: 0.00068 },
-        { nStar: 4, zeta: 2.87094, coeff: -0.00025 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 30.0356, coeff: -0.13288 },
-        { nStar: 2, zeta: 19.5263, coeff: -0.86863 },
-        { nStar: 3, zeta: 10.6136, coeff: -0.0359 },
-        { nStar: 3, zeta: 8.24787, coeff: 0.02034 },
-        { nStar: 4, zeta: 5.80312, coeff: -0.00417 },
-        { nStar: 4, zeta: 3.85593, coeff: 0.00178 },
-        { nStar: 4, zeta: 2.49634, coeff: -0.00044 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 47.1776, coeff: -0.00814 },
-        { nStar: 1, zeta: 32.3328, coeff: -0.21823 },
-        { nStar: 2, zeta: 21.4355, coeff: -1.26063 },
-        { nStar: 2, zeta: 20.1308, coeff: 1.99543 },
-        { nStar: 3, zeta: 14.8896, coeff: -0.0727 },
-        { nStar: 3, zeta: 9.8375, coeff: -1.13346 },
-        { nStar: 4, zeta: 5.67422, coeff: -0.03059 },
-        { nStar: 4, zeta: 3.89395, coeff: 0.01125 },
-        { nStar: 4, zeta: 2.87094, coeff: -0.00382 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 30.0356, coeff: 0.03084 },
-        { nStar: 2, zeta: 19.5263, coeff: 0.46826 },
-        { nStar: 3, zeta: 10.6136, coeff: -0.73861 },
-        { nStar: 3, zeta: 8.24787, coeff: -0.38299 },
-        { nStar: 4, zeta: 5.80312, coeff: -0.01739 },
-        { nStar: 4, zeta: 3.85593, coeff: 0.00331 },
-        { nStar: 4, zeta: 2.49634, coeff: -0.00127 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 16.1163, coeff: 0.23017 },
-        { nStar: 3, zeta: 9.10001, coeff: 0.78114 },
-        { nStar: 4, zeta: 5.79, coeff: 0.06224 },
-        { nStar: 4, zeta: 3.47691, coeff: -0.00726 },
-        { nStar: 4, zeta: 1.73789, coeff: 0.00134 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 47.1776, coeff: -0.00117 },
-        { nStar: 1, zeta: 32.3328, coeff: -0.09331 },
-        { nStar: 2, zeta: 21.4355, coeff: -0.51384 },
-        { nStar: 2, zeta: 20.1308, coeff: 0.82277 },
-        { nStar: 3, zeta: 14.8896, coeff: 0.02416 },
-        { nStar: 3, zeta: 9.8375, coeff: -0.68978 },
-        { nStar: 4, zeta: 5.67422, coeff: 0.75458 },
-        { nStar: 4, zeta: 3.89395, coeff: 0.40375 },
-        { nStar: 4, zeta: 2.87094, coeff: 0.04127 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 30.0356, coeff: 0.00968 },
-        { nStar: 2, zeta: 19.5263, coeff: 0.18704 },
-        { nStar: 3, zeta: 10.6136, coeff: -0.29731 },
-        { nStar: 3, zeta: 8.24787, coeff: -0.28295 },
-        { nStar: 4, zeta: 5.80312, coeff: 0.56281 },
-        { nStar: 4, zeta: 3.85593, coeff: 0.55483 },
-        { nStar: 4, zeta: 2.49634, coeff: 0.09703 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 16.1163, coeff: -0.06849 },
-        { nStar: 3, zeta: 9.10001, coeff: -0.23809 },
-        { nStar: 4, zeta: 5.79, coeff: 0.23909 },
-        { nStar: 4, zeta: 3.47691, coeff: 0.58889 },
-        { nStar: 4, zeta: 1.73789, coeff: 0.38367 },
-      ],
-    }
-  },
-  'Ag': {
-    Z: 47,
-    name: 'Silver',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(1)4D(10)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 48.2714, coeff: 0.85321 },
-        { nStar: 1, zeta: 34.0494, coeff: 0.16287 },
-        { nStar: 2, zeta: 21.9367, coeff: -0.28452 },
-        { nStar: 2, zeta: 21.3209, coeff: 0.27326 },
-        { nStar: 3, zeta: 14.1492, coeff: -0.00757 },
-        { nStar: 3, zeta: 10.138, coeff: 0.00328 },
-        { nStar: 4, zeta: 5.87182, coeff: -0.00088 },
-        { nStar: 4, zeta: 3.9877, coeff: 0.00058 },
-        { nStar: 5, zeta: 2.66401, coeff: -0.00024 },
-        { nStar: 5, zeta: 1.65008, coeff: 0.00013 },
-        { nStar: 5, zeta: 1.04186, coeff: -5e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 48.2714, coeff: 0.01541 },
-        { nStar: 1, zeta: 34.0494, coeff: 0.48995 },
-        { nStar: 2, zeta: 21.9367, coeff: 1.81227 },
-        { nStar: 2, zeta: 21.3209, coeff: -2.97601 },
-        { nStar: 3, zeta: 14.1492, coeff: -0.05501 },
-        { nStar: 3, zeta: 10.138, coeff: 0.01094 },
-        { nStar: 4, zeta: 5.87182, coeff: -0.00178 },
-        { nStar: 4, zeta: 3.9877, coeff: 0.00118 },
-        { nStar: 5, zeta: 2.66401, coeff: -0.00045 },
-        { nStar: 5, zeta: 1.65008, coeff: 0.00024 },
-        { nStar: 5, zeta: 1.04186, coeff: -8e-05 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 30.6154, coeff: -0.13383 },
-        { nStar: 2, zeta: 19.9958, coeff: -0.86745 },
-        { nStar: 3, zeta: 11.0088, coeff: -0.03675 },
-        { nStar: 3, zeta: 8.86584, coeff: 0.02046 },
-        { nStar: 4, zeta: 5.90958, coeff: -0.00291 },
-        { nStar: 4, zeta: 3.92436, coeff: 0.0013 },
-        { nStar: 4, zeta: 2.55069, coeff: -0.00032 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 48.2714, coeff: 0.00405 },
-        { nStar: 1, zeta: 34.0494, coeff: 0.21698 },
-        { nStar: 2, zeta: 21.9367, coeff: 3.45888 },
-        { nStar: 2, zeta: 21.3209, coeff: -4.17359 },
-        { nStar: 3, zeta: 14.1492, coeff: 0.04946 },
-        { nStar: 3, zeta: 10.138, coeff: 1.13958 },
-        { nStar: 4, zeta: 5.87182, coeff: 0.02993 },
-        { nStar: 4, zeta: 3.9877, coeff: -0.00847 },
-        { nStar: 5, zeta: 2.66401, coeff: 0.00277 },
-        { nStar: 5, zeta: 1.65008, coeff: -0.00132 },
-        { nStar: 5, zeta: 1.04186, coeff: 0.00044 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 30.6154, coeff: 0.03049 },
-        { nStar: 2, zeta: 19.9958, coeff: 0.47268 },
-        { nStar: 3, zeta: 11.0088, coeff: -0.65496 },
-        { nStar: 3, zeta: 8.86584, coeff: -0.462 },
-        { nStar: 4, zeta: 5.90958, coeff: -0.02649 },
-        { nStar: 4, zeta: 3.92436, coeff: 0.00687 },
-        { nStar: 4, zeta: 2.55069, coeff: -0.00213 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 16.462, coeff: 0.23488 },
-        { nStar: 3, zeta: 9.36028, coeff: 0.78019 },
-        { nStar: 4, zeta: 5.93684, coeff: 0.05511 },
-        { nStar: 4, zeta: 3.53384, coeff: -0.00618 },
-        { nStar: 4, zeta: 1.88607, coeff: 0.00117 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 48.2714, coeff: -0.00037 },
-        { nStar: 1, zeta: 34.0494, coeff: -0.09248 },
-        { nStar: 2, zeta: 21.9367, coeff: -1.55034 },
-        { nStar: 2, zeta: 21.3209, coeff: 1.86019 },
-        { nStar: 3, zeta: 14.1492, coeff: 0.04019 },
-        { nStar: 3, zeta: 10.138, coeff: -0.7194 },
-        { nStar: 4, zeta: 5.87182, coeff: 0.77034 },
-        { nStar: 4, zeta: 3.9877, coeff: 0.42464 },
-        { nStar: 5, zeta: 2.66401, coeff: 0.01133 },
-        { nStar: 5, zeta: 1.65008, coeff: -0.00164 },
-        { nStar: 5, zeta: 1.04186, coeff: 0.00074 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 30.6154, coeff: 0.00947 },
-        { nStar: 2, zeta: 19.9958, coeff: 0.19286 },
-        { nStar: 3, zeta: 11.0088, coeff: -0.26069 },
-        { nStar: 3, zeta: 8.86584, coeff: -0.32251 },
-        { nStar: 4, zeta: 5.90958, coeff: 0.59654 },
-        { nStar: 4, zeta: 3.92436, coeff: 0.53658 },
-        { nStar: 4, zeta: 2.55069, coeff: 0.07101 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 16.462, coeff: -0.07446 },
-        { nStar: 3, zeta: 9.36028, coeff: -0.25709 },
-        { nStar: 4, zeta: 5.93684, coeff: 0.2907 },
-        { nStar: 4, zeta: 3.53384, coeff: 0.60532 },
-        { nStar: 4, zeta: 1.88607, coeff: 0.30158 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 48.2714, coeff: -0.00019 },
-        { nStar: 1, zeta: 34.0494, coeff: 0.01987 },
-        { nStar: 2, zeta: 21.9367, coeff: 0.31024 },
-        { nStar: 2, zeta: 21.3209, coeff: -0.37499 },
-        { nStar: 3, zeta: 14.1492, coeff: -0.01483 },
-        { nStar: 3, zeta: 10.138, coeff: 0.16544 },
-        { nStar: 4, zeta: 5.87182, coeff: -0.2176 },
-        { nStar: 4, zeta: 3.9877, coeff: -0.05567 },
-        { nStar: 5, zeta: 2.66401, coeff: 0.2528 },
-        { nStar: 5, zeta: 1.65008, coeff: 0.51023 },
-        { nStar: 5, zeta: 1.04186, coeff: 0.39485 },
-      ],
-    }
-  },
-  'Cd': {
-    Z: 48,
-    name: 'Cadmium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(2)4D(10)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 49.236, coeff: 0.86581 },
-        { nStar: 1, zeta: 33.0562, coeff: 0.15625 },
-        { nStar: 2, zeta: 23.4638, coeff: -0.10878 },
-        { nStar: 2, zeta: 21.0217, coeff: 0.09218 },
-        { nStar: 3, zeta: 14.7387, coeff: -0.01008 },
-        { nStar: 3, zeta: 10.4545, coeff: 0.00412 },
-        { nStar: 4, zeta: 6.08432, coeff: -0.00103 },
-        { nStar: 4, zeta: 4.13285, coeff: 0.00061 },
-        { nStar: 5, zeta: 2.48431, coeff: -0.00021 },
-        { nStar: 5, zeta: 1.46842, coeff: 0.00013 },
-        { nStar: 5, zeta: 0.9725, coeff: -6e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 49.236, coeff: 0.03257 },
-        { nStar: 1, zeta: 33.0562, coeff: 0.49876 },
-        { nStar: 2, zeta: 23.4638, coeff: -0.02627 },
-        { nStar: 2, zeta: 21.0217, coeff: -1.16538 },
-        { nStar: 3, zeta: 14.7387, coeff: -0.05705 },
-        { nStar: 3, zeta: 10.4545, coeff: 0.01172 },
-        { nStar: 4, zeta: 6.08432, coeff: -0.00223 },
-        { nStar: 4, zeta: 4.13285, coeff: 0.00136 },
-        { nStar: 5, zeta: 2.48431, coeff: -0.00046 },
-        { nStar: 5, zeta: 1.46842, coeff: 0.00029 },
-        { nStar: 5, zeta: 0.9725, coeff: -0.00013 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 31.2251, coeff: -0.13405 },
-        { nStar: 2, zeta: 20.4703, coeff: -0.86694 },
-        { nStar: 3, zeta: 11.4886, coeff: -0.03642 },
-        { nStar: 3, zeta: 9.46699, coeff: 0.10955 },
-        { nStar: 4, zeta: 6.02421, coeff: -0.00198 },
-        { nStar: 4, zeta: 3.97808, coeff: 0.00123 },
-        { nStar: 4, zeta: 3.1736, coeff: -0.00049 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 49.236, coeff: -0.01277 },
-        { nStar: 1, zeta: 33.0562, coeff: -0.22108 },
-        { nStar: 2, zeta: 23.4638, coeff: -0.62069 },
-        { nStar: 2, zeta: 21.0217, coeff: 1.3524 },
-        { nStar: 3, zeta: 14.7387, coeff: -0.0331 },
-        { nStar: 3, zeta: 10.4545, coeff: -1.15754 },
-        { nStar: 4, zeta: 6.08432, coeff: -0.02824 },
-        { nStar: 4, zeta: 4.13285, coeff: 0.00644 },
-        { nStar: 5, zeta: 2.48431, coeff: -0.00168 },
-        { nStar: 5, zeta: 1.46842, coeff: 0.00096 },
-        { nStar: 5, zeta: 0.9725, coeff: -0.0004 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 31.2251, coeff: 0.02966 },
-        { nStar: 2, zeta: 20.4703, coeff: 0.47797 },
-        { nStar: 3, zeta: 11.4886, coeff: -0.53438 },
-        { nStar: 3, zeta: 9.46699, coeff: -0.58057 },
-        { nStar: 4, zeta: 6.02421, coeff: -0.03359 },
-        { nStar: 4, zeta: 3.97808, coeff: 0.01488 },
-        { nStar: 4, zeta: 3.1736, coeff: -0.00691 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 16.7695, coeff: 0.26158 },
-        { nStar: 3, zeta: 9.29293, coeff: 0.78571 },
-        { nStar: 4, zeta: 5.52892, coeff: 0.00683 },
-        { nStar: 4, zeta: 3.19716, coeff: 0.01135 },
-        { nStar: 4, zeta: 1.85909, coeff: -0.00522 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 49.236, coeff: -0.0035 },
-        { nStar: 1, zeta: 33.0562, coeff: -0.09634 },
-        { nStar: 2, zeta: 23.4638, coeff: -0.27657 },
-        { nStar: 2, zeta: 21.0217, coeff: 0.59663 },
-        { nStar: 3, zeta: 14.7387, coeff: 0.05511 },
-        { nStar: 3, zeta: 10.4545, coeff: -0.74768 },
-        { nStar: 4, zeta: 6.08432, coeff: 0.7819 },
-        { nStar: 4, zeta: 4.13285, coeff: 0.42395 },
-        { nStar: 5, zeta: 2.48431, coeff: 0.00409 },
-        { nStar: 5, zeta: 1.46842, coeff: -0.00053 },
-        { nStar: 5, zeta: 0.9725, coeff: 0.00017 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 31.2251, coeff: 0.00951 },
-        { nStar: 2, zeta: 20.4703, coeff: 0.19809 },
-        { nStar: 3, zeta: 11.4886, coeff: -0.19508 },
-        { nStar: 3, zeta: 9.46699, coeff: -0.39801 },
-        { nStar: 4, zeta: 6.02421, coeff: 0.65712 },
-        { nStar: 4, zeta: 3.97808, coeff: 0.44871 },
-        { nStar: 4, zeta: 3.1736, coeff: 0.09355 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 16.7695, coeff: -0.09052 },
-        { nStar: 3, zeta: 9.29293, coeff: -0.26251 },
-        { nStar: 4, zeta: 5.52892, coeff: 0.48577 },
-        { nStar: 4, zeta: 3.19716, coeff: 0.54271 },
-        { nStar: 4, zeta: 1.85909, coeff: 0.16015 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 49.236, coeff: 6e-05 },
-        { nStar: 1, zeta: 33.0562, coeff: 0.02428 },
-        { nStar: 2, zeta: 23.4638, coeff: 0.05165 },
-        { nStar: 2, zeta: 21.0217, coeff: -0.12614 },
-        { nStar: 3, zeta: 14.7387, coeff: -0.02625 },
-        { nStar: 3, zeta: 10.4545, coeff: 0.20087 },
-        { nStar: 4, zeta: 6.08432, coeff: -0.26528 },
-        { nStar: 4, zeta: 4.13285, coeff: -0.03745 },
-        { nStar: 5, zeta: 2.48431, coeff: 0.4604 },
-        { nStar: 5, zeta: 1.46842, coeff: 0.54846 },
-        { nStar: 5, zeta: 0.9725, coeff: 0.13333 },
-      ],
-    }
-  },
-  'In': {
-    Z: 49,
-    name: 'Indium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(2)4D(10)5P(1)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 51.5413, coeff: 0.68966 },
-        { nStar: 1, zeta: 39.8764, coeff: 0.3338 },
-        { nStar: 2, zeta: 33.3218, coeff: -0.03659 },
-        { nStar: 2, zeta: 23.9118, coeff: 0.01539 },
-        { nStar: 3, zeta: 20.5993, coeff: -0.00358 },
-        { nStar: 3, zeta: 10.9162, coeff: 0.0004 },
-        { nStar: 4, zeta: 6.09269, coeff: -0.00025 },
-        { nStar: 4, zeta: 3.99176, coeff: 0.00028 },
-        { nStar: 5, zeta: 3.34341, coeff: -0.00019 },
-        { nStar: 5, zeta: 2.16245, coeff: 7e-05 },
-        { nStar: 5, zeta: 1.3482, coeff: -2e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 51.5413, coeff: 0.00637 },
-        { nStar: 1, zeta: 39.8764, coeff: 0.42568 },
-        { nStar: 2, zeta: 33.3218, coeff: 0.21484 },
-        { nStar: 2, zeta: 23.9118, coeff: -1.09387 },
-        { nStar: 3, zeta: 20.5993, coeff: -0.25842 },
-        { nStar: 3, zeta: 10.9162, coeff: -0.00484 },
-        { nStar: 4, zeta: 6.09269, coeff: 0.00168 },
-        { nStar: 4, zeta: 3.99176, coeff: -0.00158 },
-        { nStar: 5, zeta: 3.34341, coeff: 0.00101 },
-        { nStar: 5, zeta: 2.16245, coeff: -0.00037 },
-        { nStar: 5, zeta: 1.3482, coeff: 0.0001 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 30.2511, coeff: 0.18582 },
-        { nStar: 2, zeta: 20.5101, coeff: 0.82208 },
-        { nStar: 3, zeta: 11.8056, coeff: 0.01213 },
-        { nStar: 3, zeta: 9.54601, coeff: -0.00107 },
-        { nStar: 4, zeta: 6.32791, coeff: -0.00196 },
-        { nStar: 4, zeta: 4.19372, coeff: 0.00137 },
-        { nStar: 5, zeta: 3.0438, coeff: -0.0006 },
-        { nStar: 5, zeta: 1.69398, coeff: 0.00029 },
-        { nStar: 5, zeta: 0.99207, coeff: -8e-05 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 51.5413, coeff: 0.01992 },
-        { nStar: 1, zeta: 39.8764, coeff: 0.16143 },
-        { nStar: 2, zeta: 33.3218, coeff: 0.17298 },
-        { nStar: 2, zeta: 23.9118, coeff: -0.61974 },
-        { nStar: 3, zeta: 20.5993, coeff: -0.26956 },
-        { nStar: 3, zeta: 10.9162, coeff: 1.20459 },
-        { nStar: 4, zeta: 6.09269, coeff: 0.04834 },
-        { nStar: 4, zeta: 3.99176, coeff: -0.02795 },
-        { nStar: 5, zeta: 3.34341, coeff: 0.01503 },
-        { nStar: 5, zeta: 2.16245, coeff: -0.00474 },
-        { nStar: 5, zeta: 1.3482, coeff: 0.00124 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 30.2511, coeff: -0.0463 },
-        { nStar: 2, zeta: 20.5101, coeff: -0.47317 },
-        { nStar: 3, zeta: 11.8056, coeff: 0.60312 },
-        { nStar: 3, zeta: 9.54601, coeff: 0.52528 },
-        { nStar: 4, zeta: 6.32791, coeff: 0.02725 },
-        { nStar: 4, zeta: 4.19372, coeff: -0.00687 },
-        { nStar: 5, zeta: 3.0438, coeff: 0.00244 },
-        { nStar: 5, zeta: 1.69398, coeff: -0.0008 },
-        { nStar: 5, zeta: 0.99207, coeff: 0.00028 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 17.4861, coeff: -0.22219 },
-        { nStar: 3, zeta: 10.0443, coeff: -0.7916 },
-        { nStar: 4, zeta: 5.9967, coeff: -0.0596 },
-        { nStar: 4, zeta: 3.68324, coeff: 0.01615 },
-        { nStar: 4, zeta: 2.22477, coeff: -0.00457 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 51.5413, coeff: 0.00732 },
-        { nStar: 1, zeta: 39.8764, coeff: -0.09231 },
-        { nStar: 2, zeta: 33.3218, coeff: -0.03719 },
-        { nStar: 2, zeta: 23.9118, coeff: 0.21817 },
-        { nStar: 3, zeta: 20.5993, coeff: 0.18834 },
-        { nStar: 3, zeta: 10.9162, coeff: -0.73739 },
-        { nStar: 4, zeta: 6.09269, coeff: 0.85938 },
-        { nStar: 4, zeta: 3.99176, coeff: 0.36057 },
-        { nStar: 5, zeta: 3.34341, coeff: -0.03686 },
-        { nStar: 5, zeta: 2.16245, coeff: 0.00921 },
-        { nStar: 5, zeta: 1.3482, coeff: -0.00212 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 30.2511, coeff: 0.01563 },
-        { nStar: 2, zeta: 20.5101, coeff: 0.20165 },
-        { nStar: 3, zeta: 11.8056, coeff: -0.23651 },
-        { nStar: 3, zeta: 9.54601, coeff: -0.38218 },
-        { nStar: 4, zeta: 6.32791, coeff: 0.62892 },
-        { nStar: 4, zeta: 4.19372, coeff: 0.55232 },
-        { nStar: 5, zeta: 3.0438, coeff: 0.0288 },
-        { nStar: 5, zeta: 1.69398, coeff: 0.00185 },
-        { nStar: 5, zeta: 0.99207, coeff: -0.00028 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 17.4861, coeff: -0.08085 },
-        { nStar: 3, zeta: 10.0443, coeff: -0.28228 },
-        { nStar: 4, zeta: 5.9967, coeff: 0.4063 },
-        { nStar: 4, zeta: 3.68324, coeff: 0.56839 },
-        { nStar: 4, zeta: 2.22477, coeff: 0.19205 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 51.5413, coeff: -0.00289 },
-        { nStar: 1, zeta: 39.8764, coeff: 0.02621 },
-        { nStar: 2, zeta: 33.3218, coeff: 0.00769 },
-        { nStar: 2, zeta: 23.9118, coeff: -0.05563 },
-        { nStar: 3, zeta: 20.5993, coeff: -0.0553 },
-        { nStar: 3, zeta: 10.9162, coeff: 0.21149 },
-        { nStar: 4, zeta: 6.09269, coeff: -0.29992 },
-        { nStar: 4, zeta: 3.99176, coeff: -0.08229 },
-        { nStar: 5, zeta: 3.34341, coeff: 0.22314 },
-        { nStar: 5, zeta: 2.16245, coeff: 0.57994 },
-        { nStar: 5, zeta: 1.3482, coeff: 0.36972 },
-      ],
-      '5p': [
-        { nStar: 2, zeta: 30.2511, coeff: -0.00266 },
-        { nStar: 2, zeta: 20.5101, coeff: -0.04107 },
-        { nStar: 3, zeta: 11.8056, coeff: 0.05254 },
-        { nStar: 3, zeta: 9.54601, coeff: 0.07303 },
-        { nStar: 4, zeta: 6.32791, coeff: -0.13994 },
-        { nStar: 4, zeta: 4.19372, coeff: -0.13391 },
-        { nStar: 5, zeta: 3.0438, coeff: 0.17634 },
-        { nStar: 5, zeta: 1.69398, coeff: 0.60102 },
-        { nStar: 5, zeta: 0.99207, coeff: 0.40498 },
-      ],
-    }
-  },
-  'Sn': {
-    Z: 50,
-    name: 'Tin',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(2)4D(10)5P(2)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 51.2468, coeff: 0.86794 },
-        { nStar: 1, zeta: 34.8359, coeff: 0.15221 },
-        { nStar: 2, zeta: 24.8025, coeff: -0.08713 },
-        { nStar: 2, zeta: 21.8812, coeff: 0.07211 },
-        { nStar: 3, zeta: 15.4634, coeff: -0.00947 },
-        { nStar: 3, zeta: 11.1293, coeff: 0.0041 },
-        { nStar: 4, zeta: 6.54571, coeff: -0.00119 },
-        { nStar: 4, zeta: 4.60056, coeff: 0.00082 },
-        { nStar: 5, zeta: 3.04899, coeff: -0.00034 },
-        { nStar: 5, zeta: 1.98832, coeff: 0.00021 },
-        { nStar: 5, zeta: 1.33764, coeff: -8e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 51.2468, coeff: 0.02601 },
-        { nStar: 1, zeta: 34.8359, coeff: 0.50368 },
-        { nStar: 2, zeta: 24.8025, coeff: -0.03004 },
-        { nStar: 2, zeta: 21.8812, coeff: -1.16236 },
-        { nStar: 3, zeta: 15.4634, coeff: -0.05107 },
-        { nStar: 3, zeta: 11.1293, coeff: 0.00982 },
-        { nStar: 4, zeta: 6.54571, coeff: -0.00176 },
-        { nStar: 4, zeta: 4.60056, coeff: 0.00123 },
-        { nStar: 5, zeta: 3.04899, coeff: -0.00048 },
-        { nStar: 5, zeta: 1.98832, coeff: 0.00029 },
-        { nStar: 5, zeta: 1.33764, coeff: -0.00011 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 32.405, coeff: 0.13594 },
-        { nStar: 2, zeta: 21.3934, coeff: 0.86581 },
-        { nStar: 3, zeta: 11.6072, coeff: 0.03802 },
-        { nStar: 3, zeta: 9.53813, coeff: -0.02353 },
-        { nStar: 4, zeta: 6.69982, coeff: 0.00312 },
-        { nStar: 4, zeta: 4.42649, coeff: -0.00105 },
-        { nStar: 5, zeta: 2.68092, coeff: 0.00027 },
-        { nStar: 5, zeta: 1.69952, coeff: -0.00015 },
-        { nStar: 5, zeta: 1.07438, coeff: 6e-05 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 51.2468, coeff: -0.00917 },
-        { nStar: 1, zeta: 34.8359, coeff: -0.22572 },
-        { nStar: 2, zeta: 24.8025, coeff: -0.52275 },
-        { nStar: 2, zeta: 21.8812, coeff: 1.25758 },
-        { nStar: 3, zeta: 15.4634, coeff: 0.00855 },
-        { nStar: 3, zeta: 11.1293, coeff: -1.19334 },
-        { nStar: 4, zeta: 6.54571, coeff: -0.03711 },
-        { nStar: 4, zeta: 4.60056, coeff: 0.01165 },
-        { nStar: 5, zeta: 3.04899, coeff: -0.00364 },
-        { nStar: 5, zeta: 1.98832, coeff: 0.00201 },
-        { nStar: 5, zeta: 1.33764, coeff: -0.00068 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 32.405, coeff: 0.02978 },
-        { nStar: 2, zeta: 21.3934, coeff: 0.48457 },
-        { nStar: 3, zeta: 11.6072, coeff: -0.79049 },
-        { nStar: 3, zeta: 9.53813, coeff: -0.32592 },
-        { nStar: 4, zeta: 6.69982, coeff: -0.03114 },
-        { nStar: 4, zeta: 4.42649, coeff: 0.00632 },
-        { nStar: 5, zeta: 2.68092, coeff: -0.00212 },
-        { nStar: 5, zeta: 1.69952, coeff: 0.0013 },
-        { nStar: 5, zeta: 1.07438, coeff: -0.00048 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 18.0849, coeff: -0.21195 },
-        { nStar: 3, zeta: 10.4274, coeff: -0.79714 },
-        { nStar: 4, zeta: 6.32865, coeff: -0.06387 },
-        { nStar: 4, zeta: 3.95998, coeff: 0.0173 },
-        { nStar: 4, zeta: 2.43189, coeff: -0.00475 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 51.2468, coeff: -0.00179 },
-        { nStar: 1, zeta: 34.8359, coeff: -0.10183 },
-        { nStar: 2, zeta: 24.8025, coeff: -0.23112 },
-        { nStar: 2, zeta: 21.8812, coeff: 0.56002 },
-        { nStar: 3, zeta: 15.4634, coeff: 0.0944 },
-        { nStar: 3, zeta: 11.1293, coeff: -0.81085 },
-        { nStar: 4, zeta: 6.54571, coeff: 0.7565 },
-        { nStar: 4, zeta: 4.60056, coeff: 0.4549 },
-        { nStar: 5, zeta: 3.04899, coeff: 0.0054 },
-        { nStar: 5, zeta: 1.98832, coeff: -0.0002 },
-        { nStar: 5, zeta: 1.33764, coeff: 0.00013 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 32.405, coeff: -0.00945 },
-        { nStar: 2, zeta: 21.3934, coeff: -0.20942 },
-        { nStar: 3, zeta: 11.6072, coeff: 0.31227 },
-        { nStar: 3, zeta: 9.53813, coeff: 0.33166 },
-        { nStar: 4, zeta: 6.69982, coeff: -0.61022 },
-        { nStar: 4, zeta: 4.42649, coeff: -0.59925 },
-        { nStar: 5, zeta: 2.68092, coeff: -0.02215 },
-        { nStar: 5, zeta: 1.69952, coeff: 0.00368 },
-        { nStar: 5, zeta: 1.07438, coeff: -0.00125 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 18.0849, coeff: -0.07987 },
-        { nStar: 3, zeta: 10.4274, coeff: -0.29974 },
-        { nStar: 4, zeta: 6.32865, coeff: 0.39274 },
-        { nStar: 4, zeta: 3.95998, coeff: 0.58769 },
-        { nStar: 4, zeta: 2.43189, coeff: 0.17966 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 51.2468, coeff: 0.00011 },
-        { nStar: 1, zeta: 34.8359, coeff: 0.0305 },
-        { nStar: 2, zeta: 24.8025, coeff: 0.06165 },
-        { nStar: 2, zeta: 21.8812, coeff: -0.15719 },
-        { nStar: 3, zeta: 15.4634, coeff: -0.03936 },
-        { nStar: 3, zeta: 11.1293, coeff: 0.26268 },
-        { nStar: 4, zeta: 6.54571, coeff: -0.3075 },
-        { nStar: 4, zeta: 4.60056, coeff: -0.10069 },
-        { nStar: 5, zeta: 3.04899, coeff: 0.4241 },
-        { nStar: 5, zeta: 1.98832, coeff: 0.5397 },
-        { nStar: 5, zeta: 1.33764, coeff: 0.18408 },
-      ],
-      '5p': [
-        { nStar: 2, zeta: 32.405, coeff: -0.0022 },
-        { nStar: 2, zeta: 21.3934, coeff: -0.04885 },
-        { nStar: 3, zeta: 11.6072, coeff: 0.0663 },
-        { nStar: 3, zeta: 9.53813, coeff: 0.09376 },
-        { nStar: 4, zeta: 6.69982, coeff: -0.18763 },
-        { nStar: 4, zeta: 4.42649, coeff: -0.12451 },
-        { nStar: 5, zeta: 2.68092, coeff: 0.33186 },
-        { nStar: 5, zeta: 1.69952, coeff: 0.56925 },
-        { nStar: 5, zeta: 1.07438, coeff: 0.2489 },
-      ],
-    }
-  },
-  'Sb': {
-    Z: 51,
-    name: 'Antimony',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(2)4D(10)5P(3)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 52.2967, coeff: 0.8633 },
-        { nStar: 1, zeta: 36.2058, coeff: 0.15526 },
-        { nStar: 2, zeta: 25.7107, coeff: -0.07402 },
-        { nStar: 2, zeta: 22.5557, coeff: 0.05984 },
-        { nStar: 3, zeta: 15.5831, coeff: -0.00834 },
-        { nStar: 3, zeta: 11.4701, coeff: 0.00398 },
-        { nStar: 4, zeta: 6.78464, coeff: -0.00114 },
-        { nStar: 4, zeta: 4.84462, coeff: 0.00077 },
-        { nStar: 5, zeta: 3.16711, coeff: -0.00031 },
-        { nStar: 5, zeta: 2.07061, coeff: 0.0002 },
-        { nStar: 5, zeta: 1.42099, coeff: -7e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 52.2967, coeff: 0.01937 },
-        { nStar: 1, zeta: 36.2058, coeff: 0.50197 },
-        { nStar: 2, zeta: 25.7107, coeff: 0.08546 },
-        { nStar: 2, zeta: 22.5557, coeff: -1.26797 },
-        { nStar: 3, zeta: 15.5831, coeff: -0.0524 },
-        { nStar: 3, zeta: 11.4701, coeff: 0.01161 },
-        { nStar: 4, zeta: 6.78464, coeff: -0.00182 },
-        { nStar: 4, zeta: 4.84462, coeff: 0.00122 },
-        { nStar: 5, zeta: 3.16711, coeff: -0.00044 },
-        { nStar: 5, zeta: 2.07061, coeff: 0.00027 },
-        { nStar: 5, zeta: 1.42099, coeff: -0.0001 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 33.0315, coeff: 0.13557 },
-        { nStar: 2, zeta: 21.8746, coeff: 0.86582 },
-        { nStar: 3, zeta: 11.9688, coeff: 0.04245 },
-        { nStar: 3, zeta: 10.2619, coeff: -0.02726 },
-        { nStar: 4, zeta: 6.89427, coeff: 0.00222 },
-        { nStar: 4, zeta: 4.63326, coeff: -0.00075 },
-        { nStar: 5, zeta: 2.79439, coeff: 0.00016 },
-        { nStar: 5, zeta: 1.7619, coeff: -9e-05 },
-        { nStar: 5, zeta: 1.16248, coeff: 3e-05 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 52.2967, coeff: -0.00764 },
-        { nStar: 1, zeta: 36.2058, coeff: -0.2235 },
-        { nStar: 2, zeta: 25.7107, coeff: -0.54484 },
-        { nStar: 2, zeta: 22.5557, coeff: 1.27093 },
-        { nStar: 3, zeta: 15.5831, coeff: 0.04021 },
-        { nStar: 3, zeta: 11.4701, coeff: -1.21742 },
-        { nStar: 4, zeta: 6.78464, coeff: -0.03927 },
-        { nStar: 4, zeta: 4.84462, coeff: 0.01231 },
-        { nStar: 5, zeta: 3.16711, coeff: -0.00347 },
-        { nStar: 5, zeta: 2.07061, coeff: 0.002 },
-        { nStar: 5, zeta: 1.42099, coeff: -0.0007 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 33.0315, coeff: 0.02908 },
-        { nStar: 2, zeta: 21.8746, coeff: 0.48854 },
-        { nStar: 3, zeta: 11.9688, coeff: -0.68889 },
-        { nStar: 3, zeta: 10.2619, coeff: -0.4229 },
-        { nStar: 4, zeta: 6.89427, coeff: -0.03955 },
-        { nStar: 4, zeta: 4.63326, coeff: 0.00927 },
-        { nStar: 5, zeta: 2.79439, coeff: -0.00289 },
-        { nStar: 5, zeta: 1.7619, coeff: 0.00185 },
-        { nStar: 5, zeta: 1.16248, coeff: -0.0007 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 18.4962, coeff: -0.21216 },
-        { nStar: 3, zeta: 10.7273, coeff: -0.79764 },
-        { nStar: 4, zeta: 6.51769, coeff: -0.06093 },
-        { nStar: 4, zeta: 4.09028, coeff: 0.0166 },
-        { nStar: 4, zeta: 2.53196, coeff: -0.00452 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 52.2967, coeff: -0.00114 },
-        { nStar: 1, zeta: 36.2058, coeff: -0.10212 },
-        { nStar: 2, zeta: 25.7107, coeff: -0.24575 },
-        { nStar: 2, zeta: 22.5557, coeff: 0.57541 },
-        { nStar: 3, zeta: 15.5831, coeff: 0.12287 },
-        { nStar: 3, zeta: 11.4701, coeff: -0.8509 },
-        { nStar: 4, zeta: 6.78464, coeff: 0.74241 },
-        { nStar: 4, zeta: 4.84462, coeff: 0.47295 },
-        { nStar: 5, zeta: 3.16711, coeff: 0.00678 },
-        { nStar: 5, zeta: 2.07061, coeff: -0.00075 },
-        { nStar: 5, zeta: 1.42099, coeff: 0.00035 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 33.0315, coeff: -0.00927 },
-        { nStar: 2, zeta: 21.8746, coeff: -0.21481 },
-        { nStar: 3, zeta: 11.9688, coeff: 0.2384 },
-        { nStar: 3, zeta: 10.2619, coeff: 0.40998 },
-        { nStar: 4, zeta: 6.89427, coeff: -0.60342 },
-        { nStar: 4, zeta: 4.63326, coeff: -0.60017 },
-        { nStar: 5, zeta: 2.79439, coeff: -0.01976 },
-        { nStar: 5, zeta: 1.7619, coeff: 0.00377 },
-        { nStar: 5, zeta: 1.16248, coeff: -0.00113 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 18.4962, coeff: -0.08297 },
-        { nStar: 3, zeta: 10.7273, coeff: -0.31179 },
-        { nStar: 4, zeta: 6.51769, coeff: 0.42124 },
-        { nStar: 4, zeta: 4.09028, coeff: 0.5952 },
-        { nStar: 4, zeta: 2.53196, coeff: 0.13979 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 52.2967, coeff: -0.00016 },
-        { nStar: 1, zeta: 36.2058, coeff: 0.03259 },
-        { nStar: 2, zeta: 25.7107, coeff: 0.07002 },
-        { nStar: 2, zeta: 22.5557, coeff: -0.17174 },
-        { nStar: 3, zeta: 15.5831, coeff: -0.05298 },
-        { nStar: 3, zeta: 11.4701, coeff: 0.29518 },
-        { nStar: 4, zeta: 6.78464, coeff: -0.32558 },
-        { nStar: 4, zeta: 4.84462, coeff: -0.11697 },
-        { nStar: 5, zeta: 3.16711, coeff: 0.48369 },
-        { nStar: 5, zeta: 2.07061, coeff: 0.52328 },
-        { nStar: 5, zeta: 1.42099, coeff: 0.14041 },
-      ],
-      '5p': [
-        { nStar: 2, zeta: 33.0315, coeff: -0.00242 },
-        { nStar: 2, zeta: 21.8746, coeff: -0.05549 },
-        { nStar: 3, zeta: 11.9688, coeff: 0.05008 },
-        { nStar: 3, zeta: 10.2619, coeff: 0.12884 },
-        { nStar: 4, zeta: 6.89427, coeff: -0.20961 },
-        { nStar: 4, zeta: 4.63326, coeff: -0.13867 },
-        { nStar: 5, zeta: 2.79439, coeff: 0.40191 },
-        { nStar: 5, zeta: 1.7619, coeff: 0.56336 },
-        { nStar: 5, zeta: 1.16248, coeff: 0.17854 },
-      ],
-    }
-  },
-  'Te': {
-    Z: 52,
-    name: 'Tellurium',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(2)4D(10)5P(4)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 53.3036, coeff: 0.86565 },
-        { nStar: 1, zeta: 36.7309, coeff: 0.15343 },
-        { nStar: 2, zeta: 26.3294, coeff: -0.07363 },
-        { nStar: 2, zeta: 22.9952, coeff: 0.05884 },
-        { nStar: 3, zeta: 15.6809, coeff: -0.00904 },
-        { nStar: 3, zeta: 11.8149, coeff: 0.0047 },
-        { nStar: 4, zeta: 7.00022, coeff: -0.00134 },
-        { nStar: 4, zeta: 5.0651, coeff: 0.00094 },
-        { nStar: 5, zeta: 3.35991, coeff: -0.00038 },
-        { nStar: 5, zeta: 2.24531, coeff: 0.00025 },
-        { nStar: 5, zeta: 1.56178, coeff: -9e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 53.3036, coeff: 0.02046 },
-        { nStar: 1, zeta: 36.7309, coeff: 0.50474 },
-        { nStar: 2, zeta: 26.3294, coeff: 0.06342 },
-        { nStar: 2, zeta: 22.9952, coeff: -1.25086 },
-        { nStar: 3, zeta: 15.6809, coeff: -0.05401 },
-        { nStar: 3, zeta: 11.8149, coeff: 0.01466 },
-        { nStar: 4, zeta: 7.00022, coeff: -0.00241 },
-        { nStar: 4, zeta: 5.0651, coeff: 0.00166 },
-        { nStar: 5, zeta: 3.35991, coeff: -0.00062 },
-        { nStar: 5, zeta: 2.24531, coeff: 0.00039 },
-        { nStar: 5, zeta: 1.56178, coeff: -0.00014 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 33.6148, coeff: 0.13646 },
-        { nStar: 2, zeta: 22.3397, coeff: 0.86508 },
-        { nStar: 3, zeta: 12.1379, coeff: 0.04592 },
-        { nStar: 3, zeta: 10.6015, coeff: -0.03121 },
-        { nStar: 4, zeta: 7.18478, coeff: 0.0022 },
-        { nStar: 4, zeta: 4.88471, coeff: -0.0007 },
-        { nStar: 5, zeta: 2.97927, coeff: 0.00013 },
-        { nStar: 5, zeta: 1.87617, coeff: -6e-05 },
-        { nStar: 5, zeta: 1.22654, coeff: 2e-05 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 53.3036, coeff: 0.00798 },
-        { nStar: 1, zeta: 36.7309, coeff: 0.22599 },
-        { nStar: 2, zeta: 26.3294, coeff: 0.51512 },
-        { nStar: 2, zeta: 22.9952, coeff: -1.24602 },
-        { nStar: 3, zeta: 15.6809, coeff: -0.06539 },
-        { nStar: 3, zeta: 11.8149, coeff: 1.24125 },
-        { nStar: 4, zeta: 7.00022, coeff: 0.04294 },
-        { nStar: 4, zeta: 5.0651, coeff: -0.01459 },
-        { nStar: 5, zeta: 3.35991, coeff: 0.00416 },
-        { nStar: 5, zeta: 2.24531, coeff: -0.00243 },
-        { nStar: 5, zeta: 1.56178, coeff: 0.00082 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 33.6148, coeff: 0.02892 },
-        { nStar: 2, zeta: 22.3397, coeff: 0.492 },
-        { nStar: 3, zeta: 12.1379, coeff: -0.73999 },
-        { nStar: 3, zeta: 10.6015, coeff: -0.36918 },
-        { nStar: 4, zeta: 7.18478, coeff: -0.04487 },
-        { nStar: 4, zeta: 4.88471, coeff: 0.01084 },
-        { nStar: 5, zeta: 2.97927, coeff: -0.00316 },
-        { nStar: 5, zeta: 1.87617, coeff: 0.00195 },
-        { nStar: 5, zeta: 1.22654, coeff: -0.00072 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 19.0107, coeff: -0.20691 },
-        { nStar: 3, zeta: 11.074, coeff: -0.80067 },
-        { nStar: 4, zeta: 6.78484, coeff: -0.06239 },
-        { nStar: 4, zeta: 4.32877, coeff: 0.0173 },
-        { nStar: 4, zeta: 2.71371, coeff: -0.00457 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 53.3036, coeff: -0.00145 },
-        { nStar: 1, zeta: 36.7309, coeff: -0.10429 },
-        { nStar: 2, zeta: 26.3294, coeff: -0.23842 },
-        { nStar: 2, zeta: 22.9952, coeff: 0.57522 },
-        { nStar: 3, zeta: 15.6809, coeff: 0.14987 },
-        { nStar: 3, zeta: 11.8149, coeff: -0.89185 },
-        { nStar: 4, zeta: 7.00022, coeff: 0.74034 },
-        { nStar: 4, zeta: 5.0651, coeff: 0.4787 },
-        { nStar: 5, zeta: 3.35991, coeff: 0.00727 },
-        { nStar: 5, zeta: 2.24531, coeff: -0.00069 },
-        { nStar: 5, zeta: 1.56178, coeff: 0.0004 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 33.6148, coeff: -0.00925 },
-        { nStar: 2, zeta: 22.3397, coeff: -0.22003 },
-        { nStar: 3, zeta: 12.1379, coeff: 0.23812 },
-        { nStar: 3, zeta: 10.6015, coeff: 0.42691 },
-        { nStar: 4, zeta: 7.18478, coeff: -0.58604 },
-        { nStar: 4, zeta: 4.88471, coeff: -0.62258 },
-        { nStar: 5, zeta: 2.97927, coeff: -0.0204 },
-        { nStar: 5, zeta: 1.87617, coeff: 0.00313 },
-        { nStar: 5, zeta: 1.22654, coeff: -0.00118 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 19.0107, coeff: -0.08333 },
-        { nStar: 3, zeta: 11.074, coeff: -0.32504 },
-        { nStar: 4, zeta: 6.78484, coeff: 0.42109 },
-        { nStar: 4, zeta: 4.32877, coeff: 0.60165 },
-        { nStar: 4, zeta: 2.71371, coeff: 0.13026 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 53.3036, coeff: 2e-05 },
-        { nStar: 1, zeta: 36.7309, coeff: 0.03485 },
-        { nStar: 2, zeta: 26.3294, coeff: 0.0729 },
-        { nStar: 2, zeta: 22.9952, coeff: -0.18253 },
-        { nStar: 3, zeta: 15.6809, coeff: -0.06577 },
-        { nStar: 3, zeta: 11.8149, coeff: 0.32633 },
-        { nStar: 4, zeta: 7.00022, coeff: -0.3417 },
-        { nStar: 4, zeta: 5.0651, coeff: -0.13619 },
-        { nStar: 5, zeta: 3.35991, coeff: 0.49466 },
-        { nStar: 5, zeta: 2.24531, coeff: 0.50924 },
-        { nStar: 5, zeta: 1.56178, coeff: 0.14903 },
-      ],
-      '5p': [
-        { nStar: 2, zeta: 33.6148, coeff: -0.00256 },
-        { nStar: 2, zeta: 22.3397, coeff: -0.06108 },
-        { nStar: 3, zeta: 12.1379, coeff: 0.05069 },
-        { nStar: 3, zeta: 10.6015, coeff: 0.14705 },
-        { nStar: 4, zeta: 7.18478, coeff: -0.2206 },
-        { nStar: 4, zeta: 4.88471, coeff: -0.16305 },
-        { nStar: 5, zeta: 2.97927, coeff: 0.43602 },
-        { nStar: 5, zeta: 1.87617, coeff: 0.54689 },
-        { nStar: 5, zeta: 1.22654, coeff: 0.17212 },
-      ],
-    }
-  },
-  'I': {
-    Z: 53,
-    name: 'Iodine',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(2)4D(10)5P(5)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 54.3639, coeff: 0.86126 },
-        { nStar: 1, zeta: 37.74, coeff: 0.15804 },
-        { nStar: 2, zeta: 27.6105, coeff: -0.06219 },
-        { nStar: 2, zeta: 23.543, coeff: 0.04662 },
-        { nStar: 3, zeta: 15.5878, coeff: -0.00954 },
-        { nStar: 3, zeta: 12.2591, coeff: 0.00584 },
-        { nStar: 4, zeta: 7.32866, coeff: -0.00164 },
-        { nStar: 4, zeta: 5.44922, coeff: 0.00118 },
-        { nStar: 5, zeta: 3.65514, coeff: -0.00046 },
-        { nStar: 5, zeta: 2.50677, coeff: 0.00029 },
-        { nStar: 5, zeta: 1.72722, coeff: -9e-05 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 54.3639, coeff: 0.01765 },
-        { nStar: 1, zeta: 37.74, coeff: 0.50429 },
-        { nStar: 2, zeta: 27.6105, coeff: 0.08968 },
-        { nStar: 2, zeta: 23.543, coeff: -1.2732 },
-        { nStar: 3, zeta: 15.5878, coeff: -0.06038 },
-        { nStar: 3, zeta: 12.2591, coeff: 0.02196 },
-        { nStar: 4, zeta: 7.32866, coeff: -0.00355 },
-        { nStar: 4, zeta: 5.44922, coeff: 0.00246 },
-        { nStar: 5, zeta: 3.65514, coeff: -0.00087 },
-        { nStar: 5, zeta: 2.50677, coeff: 0.00053 },
-        { nStar: 5, zeta: 1.72722, coeff: -0.00017 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 34.2315, coeff: 0.13634 },
-        { nStar: 2, zeta: 22.8172, coeff: 0.86504 },
-        { nStar: 3, zeta: 12.3433, coeff: 0.05825 },
-        { nStar: 3, zeta: 11.2099, coeff: -0.04344 },
-        { nStar: 4, zeta: 7.49817, coeff: 0.00182 },
-        { nStar: 4, zeta: 5.16592, coeff: -0.00052 },
-        { nStar: 5, zeta: 3.17551, coeff: 5e-05 },
-        { nStar: 5, zeta: 2.00372, coeff: -1e-05 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 54.3639, coeff: 0.00837 },
-        { nStar: 1, zeta: 37.74, coeff: 0.22392 },
-        { nStar: 2, zeta: 27.6105, coeff: 0.4359 },
-        { nStar: 2, zeta: 23.543, coeff: -1.15839 },
-        { nStar: 3, zeta: 15.5878, coeff: -0.15019 },
-        { nStar: 3, zeta: 12.2591, coeff: 1.31242 },
-        { nStar: 4, zeta: 7.32866, coeff: 0.05294 },
-        { nStar: 4, zeta: 5.44922, coeff: -0.0196 },
-        { nStar: 5, zeta: 3.65514, coeff: 0.00521 },
-        { nStar: 5, zeta: 2.50677, coeff: -0.00294 },
-        { nStar: 5, zeta: 1.72722, coeff: 0.00089 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 34.2315, coeff: 0.02843 },
-        { nStar: 2, zeta: 22.8172, coeff: 0.49543 },
-        { nStar: 3, zeta: 12.3433, coeff: -0.71406 },
-        { nStar: 3, zeta: 11.2099, coeff: -0.39019 },
-        { nStar: 4, zeta: 7.49817, coeff: -0.05302 },
-        { nStar: 4, zeta: 5.16592, coeff: 0.01321 },
-        { nStar: 5, zeta: 3.17551, coeff: -0.0036 },
-        { nStar: 5, zeta: 2.00372, coeff: 0.00216 },
-        { nStar: 5, zeta: 1.30484, coeff: -0.00077 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 19.6121, coeff: -0.19762 },
-        { nStar: 3, zeta: 11.4584, coeff: -0.80541 },
-        { nStar: 4, zeta: 7.12795, coeff: -0.06695 },
-        { nStar: 4, zeta: 4.64351, coeff: 0.01855 },
-        { nStar: 4, zeta: 2.93955, coeff: -0.00465 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 54.3639, coeff: 0.00162 },
-        { nStar: 1, zeta: 37.74, coeff: 0.10461 },
-        { nStar: 2, zeta: 27.6105, coeff: 0.20465 },
-        { nStar: 2, zeta: 23.543, coeff: -0.54189 },
-        { nStar: 3, zeta: 15.5878, coeff: -0.22857 },
-        { nStar: 3, zeta: 12.2591, coeff: 0.97929 },
-        { nStar: 4, zeta: 7.32866, coeff: -0.66288 },
-        { nStar: 4, zeta: 5.44922, coeff: -0.55328 },
-        { nStar: 5, zeta: 3.65514, coeff: -0.01661 },
-        { nStar: 5, zeta: 2.50677, coeff: 0.00329 },
-        { nStar: 5, zeta: 1.72722, coeff: -0.00117 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 34.2315, coeff: -0.00924 },
-        { nStar: 2, zeta: 22.8172, coeff: -0.22471 },
-        { nStar: 3, zeta: 12.3433, coeff: 0.1385 },
-        { nStar: 3, zeta: 11.2099, coeff: 0.538 },
-        { nStar: 4, zeta: 7.49817, coeff: -0.55045 },
-        { nStar: 4, zeta: 5.16592, coeff: -0.65717 },
-        { nStar: 5, zeta: 3.17551, coeff: -0.02336 },
-        { nStar: 5, zeta: 2.00372, coeff: 0.0033 },
-        { nStar: 5, zeta: 1.30484, coeff: -0.00149 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 19.6121, coeff: -0.08133 },
-        { nStar: 3, zeta: 11.4584, coeff: -0.33938 },
-        { nStar: 4, zeta: 7.12795, coeff: 0.39632 },
-        { nStar: 4, zeta: 4.64351, coeff: 0.61735 },
-        { nStar: 4, zeta: 2.93955, coeff: 0.13703 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 54.3639, coeff: 0.00021 },
-        { nStar: 1, zeta: 37.74, coeff: 0.03616 },
-        { nStar: 2, zeta: 27.6105, coeff: 0.06726 },
-        { nStar: 2, zeta: 23.543, coeff: -0.18201 },
-        { nStar: 3, zeta: 15.5878, coeff: -0.09791 },
-        { nStar: 3, zeta: 12.2591, coeff: 0.3734 },
-        { nStar: 4, zeta: 7.32866, coeff: -0.31712 },
-        { nStar: 4, zeta: 5.44922, coeff: -0.1978 },
-        { nStar: 5, zeta: 3.65514, coeff: 0.44715 },
-        { nStar: 5, zeta: 2.50677, coeff: 0.5323 },
-        { nStar: 5, zeta: 1.72722, coeff: 0.18598 },
-      ],
-      '5p': [
-        { nStar: 2, zeta: 34.2315, coeff: -0.00269 },
-        { nStar: 2, zeta: 22.8172, coeff: -0.0663 },
-        { nStar: 3, zeta: 12.3433, coeff: 0.01473 },
-        { nStar: 3, zeta: 11.2099, coeff: 0.1992 },
-        { nStar: 4, zeta: 7.49817, coeff: -0.22156 },
-        { nStar: 4, zeta: 5.16592, coeff: -0.19441 },
-        { nStar: 5, zeta: 3.17551, coeff: 0.45661 },
-        { nStar: 5, zeta: 2.00372, coeff: 0.54348 },
-        { nStar: 5, zeta: 1.30484, coeff: 0.16224 },
-      ],
-    }
-  },
-  'Xe': {
-    Z: 54,
-    name: 'Xenon',
-    groundState: 'K(2)L(8)M(18)4S(2)4P(6)5S(2)4D(10)5P(6)',
-    orbitals: {
-      '1s': [
-        { nStar: 1, zeta: 55.3072, coeff: 0.87059 },
-        { nStar: 1, zeta: 37.8073, coeff: 0.14926 },
-        { nStar: 2, zeta: 27.9297, coeff: -0.06259 },
-        { nStar: 2, zeta: 23.6921, coeff: 0.04643 },
-        { nStar: 3, zeta: 15.0353, coeff: -0.01383 },
-        { nStar: 3, zeta: 12.6723, coeff: 0.0103 },
-        { nStar: 4, zeta: 7.60195, coeff: -0.00254 },
-        { nStar: 4, zeta: 5.73899, coeff: 0.00201 },
-        { nStar: 5, zeta: 4.17583, coeff: -0.00085 },
-        { nStar: 5, zeta: 2.99772, coeff: 0.00045 },
-        { nStar: 5, zeta: 1.98532, coeff: -0.00011 },
-      ],
-      '2s': [
-        { nStar: 1, zeta: 55.3072, coeff: 0.02107 },
-        { nStar: 1, zeta: 37.8073, coeff: 0.51209 },
-        { nStar: 2, zeta: 27.9297, coeff: -0.01873 },
-        { nStar: 2, zeta: 23.6921, coeff: -1.18386 },
-        { nStar: 3, zeta: 15.0353, coeff: -0.06502 },
-        { nStar: 3, zeta: 12.6723, coeff: 0.03432 },
-        { nStar: 4, zeta: 7.60195, coeff: -0.00469 },
-        { nStar: 4, zeta: 5.73899, coeff: 0.00352 },
-        { nStar: 5, zeta: 4.17583, coeff: -0.00136 },
-        { nStar: 5, zeta: 2.99772, coeff: 0.00069 },
-        { nStar: 5, zeta: 1.98532, coeff: -0.00017 },
-      ],
-      '2p': [
-        { nStar: 2, zeta: 34.8844, coeff: 0.13527 },
-        { nStar: 2, zeta: 23.3047, coeff: 0.86575 },
-        { nStar: 3, zeta: 12.5412, coeff: 0.11362 },
-        { nStar: 3, zeta: 12.023, coeff: -0.09833 },
-        { nStar: 4, zeta: 7.7239, coeff: 0.00123 },
-        { nStar: 4, zeta: 5.40562, coeff: -0.00028 },
-        { nStar: 5, zeta: 3.32661, coeff: -3e-05 },
-        { nStar: 5, zeta: 2.09341, coeff: 4e-05 },
-        { nStar: 5, zeta: 1.36686, coeff: -2e-05 },
-      ],
-      '3s': [
-        { nStar: 1, zeta: 55.3072, coeff: -0.00868 },
-        { nStar: 1, zeta: 37.8073, coeff: -0.23044 },
-        { nStar: 2, zeta: 27.9297, coeff: -0.38195 },
-        { nStar: 2, zeta: 23.6921, coeff: 1.12481 },
-        { nStar: 3, zeta: 15.0353, coeff: 0.23955 },
-        { nStar: 3, zeta: 12.6723, coeff: -1.41092 },
-        { nStar: 4, zeta: 7.60195, coeff: -0.06111 },
-        { nStar: 4, zeta: 5.73899, coeff: 0.02591 },
-        { nStar: 5, zeta: 4.17583, coeff: -0.00759 },
-        { nStar: 5, zeta: 2.99772, coeff: 0.00353 },
-        { nStar: 5, zeta: 1.98532, coeff: -0.00076 },
-      ],
-      '3p': [
-        { nStar: 2, zeta: 34.8844, coeff: 0.02765 },
-        { nStar: 2, zeta: 23.3047, coeff: 0.49883 },
-        { nStar: 3, zeta: 12.5412, coeff: -0.48416 },
-        { nStar: 3, zeta: 12.023, coeff: -0.61656 },
-        { nStar: 4, zeta: 7.7239, coeff: -0.05986 },
-        { nStar: 4, zeta: 5.40562, coeff: 0.01605 },
-        { nStar: 5, zeta: 3.32661, coeff: -0.00407 },
-        { nStar: 5, zeta: 2.09341, coeff: 0.00238 },
-        { nStar: 5, zeta: 1.36686, coeff: -0.00087 },
-      ],
-      '3d': [
-        { nStar: 3, zeta: 20.0824, coeff: -0.19493 },
-        { nStar: 3, zeta: 11.786, coeff: -0.80743 },
-        { nStar: 4, zeta: 7.30842, coeff: -0.0683 },
-        { nStar: 4, zeta: 4.884, coeff: 0.02129 },
-        { nStar: 4, zeta: 3.1985, coeff: -0.00536 },
-      ],
-      '4s': [
-        { nStar: 1, zeta: 55.3072, coeff: 0.00237 },
-        { nStar: 1, zeta: 37.8073, coeff: 0.10784 },
-        { nStar: 2, zeta: 27.9297, coeff: 0.19149 },
-        { nStar: 2, zeta: 23.6921, coeff: -0.54498 },
-        { nStar: 3, zeta: 15.0353, coeff: -0.35456 },
-        { nStar: 3, zeta: 12.6723, coeff: 1.13006 },
-        { nStar: 4, zeta: 7.60195, coeff: -0.63451 },
-        { nStar: 4, zeta: 5.73899, coeff: -0.58291 },
-        { nStar: 5, zeta: 4.17583, coeff: -0.02272 },
-        { nStar: 5, zeta: 2.99772, coeff: 0.00218 },
-        { nStar: 5, zeta: 1.98532, coeff: -0.00092 },
-      ],
-      '4p': [
-        { nStar: 2, zeta: 34.8844, coeff: -0.00908 },
-        { nStar: 2, zeta: 23.3047, coeff: -0.22945 },
-        { nStar: 3, zeta: 12.5412, coeff: -0.34216 },
-        { nStar: 3, zeta: 12.023, coeff: 1.02476 },
-        { nStar: 4, zeta: 7.7239, coeff: -0.53369 },
-        { nStar: 4, zeta: 5.40562, coeff: -0.67016 },
-        { nStar: 5, zeta: 3.32661, coeff: -0.02313 },
-        { nStar: 5, zeta: 2.09341, coeff: 0.00433 },
-        { nStar: 5, zeta: 1.36686, coeff: -0.00136 },
-      ],
-      '4d': [
-        { nStar: 3, zeta: 20.0824, coeff: -0.08265 },
-        { nStar: 3, zeta: 11.786, coeff: -0.3486 },
-        { nStar: 4, zeta: 7.30842, coeff: 0.40928 },
-        { nStar: 4, zeta: 4.884, coeff: 0.59391 },
-        { nStar: 4, zeta: 3.1985, coeff: 0.14481 },
-      ],
-      '5s': [
-        { nStar: 1, zeta: 55.3072, coeff: 0.0007 },
-        { nStar: 1, zeta: 37.8073, coeff: 0.03815 },
-        { nStar: 2, zeta: 27.9297, coeff: 0.06768 },
-        { nStar: 2, zeta: 23.6921, coeff: -0.19267 },
-        { nStar: 3, zeta: 15.0353, coeff: -0.15274 },
-        { nStar: 3, zeta: 12.6723, coeff: 0.44776 },
-        { nStar: 4, zeta: 7.60195, coeff: -0.30543 },
-        { nStar: 4, zeta: 5.73899, coeff: -0.24664 },
-        { nStar: 5, zeta: 4.17583, coeff: 0.27675 },
-        { nStar: 5, zeta: 2.99772, coeff: 0.59862 },
-        { nStar: 5, zeta: 1.98532, coeff: 0.30408 },
-      ],
-      '5p': [
-        { nStar: 2, zeta: 34.8844, coeff: -0.00277 },
-        { nStar: 2, zeta: 23.3047, coeff: -0.07054 },
-        { nStar: 3, zeta: 12.5412, coeff: -0.18148 },
-        { nStar: 3, zeta: 12.023, coeff: 0.40692 },
-        { nStar: 4, zeta: 7.7239, coeff: -0.22741 },
-        { nStar: 4, zeta: 5.40562, coeff: -0.21144 },
-        { nStar: 5, zeta: 3.32661, coeff: 0.49354 },
-        { nStar: 5, zeta: 2.09341, coeff: 0.53529 },
-        { nStar: 5, zeta: 1.36686, coeff: 0.13666 },
-      ],
-    }
-  },
-  'Au_NR': {
-    Z: 79,
-    name: 'Gold (Non-Relativistic)',
-    groundState: '[Xe] 4f14 5d10 6s1',
-    orbitals: {
-      '1s': [{ nStar: 1, zeta: 78.5, coeff: 1.0 }],
-      '6s': [
-        { nStar: 1, zeta: 78.52, coeff: -0.012 },
-        { nStar: 4, zeta: 12.8, coeff: 0.15 },
-        { nStar: 5, zeta: 5.5, coeff: -0.45 },
-        { nStar: 6, zeta: 2.1, coeff: 0.98 }
-      ],
-      '5d': [
-        { nStar: 3, zeta: 28.5, coeff: 0.08 },
-        { nStar: 4, zeta: 12.5, coeff: -0.35 },
-        { nStar: 5, zeta: 3.8, coeff: 1.05 }
+  "H": {
+    "Z": 1,
+    "name": "H",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 1.0000532541904434,
+          "coeff": 1.0
+        }
       ]
+    },
+    "E_tot": -0.5,
+    "groundState": "1s\u00b9",
+    "energies": {
+      "1s": -0.5
     }
   },
-  'Au_R': {
-    Z: 79,
-    name: 'Gold (Relativistic)',
-    note: 'Relativistic contraction of s orbitals and expansion of d orbitals.',
-    groundState: '[Xe] 4f14 5d10 6s1',
-    orbitals: {
-      '1s': [{ nStar: 1, zeta: 96.0, coeff: 1.0 }], // Relativistic contraction ~22%
-      '6s': [
-        { nStar: 1, zeta: 96.0, coeff: -0.015 },
-        { nStar: 4, zeta: 16.5, coeff: 0.18 },
-        { nStar: 5, zeta: 7.2, coeff: -0.52 },
-        { nStar: 6, zeta: 2.8, coeff: 1.15 } // Higher zeta -> peak closer to nucleus
-      ],
-      '5d': [
-        { nStar: 3, zeta: 26.5, coeff: 0.10 },
-        { nStar: 4, zeta: 11.2, coeff: -0.38 },
-        { nStar: 5, zeta: 3.2, coeff: 1.20 } // Lower zeta -> peak further from nucleus
+  "He": {
+    "Z": 2,
+    "name": "He",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 6.438865513242302,
+          "coeff": 0.0008103
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.385077039750975,
+          "coeff": 0.0798826
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.178370004614139,
+          "coeff": 0.180161
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.4553870053179185,
+          "coeff": 0.7407925
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3552466748849417,
+          "coeff": 0.0272015
+        }
       ]
+    },
+    "E_tot": -2.861679996,
+    "energies": {
+      "1s": -0.9179556
     }
   },
-};
-
-// Helper functions
-globalScope.getOrbitalData = function(symbol, orbitalName) {
-    const atom = globalScope.SlaterBasis[symbol];
-    if (!atom || !atom.orbitals[orbitalName]) return null;
-    return atom.orbitals[orbitalName];
+  "Li": {
+    "Z": 3,
+    "name": "Li",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 10.340627871973044,
+          "coeff": 0.001427
+        },
+        {
+          "nStar": 1,
+          "zeta": 5.55613584584048,
+          "coeff": -0.0514718
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.4549918469634004,
+          "coeff": -0.147164
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.4176036660306077,
+          "coeff": -0.8105589
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5565179802179525,
+          "coeff": -0.0077788
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.8903817262972132,
+          "coeff": 0.0004098
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6377076291557396,
+          "coeff": -0.0005029
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6269144563961122,
+          "coeff": -0.0002691
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 10.340627871973044,
+          "coeff": 0.0002728
+        },
+        {
+          "nStar": 1,
+          "zeta": 5.55613584584048,
+          "coeff": -0.0059858
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.4549918469634004,
+          "coeff": -0.0400549
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.4176036660306077,
+          "coeff": -0.0273618
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5565179802179525,
+          "coeff": -0.1448297
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.8903817262972132,
+          "coeff": -0.605339
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6377076291557396,
+          "coeff": 0.5955827
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6269144563961122,
+          "coeff": 0.9979831
+        }
+      ]
+    },
+    "E_tot": -7.432726929,
+    "energies": {
+      "1s": -2.4777413,
+      "2s": -0.1963228
+    }
+  },
+  "Be": {
+    "Z": 4,
+    "name": "Be",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 12.694316833070419,
+          "coeff": -0.0024917
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.112839314928898,
+          "coeff": 0.0314015
+        },
+        {
+          "nStar": 1,
+          "zeta": 5.156949833026227,
+          "coeff": 0.0849694
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.475428140099609,
+          "coeff": 0.8685562
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.3517607511305467,
+          "coeff": 0.0315855
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.4076283298450796,
+          "coeff": -0.0035284
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8223206350034835,
+          "coeff": -0.0004149
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7871436634613259,
+          "coeff": 0.0012299
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 12.694316833070419,
+          "coeff": 0.0004442
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.112839314928898,
+          "coeff": -0.003099
+        },
+        {
+          "nStar": 1,
+          "zeta": 5.156949833026227,
+          "coeff": -0.0367056
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.475428140099609,
+          "coeff": 0.013891
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.3517607511305467,
+          "coeff": -0.3598016
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.4076283298450796,
+          "coeff": -0.2563459
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8223206350034835,
+          "coeff": 0.2434108
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7871436634613259,
+          "coeff": 1.1150995
+        }
+      ]
+    },
+    "E_tot": -14.573023167,
+    "energies": {
+      "1s": -4.7326699,
+      "2s": -0.3092695
+    }
+  },
+  "B": {
+    "Z": 5,
+    "name": "B",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 16.130779646667715,
+          "coeff": -0.0005529
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.638230653223054,
+          "coeff": -0.2350117
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.14397837928105,
+          "coeff": -0.1508924
+        },
+        {
+          "nStar": 1,
+          "zeta": 4.1731736787829155,
+          "coeff": -0.6421165
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.491919452158648,
+          "coeff": -0.0011507
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.6447125793188218,
+          "coeff": -0.0008611
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9930199914919406,
+          "coeff": 0.0004712
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7882674076808692,
+          "coeff": -0.0002323
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 16.130779646667715,
+          "coeff": -0.0001239
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.638230653223054,
+          "coeff": 0.0122241
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.14397837928105,
+          "coeff": 0.0355967
+        },
+        {
+          "nStar": 1,
+          "zeta": 4.1731736787829155,
+          "coeff": -0.1987214
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.491919452158648,
+          "coeff": -0.5378967
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.6447125793188218,
+          "coeff": -0.1199728
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9930199914919406,
+          "coeff": 1.4382402
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7882674076808692,
+          "coeff": 0.0299258
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 3,
+          "zeta": 12.15154715866277,
+          "coeff": 5.99e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.515836143658064,
+          "coeff": 0.0113751
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.9355373173292594,
+          "coeff": 0.0095096
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.037106967636565,
+          "coeff": 0.1647518
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3028164184765094,
+          "coeff": 0.336786
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.920659659349319,
+          "coeff": 0.4099162
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7882674076808692,
+          "coeff": 0.1329396
+        }
+      ]
+    },
+    "E_tot": -24.529060725,
+    "energies": {
+      "1s": -7.6953347,
+      "2s": -0.4947058,
+      "2p": -0.3098564
+    }
+  },
+  "C": {
+    "Z": 6,
+    "name": "C",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 18.926728461424084,
+          "coeff": -0.000549
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.256532223668358,
+          "coeff": -0.2240196
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.53195211950939,
+          "coeff": -0.1458182
+        },
+        {
+          "nStar": 1,
+          "zeta": 5.110164434418386,
+          "coeff": -0.6531614
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.282923524488491,
+          "coeff": -0.0040799
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.274603525880348,
+          "coeff": -0.0011082
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.19525436089652,
+          "coeff": -0.0002033
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9327451178763646,
+          "coeff": -6.58e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 18.926728461424084,
+          "coeff": -0.0001371
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.256532223668358,
+          "coeff": 0.0125129
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.53195211950939,
+          "coeff": 0.0314257
+        },
+        {
+          "nStar": 1,
+          "zeta": 5.110164434418386,
+          "coeff": -0.1900434
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.282923524488491,
+          "coeff": -0.4731413
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.274603525880348,
+          "coeff": -0.0222123
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.19525436089652,
+          "coeff": 1.2890026
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9327451178763646,
+          "coeff": 0.0176521
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 3,
+          "zeta": 15.112597586540515,
+          "coeff": 5.52e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.578286896771836,
+          "coeff": 0.0137471
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.738193347705957,
+          "coeff": 0.0162926
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.4992852517053787,
+          "coeff": 0.2011747
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.6050098822126462,
+          "coeff": 0.3651183
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.1254725858308048,
+          "coeff": 0.3811596
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9327451178763646,
+          "coeff": 0.0951923
+        }
+      ]
+    },
+    "E_tot": -37.68861896,
+    "energies": {
+      "1s": -11.3255187,
+      "2s": -0.7056273,
+      "2p": -0.4333405
+    }
+  },
+  "N": {
+    "Z": 7,
+    "name": "N",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 21.722959072815637,
+          "coeff": -0.0005456
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.98664362912447,
+          "coeff": -0.1970483
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.005007914605883,
+          "coeff": -0.1281924
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.101243073457598,
+          "coeff": -0.6885659
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.9592880351021464,
+          "coeff": -0.0102852
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.655546160079267,
+          "coeff": -0.0012032
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.4102006596728973,
+          "coeff": -0.0003913
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.0682343614112477,
+          "coeff": -2.91e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 21.722959072815637,
+          "coeff": -0.0001302
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.98664362912447,
+          "coeff": 0.0186923
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.005007914605883,
+          "coeff": 0.033713
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.101243073457598,
+          "coeff": -0.2066322
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.9592880351021464,
+          "coeff": -0.4498099
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.655546160079267,
+          "coeff": 0.0126996
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.4102006596728973,
+          "coeff": 1.2313602
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.0682343614112477,
+          "coeff": 0.0261302
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 3,
+          "zeta": 17.63353447023703,
+          "coeff": 5.33e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.604418333277089,
+          "coeff": 0.0160353
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.5742028587953545,
+          "coeff": 0.022191
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.940606973928629,
+          "coeff": 0.2314394
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.8790600621893156,
+          "coeff": 0.3844061
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3097224803141967,
+          "coeff": 0.3515842
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.0682343614112477,
+          "coeff": 0.0723077
+        }
+      ]
+    },
+    "E_tot": -54.400934199,
+    "energies": {
+      "1s": -15.6290601,
+      "2s": -0.9453239,
+      "2p": -0.5675889
+    }
+  },
+  "O": {
+    "Z": 8,
+    "name": "O",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 25.06110843016485,
+          "coeff": -0.0004756
+        },
+        {
+          "nStar": 1,
+          "zeta": 12.597693029984107,
+          "coeff": -0.1852813
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.392514590688382,
+          "coeff": -0.1195096
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.095371641677337,
+          "coeff": -0.6980503
+        },
+        {
+          "nStar": 1,
+          "zeta": 4.821076647169494,
+          "coeff": -0.0198704
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.7954852561031607,
+          "coeff": -0.0014337
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.6117600178699951,
+          "coeff": -5.56e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.1280384528408671,
+          "coeff": -0.000118
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 25.06110843016485,
+          "coeff": -0.0001236
+        },
+        {
+          "nStar": 1,
+          "zeta": 12.597693029984107,
+          "coeff": 0.0164417
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.392514590688382,
+          "coeff": 0.0288443
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.095371641677337,
+          "coeff": -0.17934
+        },
+        {
+          "nStar": 1,
+          "zeta": 4.821076647169494,
+          "coeff": -0.438445
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.7954852561031607,
+          "coeff": 0.075241
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.6117600178699951,
+          "coeff": 1.1524847
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.1280384528408671,
+          "coeff": 0.014255
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 3,
+          "zeta": 20.868120363328323,
+          "coeff": 4.81e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.690624401380429,
+          "coeff": 0.0171803
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.449906841681357,
+          "coeff": 0.026801
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.4138286239069786,
+          "coeff": 0.2528558
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.1426683996614386,
+          "coeff": 0.385326
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.43037484146389,
+          "coeff": 0.343352
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.1280384528408671,
+          "coeff": 0.0652167
+        }
+      ]
+    },
+    "E_tot": -74.809398459,
+    "energies": {
+      "1s": -20.668657,
+      "2s": -1.2443146,
+      "2p": -0.6319062
+    }
+  },
+  "F": {
+    "Z": 9,
+    "name": "F",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 27.76736864950323,
+          "coeff": -0.0004697
+        },
+        {
+          "nStar": 1,
+          "zeta": 14.353001659238767,
+          "coeff": -0.1659861
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.884256071457942,
+          "coeff": -0.1073798
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.115685872554561,
+          "coeff": -0.7181088
+        },
+        {
+          "nStar": 1,
+          "zeta": 5.657854361111007,
+          "coeff": -0.0291976
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.195883997308395,
+          "coeff": -0.0015668
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8201348965503736,
+          "coeff": -0.0001671
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.213553492755468,
+          "coeff": -0.0001024
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 27.76736864950323,
+          "coeff": -0.0001318
+        },
+        {
+          "nStar": 1,
+          "zeta": 14.353001659238767,
+          "coeff": 0.0120793
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.884256071457942,
+          "coeff": 0.0223256
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.115685872554561,
+          "coeff": -0.1484346
+        },
+        {
+          "nStar": 1,
+          "zeta": 5.657854361111007,
+          "coeff": -0.4452401
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.195883997308395,
+          "coeff": 0.1053716
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8201348965503736,
+          "coeff": 1.1104016
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.213553492755468,
+          "coeff": 0.0133407
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 3,
+          "zeta": 23.03896434081142,
+          "coeff": 4.74e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.726766040860548,
+          "coeff": 0.0187577
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.315701251110651,
+          "coeff": 0.0309393
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.8627564581202,
+          "coeff": 0.2700273
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.3954193051467874,
+          "coeff": 0.3918133
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.5668463720308068,
+          "coeff": 0.3293205
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.213553492755468,
+          "coeff": 0.0568617
+        }
+      ]
+    },
+    "E_tot": -99.409349369,
+    "energies": {
+      "1s": -26.38276,
+      "2s": -1.5725347,
+      "2p": -0.7300174
+    }
+  },
+  "Ne": {
+    "Z": 10,
+    "name": "Ne",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 29.370822608922197,
+          "coeff": -0.0005654
+        },
+        {
+          "nStar": 1,
+          "zeta": 16.442040090698235,
+          "coeff": -0.1341233
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.588851474829884,
+          "coeff": -0.0891954
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.193857536770114,
+          "coeff": -0.7527202
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.526422081644572,
+          "coeff": -0.0417988
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.593354097318837,
+          "coeff": -0.0017244
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.02694676609678,
+          "coeff": -0.0002064
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.3111369820340746,
+          "coeff": -0.0001014
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 29.370822608922197,
+          "coeff": -0.0001682
+        },
+        {
+          "nStar": 1,
+          "zeta": 16.442040090698235,
+          "coeff": 0.0046073
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.588851474829884,
+          "coeff": 0.01312
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.193857536770114,
+          "coeff": -0.1044881
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.526422081644572,
+          "coeff": -0.4632619
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.593354097318837,
+          "coeff": 0.1258193
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.02694676609678,
+          "coeff": 1.0809135
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.3111369820340746,
+          "coeff": 0.0127644
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 3,
+          "zeta": 25.868974794957534,
+          "coeff": 4.09e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.731992312806044,
+          "coeff": 0.0203038
+        },
+        {
+          "nStar": 3,
+          "zeta": 8.168065052840804,
+          "coeff": 0.0340866
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.31858706108994,
+          "coeff": 0.2801866
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.6628399836172636,
+          "coeff": 0.3958489
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.719593066010125,
+          "coeff": 0.3203928
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3111369820340746,
+          "coeff": 0.0510413
+        }
+      ]
+    },
+    "E_tot": -128.547098079,
+    "energies": {
+      "1s": -32.7724425,
+      "2s": -1.9303907,
+      "2p": -0.8504095
+    }
+  },
+  "Na": {
+    "Z": 11,
+    "name": "Na",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 33.47099145172992,
+          "coeff": 0.0004501
+        },
+        {
+          "nStar": 1,
+          "zeta": 17.705507915898114,
+          "coeff": 0.1721192
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.807234138339668,
+          "coeff": 0.1153891
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.908899138490925,
+          "coeff": 0.7194672
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.559314377466191,
+          "coeff": 0.0130293
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.197321493579822,
+          "coeff": 0.0021183
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.4894958521901223,
+          "coeff": 0.0011034
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.1045410149341277,
+          "coeff": -5.75e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6241285183737162,
+          "coeff": -1.67e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6074077797338644,
+          "coeff": 4e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 33.47099145172992,
+          "coeff": -0.0001077
+        },
+        {
+          "nStar": 1,
+          "zeta": 17.705507915898114,
+          "coeff": 0.0260931
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.807234138339668,
+          "coeff": 0.0324851
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.908899138490925,
+          "coeff": -0.2370856
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.559314377466191,
+          "coeff": -0.5048822
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.197321493579822,
+          "coeff": -0.0246135
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.4894958521901223,
+          "coeff": 1.339663
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.1045410149341277,
+          "coeff": 0.0054488
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6241285183737162,
+          "coeff": 0.0010882
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6074077797338644,
+          "coeff": -0.0022657
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 2,
+          "zeta": 33.47099145172992,
+          "coeff": 1.79e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 17.705507915898114,
+          "coeff": -0.0024656
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.807234138339668,
+          "coeff": -0.0035309
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.908899138490925,
+          "coeff": 0.0269246
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.559314377466191,
+          "coeff": 0.083311
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.197321493579822,
+          "coeff": -0.007746
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.4894958521901223,
+          "coeff": -0.126339
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.1045410149341277,
+          "coeff": -0.3585874
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6241285183737162,
+          "coeff": 0.8979831
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6074077797338644,
+          "coeff": 0.3366263
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 3,
+          "zeta": 28.919973358466464,
+          "coeff": 4.06e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.584163560562436,
+          "coeff": 0.0261868
+        },
+        {
+          "nStar": 3,
+          "zeta": 8.875704839981474,
+          "coeff": 0.0469221
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.594608967307398,
+          "coeff": 0.3344314
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.752181444186199,
+          "coeff": 0.4892686
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.9168701880233439,
+          "coeff": 0.1864531
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6074077797338644,
+          "coeff": 0.000635
+        }
+      ]
+    },
+    "E_tot": -161.85891151,
+    "energies": {
+      "1s": -40.4785011,
+      "2s": -2.7970265,
+      "3s": -0.1821026,
+      "2p": -1.5181403
+    }
+  },
+  "Mg": {
+    "Z": 12,
+    "name": "Mg",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 36.26634944164511,
+          "coeff": -0.000436
+        },
+        {
+          "nStar": 1,
+          "zeta": 19.34156791554931,
+          "coeff": -0.1729871
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.217780101262235,
+          "coeff": -0.1169158
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.856627739201732,
+          "coeff": -0.714436
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.914267144221557,
+          "coeff": -0.0148335
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.070525977312917,
+          "coeff": -0.0028713
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.9276014187378196,
+          "coeff": -0.0011717
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.7072656459932998,
+          "coeff": 6.26e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7558721752807387,
+          "coeff": 7.6e-06
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7169073856735455,
+          "coeff": -1.73e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 36.26634944164511,
+          "coeff": 0.0001304
+        },
+        {
+          "nStar": 1,
+          "zeta": 19.34156791554931,
+          "coeff": -0.0094505
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.217780101262235,
+          "coeff": -0.0167113
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.856627739201732,
+          "coeff": 0.1266857
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.914267144221557,
+          "coeff": 0.6252975
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.070525977312917,
+          "coeff": 0.1486317
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.9276014187378196,
+          "coeff": -1.472932
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.7072656459932998,
+          "coeff": -0.0053579
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7558721752807387,
+          "coeff": -0.0001472
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7169073856735455,
+          "coeff": 0.0003601
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 2,
+          "zeta": 36.26634944164511,
+          "coeff": 3.06e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 19.34156791554931,
+          "coeff": 0.0007143
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.217780101262235,
+          "coeff": -0.0009558
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.856627739201732,
+          "coeff": 0.0081759
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.914267144221557,
+          "coeff": 0.1267181
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.070525977312917,
+          "coeff": 0.0042013
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.9276014187378196,
+          "coeff": -0.0558535
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.7072656459932998,
+          "coeff": -0.6244636
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7558721752807387,
+          "coeff": 0.539053
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7169073856735455,
+          "coeff": 0.7823663
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 3,
+          "zeta": 32.32509614256555,
+          "coeff": 3.56e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.5919706874253,
+          "coeff": 0.0286249
+        },
+        {
+          "nStar": 3,
+          "zeta": 9.718687793732922,
+          "coeff": 0.0513208
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.0812117226320455,
+          "coeff": 0.3387086
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.0946120891355884,
+          "coeff": 0.5624952
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.1022000802713903,
+          "coeff": 0.0909855
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7169073856735455,
+          "coeff": 0.0006711
+        }
+      ]
+    },
+    "E_tot": -199.61463627,
+    "energies": {
+      "1s": -49.0317363,
+      "2s": -3.7677216,
+      "3s": -0.2530524,
+      "2p": -2.282226
+    }
+  },
+  "Al": {
+    "Z": 13,
+    "name": "Al",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 39.85475200069077,
+          "coeff": 0.0016984
+        },
+        {
+          "nStar": 1,
+          "zeta": 28.89482940830108,
+          "coeff": -0.0106334
+        },
+        {
+          "nStar": 1,
+          "zeta": 13.197832616487577,
+          "coeff": -0.9324788
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.34175690221379,
+          "coeff": -0.0712122
+        },
+        {
+          "nStar": 1,
+          "zeta": 5.8726195155647885,
+          "coeff": -0.0047377
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.430844289806005,
+          "coeff": -0.0037917
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.299979092293995,
+          "coeff": 0.0042404
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8421322301825658,
+          "coeff": -0.00034
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7135626924120184,
+          "coeff": -4.38e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6538826027024357,
+          "coeff": 8.58e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 39.85475200069077,
+          "coeff": -0.0006857
+        },
+        {
+          "nStar": 1,
+          "zeta": 28.89482940830108,
+          "coeff": 0.0030978
+        },
+        {
+          "nStar": 1,
+          "zeta": 13.197832616487577,
+          "coeff": 0.2903958
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.34175690221379,
+          "coeff": 0.1788086
+        },
+        {
+          "nStar": 1,
+          "zeta": 5.8726195155647885,
+          "coeff": 0.4039318
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.430844289806005,
+          "coeff": -0.1398263
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.299979092293995,
+          "coeff": -1.338816
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8421322301825658,
+          "coeff": -0.0020328
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7135626924120184,
+          "coeff": 0.0001916
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6538826027024357,
+          "coeff": -0.0005141
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 39.85475200069077,
+          "coeff": -0.0001786
+        },
+        {
+          "nStar": 1,
+          "zeta": 28.89482940830108,
+          "coeff": 0.0007977
+        },
+        {
+          "nStar": 1,
+          "zeta": 13.197832616487577,
+          "coeff": 0.0593803
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.34175690221379,
+          "coeff": 0.0376137
+        },
+        {
+          "nStar": 1,
+          "zeta": 5.8726195155647885,
+          "coeff": 0.4131777
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.430844289806005,
+          "coeff": 0.3590308
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.299979092293995,
+          "coeff": -0.8526617
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8421322301825658,
+          "coeff": -0.824561
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7135626924120184,
+          "coeff": -0.6786038
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6538826027024357,
+          "coeff": 2.1291109
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 33.21116518112174,
+          "coeff": -9.24e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 19.939238758991817,
+          "coeff": 0.0018114
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.985565847246328,
+          "coeff": 0.0035228
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.756701269603208,
+          "coeff": 0.1462357
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.098625977026639,
+          "coeff": 0.3034811
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.543574322433866,
+          "coeff": 0.5033633
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.605917903250548,
+          "coeff": 0.0995579
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.021495931103929,
+          "coeff": 0.0023526
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7094971042369189,
+          "coeff": -0.0008711
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.6538826027024357,
+          "coeff": 0.0002671
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 33.21116518112174,
+          "coeff": 1.8e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 19.939238758991817,
+          "coeff": -0.0003532
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.985565847246328,
+          "coeff": -0.0002071
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.756701269603208,
+          "coeff": -0.0259716
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.098625977026639,
+          "coeff": -0.0684621
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.543574322433866,
+          "coeff": -0.0224624
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.605917903250548,
+          "coeff": -0.1694494
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.021495931103929,
+          "coeff": 0.3150565
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7094971042369189,
+          "coeff": 0.745195
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.6538826027024357,
+          "coeff": 0.0230875
+        }
+      ]
+    },
+    "E_tot": -241.876707201,
+    "energies": {
+      "1s": -58.5010265,
+      "2s": -4.9106719,
+      "3s": -0.3934208,
+      "2p": -3.2183033,
+      "3p": -0.2099507
+    }
+  },
+  "Si": {
+    "Z": 14,
+    "name": "Si",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 41.17374632194236,
+          "coeff": 0.002733
+        },
+        {
+          "nStar": 1,
+          "zeta": 32.68696149547736,
+          "coeff": -0.0101378
+        },
+        {
+          "nStar": 1,
+          "zeta": 14.303787427014148,
+          "coeff": -0.9311367
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.345210236880831,
+          "coeff": -0.0745227
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.323949742463157,
+          "coeff": -0.0042718
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.93110828638837,
+          "coeff": -0.0034503
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.6246110276252037,
+          "coeff": 0.0037882
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.092071505747966,
+          "coeff": -0.0003537
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9852866988685272,
+          "coeff": 0.000118
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7789935626350786,
+          "coeff": -5.51e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 41.17374632194236,
+          "coeff": 0.0010884
+        },
+        {
+          "nStar": 1,
+          "zeta": 32.68696149547736,
+          "coeff": -0.0032055
+        },
+        {
+          "nStar": 1,
+          "zeta": 14.303787427014148,
+          "coeff": -0.291722
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.345210236880831,
+          "coeff": -0.1774382
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.323949742463157,
+          "coeff": -0.3282571
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.93110828638837,
+          "coeff": 0.3203634
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.6246110276252037,
+          "coeff": 1.0983224
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.092071505747966,
+          "coeff": 0.0013121
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9852866988685272,
+          "coeff": 0.0012855
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7789935626350786,
+          "coeff": -0.0003025
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 41.17374632194236,
+          "coeff": -0.0003241
+        },
+        {
+          "nStar": 1,
+          "zeta": 32.68696149547736,
+          "coeff": 0.0009458
+        },
+        {
+          "nStar": 1,
+          "zeta": 14.303787427014148,
+          "coeff": 0.0659012
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.345210236880831,
+          "coeff": 0.0416884
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.323949742463157,
+          "coeff": 0.6266028
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.93110828638837,
+          "coeff": 0.5323327
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.6246110276252037,
+          "coeff": -1.3386717
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.092071505747966,
+          "coeff": -0.8164418
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9852866988685272,
+          "coeff": 1.6628928
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7789935626350786,
+          "coeff": -0.0327784
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 36.36584093694604,
+          "coeff": -7.71e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 21.031158788017972,
+          "coeff": 0.0019986
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.196361396515954,
+          "coeff": 0.0027286
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.65996838929024,
+          "coeff": 0.1324846
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.794182420268827,
+          "coeff": 0.2686232
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.135099127457128,
+          "coeff": 0.5215984
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.089532268554009,
+          "coeff": 0.1236799
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.2656024285628367,
+          "coeff": 0.0026814
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8793328302107208,
+          "coeff": -0.0007868
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.7789935626350786,
+          "coeff": 0.0002433
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 36.36584093694604,
+          "coeff": 1.86e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 21.031158788017972,
+          "coeff": -0.0004618
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.196361396515954,
+          "coeff": 0.0010049
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.65996838929024,
+          "coeff": -0.0298094
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.794182420268827,
+          "coeff": -0.0732137
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.135099127457128,
+          "coeff": -0.0253179
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.089532268554009,
+          "coeff": -0.2177402
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.2656024285628367,
+          "coeff": 0.3957806
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8793328302107208,
+          "coeff": 0.689915
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.7789935626350786,
+          "coeff": 0.0234931
+        }
+      ]
+    },
+    "E_tot": -288.854362454,
+    "energies": {
+      "1s": -68.8124558,
+      "2s": -6.156538,
+      "3s": -0.5398424,
+      "2p": -4.2560538,
+      "3p": -0.2971145
+    }
+  },
+  "P": {
+    "Z": 15,
+    "name": "P",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 47.002833018712856,
+          "coeff": -0.0003053
+        },
+        {
+          "nStar": 1,
+          "zeta": 23.728691618527495,
+          "coeff": -0.2060038
+        },
+        {
+          "nStar": 2,
+          "zeta": 20.176042356777366,
+          "coeff": -0.1348631
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.48510800552471,
+          "coeff": 0.1932441
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.618571551530767,
+          "coeff": -0.8490745
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.2399411972904595,
+          "coeff": -0.0023024
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.7475318124896155,
+          "coeff": 0.0004126
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.6637184889992005,
+          "coeff": -0.0001709
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.1239780040287934,
+          "coeff": 7.88e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.8958425870323856,
+          "coeff": -3.52e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 47.002833018712856,
+          "coeff": -8.32e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 23.728691618527495,
+          "coeff": 0.0429022
+        },
+        {
+          "nStar": 2,
+          "zeta": 20.176042356777366,
+          "coeff": 0.0434537
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.48510800552471,
+          "coeff": 0.0832682
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.618571551530767,
+          "coeff": -0.522208
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.2399411972904595,
+          "coeff": 0.439844
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.7475318124896155,
+          "coeff": 0.639951
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.6637184889992005,
+          "coeff": 0.0289095
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.1239780040287934,
+          "coeff": 0.001093
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.8958425870323856,
+          "coeff": -7.57e-05
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 2,
+          "zeta": 47.002833018712856,
+          "coeff": 5.16e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 23.728691618527495,
+          "coeff": 0.0230913
+        },
+        {
+          "nStar": 2,
+          "zeta": 20.176042356777366,
+          "coeff": 0.0169021
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.48510800552471,
+          "coeff": 0.0630092
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.618571551530767,
+          "coeff": 0.1114601
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.2399411972904595,
+          "coeff": 0.1136681
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.7475318124896155,
+          "coeff": -0.1938357
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.6637184889992005,
+          "coeff": -1.0898485
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.1239780040287934,
+          "coeff": 1.6678177
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.8958425870323856,
+          "coeff": -0.0576567
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 37.72939177442879,
+          "coeff": -8.3e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 18.60299378919041,
+          "coeff": -0.003743
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.066517080645324,
+          "coeff": 0.1235617
+        },
+        {
+          "nStar": 3,
+          "zeta": 9.48286344788908,
+          "coeff": 0.0793192
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.354497201549283,
+          "coeff": 0.5133664
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.716592557327194,
+          "coeff": -0.1399868
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.469090092992137,
+          "coeff": 0.4681291
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.5561227702185585,
+          "coeff": 0.0021171
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.0884655091256739,
+          "coeff": -0.0005972
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8958425870323856,
+          "coeff": 0.0002485
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 37.72939177442879,
+          "coeff": 2.33e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 18.60299378919041,
+          "coeff": 0.0009662
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.066517080645324,
+          "coeff": -0.031778
+        },
+        {
+          "nStar": 3,
+          "zeta": 9.48286344788908,
+          "coeff": -0.0258695
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.354497201549283,
+          "coeff": -0.0918254
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.716592557327194,
+          "coeff": 0.0001315
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.469090092992137,
+          "coeff": -0.2476404
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.5561227702185585,
+          "coeff": 0.3847957
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.0884655091256739,
+          "coeff": 0.5829971
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8958425870323856,
+          "coeff": 0.1655351
+        }
+      ]
+    },
+    "E_tot": -340.718780875,
+    "energies": {
+      "1s": -79.9697149,
+      "2s": -7.511096,
+      "3s": -0.6964161,
+      "2p": -5.4009589,
+      "3p": -0.3917087
+    }
+  },
+  "S": {
+    "Z": 16,
+    "name": "S",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 49.09148008009803,
+          "coeff": -0.0003311
+        },
+        {
+          "nStar": 1,
+          "zeta": 25.4955491674427,
+          "coeff": -0.2185996
+        },
+        {
+          "nStar": 2,
+          "zeta": 21.72064841129771,
+          "coeff": -0.1458971
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.747990020632024,
+          "coeff": 0.2712632
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.60345836825304,
+          "coeff": -0.8952737
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.557735321960705,
+          "coeff": -0.0006092
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.137803316466386,
+          "coeff": -0.0004666
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.991252795395357,
+          "coeff": 0.0002312
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.2916867213081709,
+          "coeff": 1.67e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9482001938537344,
+          "coeff": 2.2e-06
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 49.09148008009803,
+          "coeff": -9.64e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 25.4955491674427,
+          "coeff": 0.0340191
+        },
+        {
+          "nStar": 2,
+          "zeta": 21.72064841129771,
+          "coeff": 0.0353772
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.747990020632024,
+          "coeff": 0.131355
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.60345836825304,
+          "coeff": -0.5589279
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.557735321960705,
+          "coeff": 0.5184366
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.137803316466386,
+          "coeff": 0.5633707
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.991252795395357,
+          "coeff": 0.0316144
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.2916867213081709,
+          "coeff": 0.0018838
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9482001938537344,
+          "coeff": -0.0001474
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 2,
+          "zeta": 49.09148008009803,
+          "coeff": 3.76e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 25.4955491674427,
+          "coeff": 0.0034601
+        },
+        {
+          "nStar": 2,
+          "zeta": 21.72064841129771,
+          "coeff": 0.0007431
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.747990020632024,
+          "coeff": 0.0178604
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.60345836825304,
+          "coeff": 0.2001706
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.557735321960705,
+          "coeff": 0.1462161
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.137803316466386,
+          "coeff": -0.2861706
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.991252795395357,
+          "coeff": -1.0966241
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.2916867213081709,
+          "coeff": 1.6354332
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9482001938537344,
+          "coeff": 0.0090317
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 40.95881679398603,
+          "coeff": -7.73e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.067532562793403,
+          "coeff": -0.0034844
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.822135450063797,
+          "coeff": 0.1229454
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.228038163055905,
+          "coeff": 0.0714001
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.766090343086845,
+          "coeff": 0.5908461
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.9204418224304423,
+          "coeff": -0.1122147
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.6919570386250378,
+          "coeff": 0.3682991
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.8608852328000405,
+          "coeff": 0.0025488
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.213813121389545,
+          "coeff": 0.0001394
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9482001938537344,
+          "coeff": 0.0002639
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 40.95881679398603,
+          "coeff": 2.33e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.067532562793403,
+          "coeff": 0.0009714
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.822135450063797,
+          "coeff": -0.0352972
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.228038163055905,
+          "coeff": -0.0278951
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.766090343086845,
+          "coeff": -0.0770693
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.9204418224304423,
+          "coeff": 0.0839057
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.6919570386250378,
+          "coeff": -0.3602018
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.8608852328000405,
+          "coeff": 0.4024984
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.213813121389545,
+          "coeff": 0.5932585
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9482001938537344,
+          "coeff": 0.1586131
+        }
+      ]
+    },
+    "E_tot": -397.504895877,
+    "energies": {
+      "1s": -92.0044503,
+      "2s": -9.0042897,
+      "3s": -0.8795274,
+      "2p": -6.682509,
+      "3p": -0.4373688
+    }
+  },
+  "Cl": {
+    "Z": 17,
+    "name": "Cl",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 53.37119454921948,
+          "coeff": -0.0002524
+        },
+        {
+          "nStar": 1,
+          "zeta": 27.060077897129762,
+          "coeff": -0.1814618
+        },
+        {
+          "nStar": 2,
+          "zeta": 23.110465782722645,
+          "coeff": -0.115539
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.470941603081016,
+          "coeff": 0.2068512
+        },
+        {
+          "nStar": 1,
+          "zeta": 13.409904624386908,
+          "coeff": -0.90227
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.690614153065051,
+          "coeff": -0.0017631
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.195443005154538,
+          "coeff": 0.0004191
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.1522367941064595,
+          "coeff": -2.54e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.4500436519266455,
+          "coeff": 5.3e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.0221099049860598,
+          "coeff": -8.1e-06
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 53.37119454921948,
+          "coeff": -7.22e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 27.060077897129762,
+          "coeff": 0.0445893
+        },
+        {
+          "nStar": 2,
+          "zeta": 23.110465782722645,
+          "coeff": 0.0426753
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.470941603081016,
+          "coeff": 0.075919
+        },
+        {
+          "nStar": 1,
+          "zeta": 13.409904624386908,
+          "coeff": -0.5277537
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.690614153065051,
+          "coeff": 0.7717007
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.195443005154538,
+          "coeff": 0.3283319
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.1522367941064595,
+          "coeff": 0.0097044
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.4500436519266455,
+          "coeff": 0.0032987
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.0221099049860598,
+          "coeff": -0.0004079
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 2,
+          "zeta": 53.37119454921948,
+          "coeff": 4.02e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 27.060077897129762,
+          "coeff": 0.0037577
+        },
+        {
+          "nStar": 2,
+          "zeta": 23.110465782722645,
+          "coeff": 0.0006709
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.470941603081016,
+          "coeff": 0.0227232
+        },
+        {
+          "nStar": 1,
+          "zeta": 13.409904624386908,
+          "coeff": 0.1486623
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.690614153065051,
+          "coeff": 0.0455228
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.195443005154538,
+          "coeff": -0.4489641
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.1522367941064595,
+          "coeff": -0.8603633
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.4500436519266455,
+          "coeff": 1.6497514
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.0221099049860598,
+          "coeff": 0.0275982
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 44.943570435622874,
+          "coeff": -6.18e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 21.345798181009247,
+          "coeff": -0.003283
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.563489600632037,
+          "coeff": 0.1185708
+        },
+        {
+          "nStar": 3,
+          "zeta": 11.054810571268876,
+          "coeff": 0.0572152
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.315052392213729,
+          "coeff": 0.6133383
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.2135195553051945,
+          "coeff": -0.1362286
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.9235561220260906,
+          "coeff": 0.3818518
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.046966073990763,
+          "coeff": 0.0021977
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3164669544429202,
+          "coeff": 0.0008173
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.0221099049860598,
+          "coeff": 0.0002335
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 44.943570435622874,
+          "coeff": 1.98e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 21.345798181009247,
+          "coeff": 0.0009768
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.563489600632037,
+          "coeff": -0.0369629
+        },
+        {
+          "nStar": 3,
+          "zeta": 11.054810571268876,
+          "coeff": -0.0262659
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.315052392213729,
+          "coeff": -0.0707982
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.2135195553051945,
+          "coeff": 0.167567
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.9235561220260906,
+          "coeff": -0.4534267
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.046966073990763,
+          "coeff": 0.459344
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3164669544429202,
+          "coeff": 0.5677005
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.0221099049860598,
+          "coeff": 0.1293086
+        }
+      ]
+    },
+    "E_tot": -459.482072328,
+    "energies": {
+      "1s": -104.8844208,
+      "2s": -10.6074807,
+      "3s": -1.0729121,
+      "2p": -8.0722274,
+      "3p": -0.5063999
+    }
+  },
+  "Ar": {
+    "Z": 18,
+    "name": "Ar",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 2,
+          "zeta": 57.007822989968325,
+          "coeff": -0.0002716
+        },
+        {
+          "nStar": 1,
+          "zeta": 29.28544157648269,
+          "coeff": -0.1710204
+        },
+        {
+          "nStar": 2,
+          "zeta": 24.944354902861527,
+          "coeff": -0.1141106
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.351240693119514,
+          "coeff": 0.2067242
+        },
+        {
+          "nStar": 1,
+          "zeta": 14.283306149741335,
+          "coeff": -0.9132755
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.066427169306387,
+          "coeff": -0.0023696
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.402334854248248,
+          "coeff": 0.0014535
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.3754562277368567,
+          "coeff": -0.0007953
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5952118908689648,
+          "coeff": 0.0001863
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.1063015054128786,
+          "coeff": -5.28e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 2,
+          "zeta": 57.007822989968325,
+          "coeff": -7.26e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 29.28544157648269,
+          "coeff": 0.027922
+        },
+        {
+          "nStar": 2,
+          "zeta": 24.944354902861527,
+          "coeff": 0.0286702
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.351240693119514,
+          "coeff": 0.0504759
+        },
+        {
+          "nStar": 1,
+          "zeta": 14.283306149741335,
+          "coeff": -0.4849957
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.066427169306387,
+          "coeff": 0.869815
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.402334854248248,
+          "coeff": 0.2352997
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.3754562277368567,
+          "coeff": 0.0088439
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5952118908689648,
+          "coeff": 0.0035499
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.1063015054128786,
+          "coeff": -0.0003098
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 2,
+          "zeta": 57.007822989968325,
+          "coeff": 3.59e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 29.28544157648269,
+          "coeff": -0.011228
+        },
+        {
+          "nStar": 2,
+          "zeta": 24.944354902861527,
+          "coeff": -0.011513
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.351240693119514,
+          "coeff": -0.0092934
+        },
+        {
+          "nStar": 1,
+          "zeta": 14.283306149741335,
+          "coeff": 0.1752091
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.066427169306387,
+          "coeff": -0.056149
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.402334854248248,
+          "coeff": -0.5300804
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.3754562277368567,
+          "coeff": -0.6888917
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5952118908689648,
+          "coeff": 1.6573375
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.1063015054128786,
+          "coeff": 0.0288341
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 47.866918960942826,
+          "coeff": -6.13e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.794379432477346,
+          "coeff": -0.0031317
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.361000200410572,
+          "coeff": 0.1112736
+        },
+        {
+          "nStar": 3,
+          "zeta": 12.013710825519437,
+          "coeff": 0.0425036
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.899164309781718,
+          "coeff": 0.633922
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.49348099981468,
+          "coeff": -0.1615644
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.148784805084749,
+          "coeff": 0.4032696
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.2395835173461136,
+          "coeff": 0.0011903
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.4371558811650085,
+          "coeff": -9e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.1063015054128786,
+          "coeff": 4.14e-05
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 47.866918960942826,
+          "coeff": 2.02e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.794379432477346,
+          "coeff": 0.0009789
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.361000200410572,
+          "coeff": -0.0362469
+        },
+        {
+          "nStar": 3,
+          "zeta": 12.013710825519437,
+          "coeff": -0.0220688
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.899164309781718,
+          "coeff": -0.0797423
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.49348099981468,
+          "coeff": 0.2302612
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.148784805084749,
+          "coeff": -0.5119924
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.2395835173461136,
+          "coeff": 0.4891912
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.4371558811650085,
+          "coeff": 0.553562
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.1063015054128786,
+          "coeff": 0.1126417
+        }
+      ]
+    },
+    "E_tot": -526.817512711,
+    "energies": {
+      "1s": -118.6103508,
+      "2s": -12.3221535,
+      "3s": -1.277353,
+      "2p": -9.5714658,
+      "3p": -0.5910174
+    }
+  },
+  "K": {
+    "Z": 19,
+    "name": "K",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 49.489798979004256,
+          "coeff": -0.0021779
+        },
+        {
+          "nStar": 3,
+          "zeta": 27.711281441946376,
+          "coeff": 0.0160836
+        },
+        {
+          "nStar": 1,
+          "zeta": 20.61845887205078,
+          "coeff": 0.8188097
+        },
+        {
+          "nStar": 3,
+          "zeta": 13.859240420660473,
+          "coeff": -0.0820494
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.79771320346267,
+          "coeff": -0.2158247
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.197360439613798,
+          "coeff": -0.051615
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.196395897508098,
+          "coeff": 0.4738586
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.409084347748664,
+          "coeff": 0.0002719
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.346668747534841,
+          "coeff": 0.0022252
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8644456159100995,
+          "coeff": -0.0034121
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.5664625277906107,
+          "coeff": -2.94e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.5537379131192232,
+          "coeff": 6.59e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 49.489798979004256,
+          "coeff": 0.0018667
+        },
+        {
+          "nStar": 3,
+          "zeta": 27.711281441946376,
+          "coeff": -0.0102939
+        },
+        {
+          "nStar": 1,
+          "zeta": 20.61845887205078,
+          "coeff": -0.1600968
+        },
+        {
+          "nStar": 3,
+          "zeta": 13.859240420660473,
+          "coeff": 0.0858637
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.79771320346267,
+          "coeff": 1.0427023
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.197360439613798,
+          "coeff": 0.4336528
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.196395897508098,
+          "coeff": -0.6297128
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.409084347748664,
+          "coeff": 0.0197017
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.346668747534841,
+          "coeff": -0.0061072
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8644456159100995,
+          "coeff": 0.0119124
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.5664625277906107,
+          "coeff": 8.55e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.5537379131192232,
+          "coeff": -0.0002013
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 49.489798979004256,
+          "coeff": -0.0004251
+        },
+        {
+          "nStar": 3,
+          "zeta": 27.711281441946376,
+          "coeff": 0.0025019
+        },
+        {
+          "nStar": 1,
+          "zeta": 20.61845887205078,
+          "coeff": 0.0524504
+        },
+        {
+          "nStar": 3,
+          "zeta": 13.859240420660473,
+          "coeff": -0.0473839
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.79771320346267,
+          "coeff": -0.0769891
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.197360439613798,
+          "coeff": -0.6445475
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.196395897508098,
+          "coeff": 0.2904986
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.409084347748664,
+          "coeff": -0.9094076
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.346668747534841,
+          "coeff": 0.1553851
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8644456159100995,
+          "coeff": 1.7112623
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.5664625277906107,
+          "coeff": 0.0002823
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.5537379131192232,
+          "coeff": 0.0009316
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 49.489798979004256,
+          "coeff": 0.0001342
+        },
+        {
+          "nStar": 3,
+          "zeta": 27.711281441946376,
+          "coeff": -0.0007921
+        },
+        {
+          "nStar": 1,
+          "zeta": 20.61845887205078,
+          "coeff": -0.0103128
+        },
+        {
+          "nStar": 3,
+          "zeta": 13.859240420660473,
+          "coeff": 0.0069127
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.79771320346267,
+          "coeff": 0.0276908
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.197360439613798,
+          "coeff": 0.0821168
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.196395897508098,
+          "coeff": -0.1213107
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.409084347748664,
+          "coeff": 0.760934
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.346668747534841,
+          "coeff": 0.591144
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8644456159100995,
+          "coeff": -1.2959807
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.5664625277906107,
+          "coeff": 1.4608731
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.5537379131192232,
+          "coeff": -0.536794
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 46.762318608213704,
+          "coeff": 9.79e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 24.426096911957142,
+          "coeff": 0.0031928
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.709196005993695,
+          "coeff": -0.086645
+        },
+        {
+          "nStar": 3,
+          "zeta": 9.462902365304611,
+          "coeff": 0.0491453
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.7247709812197956,
+          "coeff": -0.666066
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.669863985452708,
+          "coeff": -0.3268554
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.2931223862610226,
+          "coeff": 0.0071913
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.930971491988948,
+          "coeff": -0.0110148
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3162461728946409,
+          "coeff": 0.0005219
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.5537379131192232,
+          "coeff": -9.5e-06
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 46.762318608213704,
+          "coeff": 3.54e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 24.426096911957142,
+          "coeff": 0.001104
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.709196005993695,
+          "coeff": -0.0153622
+        },
+        {
+          "nStar": 3,
+          "zeta": 9.462902365304611,
+          "coeff": 0.0620133
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.7247709812197956,
+          "coeff": -0.176532
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.669863985452708,
+          "coeff": -0.3537264
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.2931223862610226,
+          "coeff": -0.340156
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.930971491988948,
+          "coeff": 1.373535
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3162461728946409,
+          "coeff": 0.1055549
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.5537379131192232,
+          "coeff": 0.0010773
+        }
+      ]
+    },
+    "E_tot": -599.164786322,
+    "energies": {
+      "1s": -133.5330493,
+      "2s": -14.4899575,
+      "3s": -1.7487797,
+      "4s": -0.1474751,
+      "2p": -11.5192795,
+      "3p": -0.9544227
+    }
+  },
+  "Ca": {
+    "Z": 20,
+    "name": "Ca",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 56.22264275401607,
+          "coeff": 0.0014243
+        },
+        {
+          "nStar": 3,
+          "zeta": 29.97193035641106,
+          "coeff": -0.0129567
+        },
+        {
+          "nStar": 1,
+          "zeta": 21.78094492864285,
+          "coeff": -0.8089442
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.879982693864115,
+          "coeff": 0.0880966
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.251348187251823,
+          "coeff": 0.2394273
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.910385965345918,
+          "coeff": -0.4761799
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.399761385113052,
+          "coeff": 0.0057173
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.633646088688822,
+          "coeff": -0.0121835
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8556432057332306,
+          "coeff": 0.0270307
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5330692047302124,
+          "coeff": -0.0101743
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6626845397621384,
+          "coeff": -0.000183
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6389571331448681,
+          "coeff": 0.0004971
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 56.22264275401607,
+          "coeff": 0.0011968
+        },
+        {
+          "nStar": 3,
+          "zeta": 29.97193035641106,
+          "coeff": -0.0080951
+        },
+        {
+          "nStar": 1,
+          "zeta": 21.78094492864285,
+          "coeff": -0.1512063
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.879982693864115,
+          "coeff": 0.0841105
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.251348187251823,
+          "coeff": 1.1633902
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.910385965345918,
+          "coeff": -0.6311882
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.399761385113052,
+          "coeff": 0.3048988
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.633646088688822,
+          "coeff": -0.0308593
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8556432057332306,
+          "coeff": 0.0813505
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5330692047302124,
+          "coeff": -0.0336703
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6626845397621384,
+          "coeff": -0.000871
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6389571331448681,
+          "coeff": 0.0022405
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 56.22264275401607,
+          "coeff": -0.0003224
+        },
+        {
+          "nStar": 3,
+          "zeta": 29.97193035641106,
+          "coeff": 0.0023876
+        },
+        {
+          "nStar": 1,
+          "zeta": 21.78094492864285,
+          "coeff": 0.0513616
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.879982693864115,
+          "coeff": -0.0422994
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.251348187251823,
+          "coeff": -0.15557
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.910385965345918,
+          "coeff": 0.1971616
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.399761385113052,
+          "coeff": -0.7182685
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.633646088688822,
+          "coeff": 1.1275138
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8556432057332306,
+          "coeff": 0.0596091
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5330692047302124,
+          "coeff": 0.1150448
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6626845397621384,
+          "coeff": 0.0023577
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6389571331448681,
+          "coeff": -0.0063252
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 56.22264275401607,
+          "coeff": 5.34e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 29.97193035641106,
+          "coeff": -0.0004143
+        },
+        {
+          "nStar": 1,
+          "zeta": 21.78094492864285,
+          "coeff": -0.0124182
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.879982693864115,
+          "coeff": 0.0122024
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.251348187251823,
+          "coeff": 0.0109921
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.910385965345918,
+          "coeff": -0.0234364
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.399761385113052,
+          "coeff": 0.2343941
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.633646088688822,
+          "coeff": -0.1255387
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8556432057332306,
+          "coeff": 0.7711321
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5330692047302124,
+          "coeff": -1.3923824
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6626845397621384,
+          "coeff": 0.9198284
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6389571331448681,
+          "coeff": 0.3965575
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 48.35990824875486,
+          "coeff": -0.000112
+        },
+        {
+          "nStar": 3,
+          "zeta": 26.061133259237305,
+          "coeff": -0.0030349
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.482509295105846,
+          "coeff": 0.0875599
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.472296591651531,
+          "coeff": -0.0316728
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.31259579447166,
+          "coeff": 0.6426078
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.113213765555145,
+          "coeff": 0.3319706
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.3807921630681754,
+          "coeff": -0.0052519
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.1016482463932546,
+          "coeff": 0.0078938
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.2351013274959097,
+          "coeff": 0.0001322
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6389571331448681,
+          "coeff": -4.58e-05
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 48.35990824875486,
+          "coeff": 4.62e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 26.061133259237305,
+          "coeff": 0.00118
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.482509295105846,
+          "coeff": -0.0123491
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.472296591651531,
+          "coeff": 0.0651053
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.31259579447166,
+          "coeff": -0.2032528
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.113213765555145,
+          "coeff": -0.3647918
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.3807921630681754,
+          "coeff": -0.3608637
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.1016482463932546,
+          "coeff": 1.4758199
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.2351013274959097,
+          "coeff": 0.0280494
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6389571331448681,
+          "coeff": 0.0009427
+        }
+      ]
+    },
+    "E_tot": -676.758185346,
+    "energies": {
+      "1s": -149.363726,
+      "2s": -16.8227434,
+      "3s": -2.2453758,
+      "4s": -0.1955295,
+      "2p": -13.6292687,
+      "3p": -1.340707
+    }
+  },
+  "Sc": {
+    "Z": 21,
+    "name": "Sc",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 58.88141926303764,
+          "coeff": 0.0013535
+        },
+        {
+          "nStar": 3,
+          "zeta": 31.57487146221877,
+          "coeff": -0.0120567
+        },
+        {
+          "nStar": 1,
+          "zeta": 22.899509588066703,
+          "coeff": -0.8097734
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.786354335786678,
+          "coeff": 0.0850621
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.81714037891868,
+          "coeff": 0.2364389
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.34041621401919,
+          "coeff": -0.4739453
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.805609904267232,
+          "coeff": 0.0098844
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.8539302627004486,
+          "coeff": -0.0114407
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.0089724012460266,
+          "coeff": 0.0244354
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.626919325118121,
+          "coeff": -0.0087021
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6929132694622947,
+          "coeff": -0.0002086
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6638313132411083,
+          "coeff": 0.000532
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 58.88141926303764,
+          "coeff": 0.0011952
+        },
+        {
+          "nStar": 3,
+          "zeta": 31.57487146221877,
+          "coeff": -0.0079309
+        },
+        {
+          "nStar": 1,
+          "zeta": 22.899509588066703,
+          "coeff": -0.1476516
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.786354335786678,
+          "coeff": 0.0757744
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.81714037891868,
+          "coeff": 1.1816323
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.34041621401919,
+          "coeff": -0.6559424
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.805609904267232,
+          "coeff": 0.3207819
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.8539302627004486,
+          "coeff": -0.0216877
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.0089724012460266,
+          "coeff": 0.0583152
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.626919325118121,
+          "coeff": -0.0233924
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6929132694622947,
+          "coeff": -0.0008048
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6638313132411083,
+          "coeff": 0.0019576
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 58.88141926303764,
+          "coeff": -0.0003663
+        },
+        {
+          "nStar": 3,
+          "zeta": 31.57487146221877,
+          "coeff": 0.0026465
+        },
+        {
+          "nStar": 1,
+          "zeta": 22.899509588066703,
+          "coeff": 0.0513897
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.786354335786678,
+          "coeff": -0.037952
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.81714037891868,
+          "coeff": -0.1710157
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.34041621401919,
+          "coeff": 0.1997936
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.805609904267232,
+          "coeff": -0.7562835
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.8539302627004486,
+          "coeff": 1.0889723
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.0089724012460266,
+          "coeff": 0.1562578
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.626919325118121,
+          "coeff": 0.0876539
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6929132694622947,
+          "coeff": 0.0019419
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6638313132411083,
+          "coeff": -0.0049723
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 58.88141926303764,
+          "coeff": 7.57e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 31.57487146221877,
+          "coeff": -0.0005611
+        },
+        {
+          "nStar": 1,
+          "zeta": 22.899509588066703,
+          "coeff": -0.0124367
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.786354335786678,
+          "coeff": 0.0104546
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.81714037891868,
+          "coeff": 0.0175538
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.34041621401919,
+          "coeff": -0.0264782
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.805609904267232,
+          "coeff": 0.236812
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.8539302627004486,
+          "coeff": -0.1453304
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.0089724012460266,
+          "coeff": 0.6523544
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.626919325118121,
+          "coeff": -1.284163
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6929132694622947,
+          "coeff": 0.824911
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6638313132411083,
+          "coeff": 0.5079875
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 51.04123968239439,
+          "coeff": -0.0001098
+        },
+        {
+          "nStar": 3,
+          "zeta": 27.573863399539466,
+          "coeff": -0.0029004
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.828954913888493,
+          "coeff": 0.1212841
+        },
+        {
+          "nStar": 3,
+          "zeta": 11.255943867823147,
+          "coeff": 0.0252489
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.696797259469221,
+          "coeff": 0.5745498
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.503822781538136,
+          "coeff": 0.3129971
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.565131148378455,
+          "coeff": -0.0040544
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.2608975735414534,
+          "coeff": 0.0065817
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.2480029098552279,
+          "coeff": 3e-07
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6638313132411083,
+          "coeff": -1.3e-05
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 51.04123968239439,
+          "coeff": 4.63e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 27.573863399539466,
+          "coeff": 0.0011609
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.828954913888493,
+          "coeff": -0.0132121
+        },
+        {
+          "nStar": 3,
+          "zeta": 11.255943867823147,
+          "coeff": 0.064735
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.696797259469221,
+          "coeff": -0.2299509
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.503822781538136,
+          "coeff": -0.3568473
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.565131148378455,
+          "coeff": -0.4283568
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.2608975735414534,
+          "coeff": 1.5576307
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.2480029098552279,
+          "coeff": 0.0198377
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6638313132411083,
+          "coeff": 0.0006167
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 18.112701,
+          "coeff": 0.0014099
+        },
+        {
+          "nStar": 4,
+          "zeta": 13.806782,
+          "coeff": 0.0065323
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.306244,
+          "coeff": 0.0442052
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.161485,
+          "coeff": 0.1963389
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.673453,
+          "coeff": 0.3283685
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.714319,
+          "coeff": 0.3818901
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.087439,
+          "coeff": 0.206856
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.648242,
+          "coeff": 0.0039745
+        }
+      ]
+    },
+    "E_tot": -759.735717426,
+    "energies": {
+      "1s": -165.8998988,
+      "2s": -19.0806199,
+      "3s": -2.567324,
+      "4s": -0.2101086,
+      "2p": -15.6682466,
+      "3p": -1.5745484,
+      "3d": -0.3437122
+    }
+  },
+  "Ti": {
+    "Z": 22,
+    "name": "Ti",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 61.88481798686818,
+          "coeff": 0.0012926
+        },
+        {
+          "nStar": 3,
+          "zeta": 33.15426562452347,
+          "coeff": -0.0114605
+        },
+        {
+          "nStar": 1,
+          "zeta": 24.019496223826472,
+          "coeff": -0.8115312
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.68593247736153,
+          "coeff": 0.0816377
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.39000577511275,
+          "coeff": 0.2319387
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.763410467830586,
+          "coeff": -0.4691019
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.206054363541213,
+          "coeff": 0.0151634
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.0585695174305143,
+          "coeff": -0.0092445
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.169103732607161,
+          "coeff": 0.0178036
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.6640753038051677,
+          "coeff": -0.0051991
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7141759243252889,
+          "coeff": -0.0001907
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6820920044227988,
+          "coeff": 0.0004695
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 61.88481798686818,
+          "coeff": 0.001204
+        },
+        {
+          "nStar": 3,
+          "zeta": 33.15426562452347,
+          "coeff": -0.007986
+        },
+        {
+          "nStar": 1,
+          "zeta": 24.019496223826472,
+          "coeff": -0.144546
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.68593247736153,
+          "coeff": 0.0678589
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.39000577511275,
+          "coeff": 1.1968416
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.763410467830586,
+          "coeff": -0.6774864
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.206054363541213,
+          "coeff": 0.3399134
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.0585695174305143,
+          "coeff": -0.0077091
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.169103732607161,
+          "coeff": 0.0247033
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.6640753038051677,
+          "coeff": -0.0091746
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7141759243252889,
+          "coeff": -0.0005404
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6820920044227988,
+          "coeff": 0.0012567
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 61.88481798686818,
+          "coeff": -0.0004162
+        },
+        {
+          "nStar": 3,
+          "zeta": 33.15426562452347,
+          "coeff": 0.0029768
+        },
+        {
+          "nStar": 1,
+          "zeta": 24.019496223826472,
+          "coeff": 0.0512115
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.68593247736153,
+          "coeff": -0.0333406
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.39000577511275,
+          "coeff": -0.1871558
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.763410467830586,
+          "coeff": 0.193924
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.206054363541213,
+          "coeff": -0.7919167
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.0585695174305143,
+          "coeff": 1.0154717
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.169103732607161,
+          "coeff": 0.3017204
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.6640753038051677,
+          "coeff": 0.0505037
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7141759243252889,
+          "coeff": 0.0015326
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6820920044227988,
+          "coeff": -0.0038174
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 61.88481798686818,
+          "coeff": 9.5e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 33.15426562452347,
+          "coeff": -0.0006892
+        },
+        {
+          "nStar": 1,
+          "zeta": 24.019496223826472,
+          "coeff": -0.0122019
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.68593247736153,
+          "coeff": 0.0087036
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.39000577511275,
+          "coeff": 0.0232607
+        },
+        {
+          "nStar": 1,
+          "zeta": 7.763410467830586,
+          "coeff": -0.0266562
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.206054363541213,
+          "coeff": 0.2360628
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.0585695174305143,
+          "coeff": -0.1497692
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.169103732607161,
+          "coeff": 0.4197396
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.6640753038051677,
+          "coeff": -1.0646875
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7141759243252889,
+          "coeff": 0.7481798
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6820920044227988,
+          "coeff": 0.5949651
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 52.65693470096037,
+          "coeff": -0.0001234
+        },
+        {
+          "nStar": 3,
+          "zeta": 29.431387444395543,
+          "coeff": -0.0027166
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.55743291836111,
+          "coeff": 0.1326522
+        },
+        {
+          "nStar": 3,
+          "zeta": 12.022628075663322,
+          "coeff": 0.047476
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.122152209557683,
+          "coeff": 0.5621316
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.888634287822939,
+          "coeff": 0.2922171
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.7757953945698,
+          "coeff": -0.0039271
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.4308858138155793,
+          "coeff": 0.0066401
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.284493082350105,
+          "coeff": -5.45e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6820920044227988,
+          "coeff": 2.2e-06
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 52.65693470096037,
+          "coeff": 5.53e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 29.431387444395543,
+          "coeff": 0.0011428
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.55743291836111,
+          "coeff": -0.0117801
+        },
+        {
+          "nStar": 3,
+          "zeta": 12.022628075663322,
+          "coeff": 0.0659143
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.122152209557683,
+          "coeff": -0.2596441
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.888634287822939,
+          "coeff": -0.3439841
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.7757953945698,
+          "coeff": -0.4611724
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.4308858138155793,
+          "coeff": 1.5999717
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.284493082350105,
+          "coeff": 0.0168819
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6820920044227988,
+          "coeff": 0.000373
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 19.104138,
+          "coeff": 0.001507
+        },
+        {
+          "nStar": 4,
+          "zeta": 14.658566,
+          "coeff": 0.0067172
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.716801,
+          "coeff": 0.0517986
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.401956,
+          "coeff": 0.2309356
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.774678,
+          "coeff": 0.3736332
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.78663,
+          "coeff": 0.3511324
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.17368,
+          "coeff": 0.1432688
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.664512,
+          "coeff": 0.0010332
+        }
+      ]
+    },
+    "E_tot": -848.405996326,
+    "energies": {
+      "1s": -183.2727593,
+      "2s": -21.4229135,
+      "3s": -2.8733981,
+      "4s": -0.220788,
+      "2p": -17.7911882,
+      "3p": -1.7950876,
+      "3d": -0.4406565
+    }
+  },
+  "V": {
+    "Z": 23,
+    "name": "V",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 64.69773914937043,
+          "coeff": 0.0012909
+        },
+        {
+          "nStar": 3,
+          "zeta": 34.86817121776525,
+          "coeff": -0.0109967
+        },
+        {
+          "nStar": 1,
+          "zeta": 25.166454172882613,
+          "coeff": -0.8120094
+        },
+        {
+          "nStar": 3,
+          "zeta": 17.56771494275126,
+          "coeff": 0.080039
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.944755428012042,
+          "coeff": 0.2292945
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.160982607272922,
+          "coeff": -0.4691224
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.613119316689042,
+          "coeff": 0.0218235
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.2576169609056134,
+          "coeff": -0.0057876
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.3325004599962345,
+          "coeff": 0.0102509
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.701605160496469,
+          "coeff": -0.0024138
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7335706610014301,
+          "coeff": -0.000113
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6987703370385677,
+          "coeff": 0.000273
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 64.69773914937043,
+          "coeff": 0.0011806
+        },
+        {
+          "nStar": 3,
+          "zeta": 34.86817121776525,
+          "coeff": -0.0076674
+        },
+        {
+          "nStar": 1,
+          "zeta": 25.166454172882613,
+          "coeff": -0.1411707
+        },
+        {
+          "nStar": 3,
+          "zeta": 17.56771494275126,
+          "coeff": 0.0634607
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.944755428012042,
+          "coeff": 1.216442
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.160982607272922,
+          "coeff": -0.7029589
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.613119316689042,
+          "coeff": 0.3505894
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.2576169609056134,
+          "coeff": -0.0016772
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.3325004599962345,
+          "coeff": 0.0115395
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.701605160496469,
+          "coeff": -0.0042834
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7335706610014301,
+          "coeff": -0.0003807
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6987703370385677,
+          "coeff": 0.0008539
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 64.69773914937043,
+          "coeff": -0.0004552
+        },
+        {
+          "nStar": 3,
+          "zeta": 34.86817121776525,
+          "coeff": 0.0031646
+        },
+        {
+          "nStar": 1,
+          "zeta": 25.166454172882613,
+          "coeff": 0.0506617
+        },
+        {
+          "nStar": 3,
+          "zeta": 17.56771494275126,
+          "coeff": -0.0296552
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.944755428012042,
+          "coeff": -0.2029999
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.160982607272922,
+          "coeff": 0.1897509
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.613119316689042,
+          "coeff": -0.8210458
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.2576169609056134,
+          "coeff": 0.9478692
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.3325004599962345,
+          "coeff": 0.4151478
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.701605160496469,
+          "coeff": 0.0348454
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7335706610014301,
+          "coeff": 0.0012974
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6987703370385677,
+          "coeff": -0.0031509
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 64.69773914937043,
+          "coeff": 0.0001085
+        },
+        {
+          "nStar": 3,
+          "zeta": 34.86817121776525,
+          "coeff": -0.000761
+        },
+        {
+          "nStar": 1,
+          "zeta": 25.166454172882613,
+          "coeff": -0.0118527
+        },
+        {
+          "nStar": 3,
+          "zeta": 17.56771494275126,
+          "coeff": 0.0073434
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.944755428012042,
+          "coeff": 0.0277623
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.160982607272922,
+          "coeff": -0.0264696
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.613119316689042,
+          "coeff": 0.2348937
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.2576169609056134,
+          "coeff": -0.1477421
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.3325004599962345,
+          "coeff": 0.2745684
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.701605160496469,
+          "coeff": -0.9304527
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7335706610014301,
+          "coeff": 0.6846603
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6987703370385677,
+          "coeff": 0.6630154
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 54.15718715191105,
+          "coeff": -0.0001616
+        },
+        {
+          "nStar": 3,
+          "zeta": 31.558622336395956,
+          "coeff": -0.0026656
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.2534604372594,
+          "coeff": 0.1549919
+        },
+        {
+          "nStar": 3,
+          "zeta": 12.692126787376777,
+          "coeff": 0.0894393
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.570993568934503,
+          "coeff": 0.482974
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.411764148326394,
+          "coeff": 0.3085893
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.9592119003229365,
+          "coeff": -0.0058317
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.5854510702319127,
+          "coeff": 0.0094079
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3236501813672243,
+          "coeff": 1.7e-06
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6987703370385677,
+          "coeff": -1.14e-05
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 54.15718715191105,
+          "coeff": 6.88e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 31.558622336395956,
+          "coeff": 0.0011174
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.2534604372594,
+          "coeff": -0.0154736
+        },
+        {
+          "nStar": 3,
+          "zeta": 12.692126787376777,
+          "coeff": 0.0580016
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.570993568934503,
+          "coeff": -0.2474715
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.411764148326394,
+          "coeff": -0.3520829
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.9592119003229365,
+          "coeff": -0.4947799
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.5854510702319127,
+          "coeff": 1.6362242
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3236501813672243,
+          "coeff": 0.0144381
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6987703370385677,
+          "coeff": 0.0002403
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 20.118919,
+          "coeff": 0.0015727
+        },
+        {
+          "nStar": 4,
+          "zeta": 15.491232,
+          "coeff": 0.0069095
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.9944,
+          "coeff": 0.0636709
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.606157,
+          "coeff": 0.2528675
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.904122,
+          "coeff": 0.3894624
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.867151,
+          "coeff": 0.3290693
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.237729,
+          "coeff": 0.1139047
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.679086,
+          "coeff": 0.0004478
+        }
+      ]
+    },
+    "E_tot": -942.884337023,
+    "energies": {
+      "1s": -201.502832,
+      "2s": -23.8746533,
+      "3s": -3.1831854,
+      "4s": -0.2305788,
+      "2p": -20.0224908,
+      "3p": -2.0192251,
+      "3d": -0.5096201
+    }
+  },
+  "Cr": {
+    "Z": 24,
+    "name": "Cr",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 66.16380587761701,
+          "coeff": 0.001407
+        },
+        {
+          "nStar": 3,
+          "zeta": 36.307803270771366,
+          "coeff": -0.0110748
+        },
+        {
+          "nStar": 1,
+          "zeta": 26.260117823100522,
+          "coeff": -0.8205511
+        },
+        {
+          "nStar": 3,
+          "zeta": 18.269223889544435,
+          "coeff": 0.0761683
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.483890055754882,
+          "coeff": 0.2044973
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.729882775918702,
+          "coeff": -0.4296209
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.975346036320978,
+          "coeff": 0.0176638
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.473704164460024,
+          "coeff": -0.0006641
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.38929223567735,
+          "coeff": 0.0011192
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5863951498059785,
+          "coeff": -0.0003022
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7211486335585064,
+          "coeff": -3.69e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6874953951731003,
+          "coeff": 8.28e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 66.16380587761701,
+          "coeff": 0.0013617
+        },
+        {
+          "nStar": 3,
+          "zeta": 36.307803270771366,
+          "coeff": -0.0081648
+        },
+        {
+          "nStar": 1,
+          "zeta": 26.260117823100522,
+          "coeff": -0.1421246
+        },
+        {
+          "nStar": 3,
+          "zeta": 18.269223889544435,
+          "coeff": 0.0599032
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.483890055754882,
+          "coeff": 1.2251393
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.729882775918702,
+          "coeff": -0.6888312
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.975346036320978,
+          "coeff": 0.334194
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.473704164460024,
+          "coeff": 0.0090967
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.38929223567735,
+          "coeff": -0.0087407
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5863951498059785,
+          "coeff": 0.0016728
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7211486335585064,
+          "coeff": 0.0002488
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6874953951731003,
+          "coeff": -0.0001737
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 66.16380587761701,
+          "coeff": -0.0005803
+        },
+        {
+          "nStar": 3,
+          "zeta": 36.307803270771366,
+          "coeff": 0.0036795
+        },
+        {
+          "nStar": 1,
+          "zeta": 26.260117823100522,
+          "coeff": 0.0511424
+        },
+        {
+          "nStar": 3,
+          "zeta": 18.269223889544435,
+          "coeff": -0.0255986
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.483890055754882,
+          "coeff": -0.2189007
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.729882775918702,
+          "coeff": 0.1536706
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.975346036320978,
+          "coeff": -0.8498296
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.473704164460024,
+          "coeff": 0.7471068
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.38929223567735,
+          "coeff": 0.6925615
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5863951498059785,
+          "coeff": 0.004046
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7211486335585064,
+          "coeff": -9.02e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6874953951731003,
+          "coeff": -0.0003102
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 66.16380587761701,
+          "coeff": 0.0001431
+        },
+        {
+          "nStar": 3,
+          "zeta": 36.307803270771366,
+          "coeff": -0.0009114
+        },
+        {
+          "nStar": 1,
+          "zeta": 26.260117823100522,
+          "coeff": -0.0111788
+        },
+        {
+          "nStar": 3,
+          "zeta": 18.269223889544435,
+          "coeff": 0.0052243
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.483890055754882,
+          "coeff": 0.0345145
+        },
+        {
+          "nStar": 1,
+          "zeta": 8.729882775918702,
+          "coeff": -0.0293029
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.975346036320978,
+          "coeff": 0.2087831
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.473704164460024,
+          "coeff": -0.186206
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.38929223567735,
+          "coeff": 0.0821551
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.5863951498059785,
+          "coeff": -0.6016914
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7211486335585064,
+          "coeff": 0.7365812
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6874953951731003,
+          "coeff": 0.5513708
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 55.832447389104,
+          "coeff": 0.0001884
+        },
+        {
+          "nStar": 3,
+          "zeta": 33.371262397908225,
+          "coeff": 0.0026512
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.879340295503322,
+          "coeff": -0.1813594
+        },
+        {
+          "nStar": 3,
+          "zeta": 13.278154928121163,
+          "coeff": -0.132868
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.012910812941833,
+          "coeff": -0.3895478
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.963538877946894,
+          "coeff": -0.3337827
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.1760647356695664,
+          "coeff": 0.0086859
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.729998648607998,
+          "coeff": -0.0135009
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.5337483253283708,
+          "coeff": 3.44e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6874953951731003,
+          "coeff": -3e-07
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 55.832447389104,
+          "coeff": 6.94e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 33.371262397908225,
+          "coeff": 0.0010266
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.879340295503322,
+          "coeff": -0.0207855
+        },
+        {
+          "nStar": 3,
+          "zeta": 13.278154928121163,
+          "coeff": 0.0473677
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.012910812941833,
+          "coeff": -0.2172009
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.963538877946894,
+          "coeff": -0.3681273
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.1760647356695664,
+          "coeff": -0.5436322
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.729998648607998,
+          "coeff": 1.6733666
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.5337483253283708,
+          "coeff": 0.0276998
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6874953951731003,
+          "coeff": 0.0002341
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 21.010126,
+          "coeff": 0.0015166
+        },
+        {
+          "nStar": 4,
+          "zeta": 16.248352,
+          "coeff": 0.0064929
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.319431,
+          "coeff": 0.0676131
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.807319,
+          "coeff": 0.2519614
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.023447,
+          "coeff": 0.3670945
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.852525,
+          "coeff": 0.3299536
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.147532,
+          "coeff": 0.1666695
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.666408,
+          "coeff": 0.002934
+        }
+      ]
+    },
+    "E_tot": -1043.356375551,
+    "energies": {
+      "1s": -220.3864068,
+      "2s": -26.2096369,
+      "3s": -3.2851612,
+      "4s": -0.2220501,
+      "2p": -22.1398569,
+      "3p": -2.0509322,
+      "3d": -0.3736058
+    }
+  },
+  "Mn": {
+    "Z": 25,
+    "name": "Mn",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 67.87501997254408,
+          "coeff": 0.0014463
+        },
+        {
+          "nStar": 3,
+          "zeta": 37.74952948761821,
+          "coeff": -0.0107434
+        },
+        {
+          "nStar": 1,
+          "zeta": 27.40204656112551,
+          "coeff": -0.8220966
+        },
+        {
+          "nStar": 3,
+          "zeta": 19.226182669153015,
+          "coeff": 0.072082
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.141134308467045,
+          "coeff": 0.1992914
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.254856011957823,
+          "coeff": -0.4216099
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.50529505165747,
+          "coeff": 0.0184424
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.6655719187531046,
+          "coeff": -0.0016396
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.5487331840811813,
+          "coeff": 0.0028177
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8137286936162809,
+          "coeff": -0.0007213
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7687495984077748,
+          "coeff": -4.71e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7283293270305501,
+          "coeff": 0.0001067
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 67.87501997254408,
+          "coeff": 0.0014587
+        },
+        {
+          "nStar": 3,
+          "zeta": 37.74952948761821,
+          "coeff": -0.0083
+        },
+        {
+          "nStar": 1,
+          "zeta": 27.40204656112551,
+          "coeff": -0.1380048
+        },
+        {
+          "nStar": 3,
+          "zeta": 19.226182669153015,
+          "coeff": 0.0503941
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.141134308467045,
+          "coeff": 1.2042773
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.254856011957823,
+          "coeff": -0.7054832
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.50529505165747,
+          "coeff": 0.3774786
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.6655719187531046,
+          "coeff": 0.0124346
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.5487331840811813,
+          "coeff": -0.014074
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8137286936162809,
+          "coeff": 0.0028051
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7687495984077748,
+          "coeff": 7.51e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7283293270305501,
+          "coeff": -0.0002025
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 67.87501997254408,
+          "coeff": -0.00064
+        },
+        {
+          "nStar": 3,
+          "zeta": 37.74952948761821,
+          "coeff": 0.003834
+        },
+        {
+          "nStar": 1,
+          "zeta": 27.40204656112551,
+          "coeff": 0.0507934
+        },
+        {
+          "nStar": 3,
+          "zeta": 19.226182669153015,
+          "coeff": -0.022475
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.141134308467045,
+          "coeff": -0.2078934
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.254856011957823,
+          "coeff": 0.1832236
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.50529505165747,
+          "coeff": -0.8549556
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.6655719187531046,
+          "coeff": 0.8735202
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.5487331840811813,
+          "coeff": 0.5392017
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8137286936162809,
+          "coeff": 0.0071191
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7687495984077748,
+          "coeff": 0.0005806
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7283293270305501,
+          "coeff": -0.0012804
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 67.87501997254408,
+          "coeff": 0.0001531
+        },
+        {
+          "nStar": 3,
+          "zeta": 37.74952948761821,
+          "coeff": -0.0009212
+        },
+        {
+          "nStar": 1,
+          "zeta": 27.40204656112551,
+          "coeff": -0.0114276
+        },
+        {
+          "nStar": 3,
+          "zeta": 19.226182669153015,
+          "coeff": 0.0051239
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.141134308467045,
+          "coeff": 0.0291037
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.254856011957823,
+          "coeff": -0.0268992
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.50529505165747,
+          "coeff": 0.227869
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.6655719187531046,
+          "coeff": -0.1521253
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.5487331840811813,
+          "coeff": 0.1876799
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8137286936162809,
+          "coeff": -0.8254018
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7687495984077748,
+          "coeff": 0.5930836
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7283293270305501,
+          "coeff": 0.7464188
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 53.87641608548485,
+          "coeff": 0.0003267
+        },
+        {
+          "nStar": 3,
+          "zeta": 34.97050781997763,
+          "coeff": 0.0029985
+        },
+        {
+          "nStar": 2,
+          "zeta": 18.020382098045708,
+          "coeff": -0.1595513
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.245516661886791,
+          "coeff": -0.1056915
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.418718805914128,
+          "coeff": -0.516079
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.13030458263744,
+          "coeff": -0.2542325
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.5071006631119865,
+          "coeff": 0.0062024
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.0233690612009347,
+          "coeff": -0.0105067
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.820680049308026,
+          "coeff": 0.0001346
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7283293270305501,
+          "coeff": -5.1e-06
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 53.87641608548485,
+          "coeff": 0.0001576
+        },
+        {
+          "nStar": 3,
+          "zeta": 34.97050781997763,
+          "coeff": 0.0013846
+        },
+        {
+          "nStar": 2,
+          "zeta": 18.020382098045708,
+          "coeff": -0.0179796
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.245516661886791,
+          "coeff": 0.0479529
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.418718805914128,
+          "coeff": -0.2875608
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.13030458263744,
+          "coeff": -0.322637
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.5071006631119865,
+          "coeff": -0.4273169
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.0233690612009347,
+          "coeff": 1.5653185
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.820680049308026,
+          "coeff": 0.0402565
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7283293270305501,
+          "coeff": 0.0005669
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 22.242214,
+          "coeff": 0.0016172
+        },
+        {
+          "nStar": 4,
+          "zeta": 17.176523,
+          "coeff": 0.0070783
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.574462,
+          "coeff": 0.0876536
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.005562,
+          "coeff": 0.2828126
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.189753,
+          "coeff": 0.3894977
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.065915,
+          "coeff": 0.2966932
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.380034,
+          "coeff": 0.0910173
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.704089,
+          "coeff": 0.0002949
+        }
+      ]
+    },
+    "E_tot": -1149.866250992,
+    "energies": {
+      "1s": -240.5339914,
+      "2s": -29.1094747,
+      "3s": -3.8166459,
+      "4s": -0.2478707,
+      "2p": -24.8125892,
+      "3p": -2.479531,
+      "3d": -0.6388473
+    }
+  },
+  "Fe": {
+    "Z": 26,
+    "name": "Fe",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 69.54326353835265,
+          "coeff": 0.0015184
+        },
+        {
+          "nStar": 3,
+          "zeta": 39.1489319521566,
+          "coeff": -0.0106577
+        },
+        {
+          "nStar": 1,
+          "zeta": 28.529605327533226,
+          "coeff": -0.8270191
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.079066544813784,
+          "coeff": 0.0684367
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.706482987735331,
+          "coeff": 0.1913138
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.717273595732474,
+          "coeff": -0.4067605
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.927515967197069,
+          "coeff": 0.018484
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.8721586403107167,
+          "coeff": -0.0013668
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.6970439611526165,
+          "coeff": 0.0022126
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8894461222275338,
+          "coeff": -0.0004942
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7897928981686914,
+          "coeff": -2.88e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7454164381000795,
+          "coeff": 6.56e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 69.54326353835265,
+          "coeff": 0.0015653
+        },
+        {
+          "nStar": 3,
+          "zeta": 39.1489319521566,
+          "coeff": -0.0084246
+        },
+        {
+          "nStar": 1,
+          "zeta": 28.529605327533226,
+          "coeff": -0.136679
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.079066544813784,
+          "coeff": 0.0465236
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.706482987735331,
+          "coeff": 1.2166161
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.717273595732474,
+          "coeff": -0.7169434
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.927515967197069,
+          "coeff": 0.3776062
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.8721586403107167,
+          "coeff": 0.0112197
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.6970439611526165,
+          "coeff": -0.0118535
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8894461222275338,
+          "coeff": 0.0022054
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7897928981686914,
+          "coeff": 6.15e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7454164381000795,
+          "coeff": -0.0001613
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 69.54326353835265,
+          "coeff": -0.0007443
+        },
+        {
+          "nStar": 3,
+          "zeta": 39.1489319521566,
+          "coeff": 0.0041962
+        },
+        {
+          "nStar": 1,
+          "zeta": 28.529605327533226,
+          "coeff": 0.0507275
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.079066544813784,
+          "coeff": -0.0186454
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.706482987735331,
+          "coeff": -0.2225578
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.717273595732474,
+          "coeff": 0.1830688
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.927515967197069,
+          "coeff": -0.865554
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.8721586403107167,
+          "coeff": 0.8448811
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.6970439611526165,
+          "coeff": 0.5820667
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8894461222275338,
+          "coeff": 0.007214
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7897928981686914,
+          "coeff": 0.0004931
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7454164381000795,
+          "coeff": -0.0010485
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 69.54326353835265,
+          "coeff": 0.0001824
+        },
+        {
+          "nStar": 3,
+          "zeta": 39.1489319521566,
+          "coeff": -0.001031
+        },
+        {
+          "nStar": 1,
+          "zeta": 28.529605327533226,
+          "coeff": -0.0113065
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.079066544813784,
+          "coeff": 0.0039089
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.706482987735331,
+          "coeff": 0.0331594
+        },
+        {
+          "nStar": 1,
+          "zeta": 9.717273595732474,
+          "coeff": -0.0278507
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.927515967197069,
+          "coeff": 0.2247979
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.8721586403107167,
+          "coeff": -0.1544478
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.6970439611526165,
+          "coeff": 0.1586917
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8894461222275338,
+          "coeff": -0.7886902
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7897928981686914,
+          "coeff": 0.5508906
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7454164381000795,
+          "coeff": 0.7825338
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 55.97355947542207,
+          "coeff": 0.0003539
+        },
+        {
+          "nStar": 3,
+          "zeta": 36.87989640169075,
+          "coeff": 0.0029461
+        },
+        {
+          "nStar": 2,
+          "zeta": 18.8166118055342,
+          "coeff": -0.1710197
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.958474919138895,
+          "coeff": -0.1274017
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.786293068598296,
+          "coeff": -0.5025877
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.527964963861155,
+          "coeff": -0.2353695
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.6580439580277755,
+          "coeff": 0.0067758
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.1569496057777604,
+          "coeff": -0.0113099
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.8077077097455605,
+          "coeff": 8.49e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7454164381000795,
+          "coeff": -3.6e-06
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 55.97355947542207,
+          "coeff": 0.0001605
+        },
+        {
+          "nStar": 3,
+          "zeta": 36.87989640169075,
+          "coeff": 0.0013264
+        },
+        {
+          "nStar": 2,
+          "zeta": 18.8166118055342,
+          "coeff": -0.0188217
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.958474919138895,
+          "coeff": 0.0451461
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.786293068598296,
+          "coeff": -0.3154501
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.527964963861155,
+          "coeff": -0.2957612
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.6580439580277755,
+          "coeff": -0.4783269
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.1569496057777604,
+          "coeff": 1.6251079
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.8077077097455605,
+          "coeff": 0.0289213
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7454164381000795,
+          "coeff": 0.0004127
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 23.292198,
+          "coeff": 0.0016054
+        },
+        {
+          "nStar": 4,
+          "zeta": 18.020857,
+          "coeff": 0.0069661
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.891984,
+          "coeff": 0.0981612
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.208309,
+          "coeff": 0.2946262
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.309121,
+          "coeff": 0.3855914
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.122232,
+          "coeff": 0.2865224
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.404987,
+          "coeff": 0.0891893
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.718583,
+          "coeff": 0.0003175
+        }
+      ]
+    },
+    "E_tot": -1262.443664689,
+    "energies": {
+      "1s": -261.3734219,
+      "2s": -31.9355217,
+      "3s": -4.1694393,
+      "4s": -0.2581805,
+      "2p": -27.4137116,
+      "3p": -2.7421982,
+      "3d": -0.6468876
+    }
+  },
+  "Co": {
+    "Z": 27,
+    "name": "Co",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 70.62205390482798,
+          "coeff": 0.0016519
+        },
+        {
+          "nStar": 3,
+          "zeta": 40.47562434994168,
+          "coeff": -0.0106873
+        },
+        {
+          "nStar": 1,
+          "zeta": 29.662470135280223,
+          "coeff": -0.8324281
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.924314872737728,
+          "coeff": 0.0646578
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.283002056978766,
+          "coeff": 0.1823705
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.198997505347995,
+          "coeff": -0.3900133
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.355770221945754,
+          "coeff": 0.0179088
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.0764591108121815,
+          "coeff": -0.0012577
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.8401399056506698,
+          "coeff": 0.0019348
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.955052606495437,
+          "coeff": -0.0003799
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8085324205880065,
+          "coeff": -1.92e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7608649583845813,
+          "coeff": 4.48e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 70.62205390482798,
+          "coeff": 0.0017335
+        },
+        {
+          "nStar": 3,
+          "zeta": 40.47562434994168,
+          "coeff": -0.0086171
+        },
+        {
+          "nStar": 1,
+          "zeta": 29.662470135280223,
+          "coeff": -0.1356177
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.924314872737728,
+          "coeff": 0.0425608
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.283002056978766,
+          "coeff": 1.2252448
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.198997505347995,
+          "coeff": -0.725607
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.355770221945754,
+          "coeff": 0.3791099
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.0764591108121815,
+          "coeff": 0.0105801
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.8401399056506698,
+          "coeff": -0.0107103
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.955052606495437,
+          "coeff": 0.0019459
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8085324205880065,
+          "coeff": 7.28e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7608649583845813,
+          "coeff": -0.0001761
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 70.62205390482798,
+          "coeff": -0.0008763
+        },
+        {
+          "nStar": 3,
+          "zeta": 40.47562434994168,
+          "coeff": 0.0045437
+        },
+        {
+          "nStar": 1,
+          "zeta": 29.662470135280223,
+          "coeff": 0.0506573
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.924314872737728,
+          "coeff": -0.0149959
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.283002056978766,
+          "coeff": -0.2355081
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.198997505347995,
+          "coeff": 0.1824936
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.355770221945754,
+          "coeff": -0.8737051
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.0764591108121815,
+          "coeff": 0.8165784
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.8401399056506698,
+          "coeff": 0.622699
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.955052606495437,
+          "coeff": 0.0066042
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8085324205880065,
+          "coeff": 0.0004254
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7608649583845813,
+          "coeff": -0.0008723
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 70.62205390482798,
+          "coeff": 0.0002176
+        },
+        {
+          "nStar": 3,
+          "zeta": 40.47562434994168,
+          "coeff": -0.0011301
+        },
+        {
+          "nStar": 1,
+          "zeta": 29.662470135280223,
+          "coeff": -0.0111567
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.924314872737728,
+          "coeff": 0.0027678
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.283002056978766,
+          "coeff": 0.0366503
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.198997505347995,
+          "coeff": -0.0286333
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.355770221945754,
+          "coeff": 0.2205742
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.0764591108121815,
+          "coeff": -0.1557938
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.8401399056506698,
+          "coeff": 0.1307983
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.955052606495437,
+          "coeff": -0.7520185
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8085324205880065,
+          "coeff": 0.5133699
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7608649583845813,
+          "coeff": 0.8140936
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 58.1790287116995,
+          "coeff": 0.0003577
+        },
+        {
+          "nStar": 3,
+          "zeta": 38.54180502445787,
+          "coeff": 0.0028804
+        },
+        {
+          "nStar": 2,
+          "zeta": 19.38642668817536,
+          "coeff": -0.2018877
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.505447140426313,
+          "coeff": -0.1726462
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.854009215496653,
+          "coeff": -0.4948883
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.745863498076583,
+          "coeff": -0.1701586
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.818540655107917,
+          "coeff": 0.0067602
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.2982092670483905,
+          "coeff": -0.0113278
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.83230241490561,
+          "coeff": 5.88e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7608649583845813,
+          "coeff": -3.2e-06
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 58.1790287116995,
+          "coeff": 0.0001529
+        },
+        {
+          "nStar": 3,
+          "zeta": 38.54180502445787,
+          "coeff": 0.0012416
+        },
+        {
+          "nStar": 2,
+          "zeta": 19.38642668817536,
+          "coeff": -0.0243883
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.505447140426313,
+          "coeff": 0.0375714
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.854009215496653,
+          "coeff": -0.3921162
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.745863498076583,
+          "coeff": -0.2087478
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.818540655107917,
+          "coeff": -0.5137528
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.2982092670483905,
+          "coeff": 1.6628454
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.83230241490561,
+          "coeff": 0.0237833
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7608649583845813,
+          "coeff": 0.0003303
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 24.172555,
+          "coeff": 0.0016416
+        },
+        {
+          "nStar": 4,
+          "zeta": 18.786883,
+          "coeff": 0.0069451
+        },
+        {
+          "nStar": 3,
+          "zeta": 8.199042,
+          "coeff": 0.109
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.406704,
+          "coeff": 0.3032906
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.442626,
+          "coeff": 0.3786483
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.205849,
+          "coeff": 0.2778314
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.453653,
+          "coeff": 0.0886884
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.731328,
+          "coeff": 0.0003702
+        }
+      ]
+    },
+    "E_tot": -1381.414552237,
+    "energies": {
+      "1s": -283.0655047,
+      "2s": -34.8683343,
+      "3s": -4.5242891,
+      "4s": -0.2674203,
+      "2p": -30.1201739,
+      "3p": -3.0062447,
+      "3d": -0.6754181
+    }
+  },
+  "Ni": {
+    "Z": 28,
+    "name": "Ni",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 72.2428585816353,
+          "coeff": 0.0017658
+        },
+        {
+          "nStar": 3,
+          "zeta": 41.92886999271461,
+          "coeff": -0.0107113
+        },
+        {
+          "nStar": 1,
+          "zeta": 30.809843047450453,
+          "coeff": -0.8374316
+        },
+        {
+          "nStar": 3,
+          "zeta": 21.732529731054356,
+          "coeff": 0.0619061
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.872940177532323,
+          "coeff": 0.1699209
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.787474960914928,
+          "coeff": -0.3687887
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.786865452515782,
+          "coeff": 0.0143053
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.278249921190762,
+          "coeff": -0.0009768
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.989755487184981,
+          "coeff": 0.0014735
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.0194240602875473,
+          "coeff": -0.0002638
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8266321154344999,
+          "coeff": -1.36e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7756882571361263,
+          "coeff": 3.13e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 72.2428585816353,
+          "coeff": 0.001857
+        },
+        {
+          "nStar": 3,
+          "zeta": 41.92886999271461,
+          "coeff": -0.0087143
+        },
+        {
+          "nStar": 1,
+          "zeta": 30.809843047450453,
+          "coeff": -0.134294
+        },
+        {
+          "nStar": 3,
+          "zeta": 21.732529731054356,
+          "coeff": 0.0393427
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.872940177532323,
+          "coeff": 1.2262784
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.787474960914928,
+          "coeff": -0.72396
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.786865452515782,
+          "coeff": 0.3756137
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.278249921190762,
+          "coeff": 0.0103158
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.989755487184981,
+          "coeff": -0.0100626
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.0194240602875473,
+          "coeff": 0.0016998
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8266321154344999,
+          "coeff": 6.88e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7756882571361263,
+          "coeff": -0.0001625
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 72.2428585816353,
+          "coeff": -0.0009759
+        },
+        {
+          "nStar": 3,
+          "zeta": 41.92886999271461,
+          "coeff": 0.0047668
+        },
+        {
+          "nStar": 1,
+          "zeta": 30.809843047450453,
+          "coeff": 0.0502696
+        },
+        {
+          "nStar": 3,
+          "zeta": 21.732529731054356,
+          "coeff": -0.0119704
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.872940177532323,
+          "coeff": -0.2460914
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.787474960914928,
+          "coeff": 0.1796269
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.786865452515782,
+          "coeff": -0.8799152
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.278249921190762,
+          "coeff": 0.7883898
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.989755487184981,
+          "coeff": 0.6611584
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.0194240602875473,
+          "coeff": 0.0077496
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8266321154344999,
+          "coeff": 0.0004304
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7756882571361263,
+          "coeff": -0.0008707
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 72.2428585816353,
+          "coeff": 0.000243
+        },
+        {
+          "nStar": 3,
+          "zeta": 41.92886999271461,
+          "coeff": -0.0011894
+        },
+        {
+          "nStar": 1,
+          "zeta": 30.809843047450453,
+          "coeff": -0.0109214
+        },
+        {
+          "nStar": 3,
+          "zeta": 21.732529731054356,
+          "coeff": 0.001838
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.872940177532323,
+          "coeff": 0.0394703
+        },
+        {
+          "nStar": 1,
+          "zeta": 10.787474960914928,
+          "coeff": -0.0288664
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.786865452515782,
+          "coeff": 0.2164175
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.278249921190762,
+          "coeff": -0.1552368
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.989755487184981,
+          "coeff": 0.1041796
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.0194240602875473,
+          "coeff": -0.7171979
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8266321154344999,
+          "coeff": 0.4802792
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7756882571361263,
+          "coeff": 0.840313
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 60.518213653665775,
+          "coeff": 0.000362
+        },
+        {
+          "nStar": 3,
+          "zeta": 40.34166674596717,
+          "coeff": 0.0027976
+        },
+        {
+          "nStar": 2,
+          "zeta": 20.126949252100214,
+          "coeff": -0.215915
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.164101057130864,
+          "coeff": -0.1949848
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.048126936398566,
+          "coeff": -0.5233394
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.807915197634527,
+          "coeff": -0.1068114
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.994022701369729,
+          "coeff": 0.0063656
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.4478338282445358,
+          "coeff": -0.0108025
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.8571168880933457,
+          "coeff": 4.61e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7756882571361263,
+          "coeff": -4.1e-06
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 60.518213653665775,
+          "coeff": 0.0001624
+        },
+        {
+          "nStar": 3,
+          "zeta": 40.34166674596717,
+          "coeff": 0.0012422
+        },
+        {
+          "nStar": 2,
+          "zeta": 20.126949252100214,
+          "coeff": -0.0289838
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.164101057130864,
+          "coeff": 0.0291239
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.048126936398566,
+          "coeff": -0.4624462
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.807915197634527,
+          "coeff": -0.1291237
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.994022701369729,
+          "coeff": -0.5416602
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.4478338282445358,
+          "coeff": 1.6930962
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.8571168880933457,
+          "coeff": 0.0204043
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7756882571361263,
+          "coeff": 0.0002391
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 25.058793,
+          "coeff": 0.0016742
+        },
+        {
+          "nStar": 4,
+          "zeta": 19.533825,
+          "coeff": 0.006941
+        },
+        {
+          "nStar": 3,
+          "zeta": 8.512016,
+          "coeff": 0.1192748
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.601915,
+          "coeff": 0.3109624
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.574636,
+          "coeff": 0.3717722
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.291306,
+          "coeff": 0.2701439
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.503687,
+          "coeff": 0.087963
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.743304,
+          "coeff": 0.0004043
+        }
+      ]
+    },
+    "E_tot": -1506.870907385,
+    "energies": {
+      "1s": -305.6190343,
+      "2s": -37.9178317,
+      "3s": -4.8878363,
+      "4s": -0.2762501,
+      "2p": -32.9417364,
+      "3p": -3.277678,
+      "3d": -0.7069318
+    }
+  },
+  "Cu": {
+    "Z": 29,
+    "name": "Cu",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 73.4807358745943,
+          "coeff": 0.0020207
+        },
+        {
+          "nStar": 3,
+          "zeta": 43.35466310648114,
+          "coeff": -0.0112026
+        },
+        {
+          "nStar": 1,
+          "zeta": 31.94009044163164,
+          "coeff": -0.8472089
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.26441628433515,
+          "coeff": 0.0598742
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.450087974722832,
+          "coeff": 0.1357926
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.717360848723253,
+          "coeff": -0.3188339
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.167571478373267,
+          "coeff": 0.0046457
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.502175164859292,
+          "coeff": 0.0001248
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.1013720531004862,
+          "coeff": -0.0001392
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8929160909526352,
+          "coeff": 2.34e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7692566910518372,
+          "coeff": 2.2e-06
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7230221032781754,
+          "coeff": -4.9e-06
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 73.4807358745943,
+          "coeff": 0.0021026
+        },
+        {
+          "nStar": 3,
+          "zeta": 43.35466310648114,
+          "coeff": -0.0091215
+        },
+        {
+          "nStar": 1,
+          "zeta": 31.94009044163164,
+          "coeff": -0.135825
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.26441628433515,
+          "coeff": 0.0385834
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.450087974722832,
+          "coeff": 1.2088221
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.717360848723253,
+          "coeff": -0.6818951
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.167571478373267,
+          "coeff": 0.3440914
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.502175164859292,
+          "coeff": 0.008359
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.1013720531004862,
+          "coeff": -0.0064395
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8929160909526352,
+          "coeff": 0.0010196
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7692566910518372,
+          "coeff": 7.82e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7230221032781754,
+          "coeff": -0.0001733
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 73.4807358745943,
+          "coeff": 0.001093
+        },
+        {
+          "nStar": 3,
+          "zeta": 43.35466310648114,
+          "coeff": -0.0049447
+        },
+        {
+          "nStar": 1,
+          "zeta": 31.94009044163164,
+          "coeff": -0.0499657
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.26441628433515,
+          "coeff": 0.0096176
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.450087974722832,
+          "coeff": 0.2570659
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.717360848723253,
+          "coeff": -0.1516614
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.167571478373267,
+          "coeff": 0.8899292
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.502175164859292,
+          "coeff": -0.6585943
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.1013720531004862,
+          "coeff": -0.8211081
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8929160909526352,
+          "coeff": -0.007551
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7692566910518372,
+          "coeff": -0.0003114
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7230221032781754,
+          "coeff": 0.0001435
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 73.4807358745943,
+          "coeff": 0.000248
+        },
+        {
+          "nStar": 3,
+          "zeta": 43.35466310648114,
+          "coeff": -0.0011285
+        },
+        {
+          "nStar": 1,
+          "zeta": 31.94009044163164,
+          "coeff": -0.0090394
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.26441628433515,
+          "coeff": 4.44e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.450087974722832,
+          "coeff": 0.0411595
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.717360848723253,
+          "coeff": -0.0273862
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.167571478373267,
+          "coeff": 0.1693738
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.502175164859292,
+          "coeff": -0.1563653
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.1013720531004862,
+          "coeff": 0.002482
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.8929160909526352,
+          "coeff": -0.4028755
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7692566910518372,
+          "coeff": 0.6643383
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.7230221032781754,
+          "coeff": 0.5359542
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 62.878751479062636,
+          "coeff": 0.0003582
+        },
+        {
+          "nStar": 3,
+          "zeta": 42.04578164990453,
+          "coeff": 0.0027114
+        },
+        {
+          "nStar": 2,
+          "zeta": 20.8586132542898,
+          "coeff": -0.2268487
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.80102567280057,
+          "coeff": -0.2115354
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.391492011904882,
+          "coeff": -0.515192
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.151471040908879,
+          "coeff": -0.0877481
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.133893913982537,
+          "coeff": 0.0077786
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.544651031391363,
+          "coeff": -0.0127477
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.8831580845981768,
+          "coeff": 1.92e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7230221032781754,
+          "coeff": -8.4e-06
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 62.878751479062636,
+          "coeff": 0.0001546
+        },
+        {
+          "nStar": 3,
+          "zeta": 42.04578164990453,
+          "coeff": 0.0011697
+        },
+        {
+          "nStar": 2,
+          "zeta": 20.8586132542898,
+          "coeff": -0.0311031
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.80102567280057,
+          "coeff": 0.0242955
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.391492011904882,
+          "coeff": -0.4931547
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.151471040908879,
+          "coeff": -0.086193
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.133893913982537,
+          "coeff": -0.6165142
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.544651031391363,
+          "coeff": 1.7582236
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.8831580845981768,
+          "coeff": 0.0224578
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7230221032781754,
+          "coeff": 8.78e-05
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 26.287704,
+          "coeff": 0.0015173
+        },
+        {
+          "nStar": 4,
+          "zeta": 20.461389,
+          "coeff": 0.0063705
+        },
+        {
+          "nStar": 3,
+          "zeta": 8.922963,
+          "coeff": 0.1178186
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.814383,
+          "coeff": 0.3137382
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.626597,
+          "coeff": 0.3693059
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.200138,
+          "coeff": 0.278169
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.34992,
+          "coeff": 0.1120928
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.690642,
+          "coeff": 0.0011723
+        }
+      ]
+    },
+    "E_tot": -1638.96374119,
+    "energies": {
+      "1s": -328.7929776,
+      "2s": -40.8189561,
+      "3s": -5.0119792,
+      "4s": -0.2384929,
+      "2p": -35.617944,
+      "3p": -3.3248203,
+      "3d": -0.4912314
+    }
+  },
+  "Zn": {
+    "Z": 30,
+    "name": "Zn",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 75.80458515918126,
+          "coeff": 0.0019769
+        },
+        {
+          "nStar": 3,
+          "zeta": 44.93061867619345,
+          "coeff": -0.0107609
+        },
+        {
+          "nStar": 1,
+          "zeta": 33.11473609859904,
+          "coeff": -0.8494586
+        },
+        {
+          "nStar": 3,
+          "zeta": 23.19334115025789,
+          "coeff": 0.0580937
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.007792534495835,
+          "coeff": 0.1366863
+        },
+        {
+          "nStar": 1,
+          "zeta": 12.14310196569097,
+          "coeff": -0.3167347
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.531866543795804,
+          "coeff": 0.0052139
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.643282998453216,
+          "coeff": -0.0001235
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.3932118128893527,
+          "coeff": 0.0002172
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.1165681068882534,
+          "coeff": -2.61e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8596875751053847,
+          "coeff": -2.2e-06
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.803364209125452,
+          "coeff": 4.6e-06
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 75.80458515918126,
+          "coeff": 0.0020741
+        },
+        {
+          "nStar": 3,
+          "zeta": 44.93061867619345,
+          "coeff": -0.0088027
+        },
+        {
+          "nStar": 1,
+          "zeta": 33.11473609859904,
+          "coeff": -0.1335176
+        },
+        {
+          "nStar": 3,
+          "zeta": 23.19334115025789,
+          "coeff": 0.0372026
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.007792534495835,
+          "coeff": 1.2357655
+        },
+        {
+          "nStar": 1,
+          "zeta": 12.14310196569097,
+          "coeff": -0.6992431
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.531866543795804,
+          "coeff": 0.3358924
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.643282998453216,
+          "coeff": 0.0096691
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.3932118128893527,
+          "coeff": -0.0091453
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.1165681068882534,
+          "coeff": 0.0009479
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8596875751053847,
+          "coeff": 4.58e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.803364209125452,
+          "coeff": -0.0001038
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 75.80458515918126,
+          "coeff": -0.0011753
+        },
+        {
+          "nStar": 3,
+          "zeta": 44.93061867619345,
+          "coeff": 0.0052002
+        },
+        {
+          "nStar": 1,
+          "zeta": 33.11473609859904,
+          "coeff": 0.0488817
+        },
+        {
+          "nStar": 3,
+          "zeta": 23.19334115025789,
+          "coeff": -0.0048718
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.007792534495835,
+          "coeff": -0.2951158
+        },
+        {
+          "nStar": 1,
+          "zeta": 12.14310196569097,
+          "coeff": 0.154024
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.531866543795804,
+          "coeff": -0.8917698
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.643282998453216,
+          "coeff": 0.669463
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.3932118128893527,
+          "coeff": 0.8268842
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.1165681068882534,
+          "coeff": 0.0197176
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8596875751053847,
+          "coeff": 0.0009397
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.803364209125452,
+          "coeff": -0.0019831
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 75.80458515918126,
+          "coeff": 0.0002886
+        },
+        {
+          "nStar": 3,
+          "zeta": 44.93061867619345,
+          "coeff": -0.0012828
+        },
+        {
+          "nStar": 1,
+          "zeta": 33.11473609859904,
+          "coeff": -0.0102453
+        },
+        {
+          "nStar": 3,
+          "zeta": 23.19334115025789,
+          "coeff": -0.0001946
+        },
+        {
+          "nStar": 2,
+          "zeta": 14.007792534495835,
+          "coeff": 0.051063
+        },
+        {
+          "nStar": 1,
+          "zeta": 12.14310196569097,
+          "coeff": -0.0240702
+        },
+        {
+          "nStar": 2,
+          "zeta": 10.531866543795804,
+          "coeff": 0.2096709
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.643282998453216,
+          "coeff": -0.1313166
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.3932118128893527,
+          "coeff": 0.0055122
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.1165681068882534,
+          "coeff": -0.6356594
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8596875751053847,
+          "coeff": 0.4198696
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.803364209125452,
+          "coeff": 0.8894478
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 65.2616385917445,
+          "coeff": 0.0003765
+        },
+        {
+          "nStar": 3,
+          "zeta": 43.96167696334189,
+          "coeff": 0.0026902
+        },
+        {
+          "nStar": 2,
+          "zeta": 21.72485727002938,
+          "coeff": -0.2288154
+        },
+        {
+          "nStar": 3,
+          "zeta": 17.527154234518818,
+          "coeff": -0.2182349
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.837739076972975,
+          "coeff": -0.5142568
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.498280681261255,
+          "coeff": -0.0801772
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.3227469159237515,
+          "coeff": 0.0072552
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.7346034219535307,
+          "coeff": -0.012159
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.9109464377141243,
+          "coeff": 2.38e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.803364209125452,
+          "coeff": -2.5e-06
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 65.2616385917445,
+          "coeff": 0.0001517
+        },
+        {
+          "nStar": 3,
+          "zeta": 43.96167696334189,
+          "coeff": 0.0011128
+        },
+        {
+          "nStar": 2,
+          "zeta": 21.72485727002938,
+          "coeff": -0.031331
+        },
+        {
+          "nStar": 3,
+          "zeta": 17.527154234518818,
+          "coeff": 0.0220066
+        },
+        {
+          "nStar": 2,
+          "zeta": 11.837739076972975,
+          "coeff": -0.5172974
+        },
+        {
+          "nStar": 2,
+          "zeta": 9.498280681261255,
+          "coeff": -0.0634072
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.3227469159237515,
+          "coeff": -0.5877818
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.7346034219535307,
+          "coeff": 1.7359178
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.9109464377141243,
+          "coeff": 0.0153842
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.803364209125452,
+          "coeff": 0.0001286
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 26.840425,
+          "coeff": 0.0016896
+        },
+        {
+          "nStar": 4,
+          "zeta": 21.076327,
+          "coeff": 0.0066854
+        },
+        {
+          "nStar": 3,
+          "zeta": 9.261571,
+          "coeff": 0.1293386
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.082216,
+          "coeff": 0.3220073
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.860363,
+          "coeff": 0.3716809
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.445106,
+          "coeff": 0.260711
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.590058,
+          "coeff": 0.0802155
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.764862,
+          "coeff": 0.0003242
+        }
+      ]
+    },
+    "E_tot": -1777.848115134,
+    "energies": {
+      "1s": -353.3045393,
+      "2s": -44.3617197,
+      "3s": -5.6378145,
+      "4s": -0.2925066,
+      "2p": -38.9248387,
+      "3p": -3.8393723,
+      "3d": -0.7825362
+    }
+  },
+  "Ga": {
+    "Z": 31,
+    "name": "Ga",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 78.16303318731867,
+          "coeff": -0.0020125
+        },
+        {
+          "nStar": 3,
+          "zeta": 46.49069234143991,
+          "coeff": 0.0107044
+        },
+        {
+          "nStar": 1,
+          "zeta": 34.310007241351244,
+          "coeff": 0.8493642
+        },
+        {
+          "nStar": 3,
+          "zeta": 24.178703303625475,
+          "coeff": -0.0517435
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.427947286937712,
+          "coeff": -0.1167559
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.127810253516103,
+          "coeff": -0.1089497
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.22589726036805,
+          "coeff": 0.3844733
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.765271749282999,
+          "coeff": -5.45e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.961127947146866,
+          "coeff": -0.0001774
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.243729870380216,
+          "coeff": 4.09e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7546129810554297,
+          "coeff": 8e-06
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6805825046068247,
+          "coeff": -1.31e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 78.16303318731867,
+          "coeff": 0.0021379
+        },
+        {
+          "nStar": 3,
+          "zeta": 46.49069234143991,
+          "coeff": -0.0090307
+        },
+        {
+          "nStar": 1,
+          "zeta": 34.310007241351244,
+          "coeff": -0.1184356
+        },
+        {
+          "nStar": 3,
+          "zeta": 24.178703303625475,
+          "coeff": 0.0130268
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.427947286937712,
+          "coeff": 0.9606464
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.127810253516103,
+          "coeff": 0.8388726
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.22589726036805,
+          "coeff": -0.9434169
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.765271749282999,
+          "coeff": 0.0481297
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.961127947146866,
+          "coeff": 0.0014032
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.243729870380216,
+          "coeff": 0.0004214
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7546129810554297,
+          "coeff": 7.02e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6805825046068247,
+          "coeff": -0.0001202
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 78.16303318731867,
+          "coeff": 0.0010632
+        },
+        {
+          "nStar": 3,
+          "zeta": 46.49069234143991,
+          "coeff": -0.0046042
+        },
+        {
+          "nStar": 1,
+          "zeta": 34.310007241351244,
+          "coeff": -0.0506485
+        },
+        {
+          "nStar": 3,
+          "zeta": 24.178703303625475,
+          "coeff": 0.0129238
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.427947286937712,
+          "coeff": 0.0751663
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.127810253516103,
+          "coeff": 0.86891
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.22589726036805,
+          "coeff": -0.5220104
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.765271749282999,
+          "coeff": 1.4389889
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.961127947146866,
+          "coeff": -2.2717431
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.243729870380216,
+          "coeff": -0.0160811
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7546129810554297,
+          "coeff": -0.000362
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6805825046068247,
+          "coeff": 0.0005797
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 78.16303318731867,
+          "coeff": 0.0002349
+        },
+        {
+          "nStar": 3,
+          "zeta": 46.49069234143991,
+          "coeff": -0.0010139
+        },
+        {
+          "nStar": 1,
+          "zeta": 34.310007241351244,
+          "coeff": -0.0130995
+        },
+        {
+          "nStar": 3,
+          "zeta": 24.178703303625475,
+          "coeff": 0.0058638
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.427947286937712,
+          "coeff": -0.0157824
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.127810253516103,
+          "coeff": 0.2528832
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.22589726036805,
+          "coeff": -0.0984525
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.765271749282999,
+          "coeff": 0.2874108
+        },
+        {
+          "nStar": 1,
+          "zeta": 3.961127947146866,
+          "coeff": -0.2434421
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.243729870380216,
+          "coeff": -0.9647349
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.7546129810554297,
+          "coeff": -0.7955805
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.6805825046068247,
+          "coeff": 2.1805188
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 69.0766422015334,
+          "coeff": -0.0003531
+        },
+        {
+          "nStar": 3,
+          "zeta": 46.533378801921124,
+          "coeff": -0.0024432
+        },
+        {
+          "nStar": 2,
+          "zeta": 23.19190746911906,
+          "coeff": 0.1795597
+        },
+        {
+          "nStar": 3,
+          "zeta": 18.78597484184745,
+          "coeff": 0.1551185
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.833320420048306,
+          "coeff": 0.6582416
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.742314109379011,
+          "coeff": 0.048533
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.225424879459292,
+          "coeff": 0.0027297
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.985635670669597,
+          "coeff": 0.0008101
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.169028619086453,
+          "coeff": 0.0002605
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9541639104182391,
+          "coeff": 5.7e-06
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6805825046068247,
+          "coeff": -4.6e-06
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 69.0766422015334,
+          "coeff": 0.0001678
+        },
+        {
+          "nStar": 3,
+          "zeta": 46.533378801921124,
+          "coeff": 0.0011738
+        },
+        {
+          "nStar": 2,
+          "zeta": 23.19190746911906,
+          "coeff": -0.0174948
+        },
+        {
+          "nStar": 3,
+          "zeta": 18.78597484184745,
+          "coeff": 0.0378616
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.833320420048306,
+          "coeff": -0.4796254
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.742314109379011,
+          "coeff": 0.0568351
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.225424879459292,
+          "coeff": 0.4257664
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.985635670669597,
+          "coeff": 0.4598884
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.169028619086453,
+          "coeff": 0.2161453
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9541639104182391,
+          "coeff": 0.001526
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6805825046068247,
+          "coeff": -0.000468
+        }
+      ],
+      "4p": [
+        {
+          "nStar": 2,
+          "zeta": 69.0766422015334,
+          "coeff": -2.1e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 46.533378801921124,
+          "coeff": -0.0001513
+        },
+        {
+          "nStar": 2,
+          "zeta": 23.19190746911906,
+          "coeff": 0.0026151
+        },
+        {
+          "nStar": 3,
+          "zeta": 18.78597484184745,
+          "coeff": -0.0060864
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.833320420048306,
+          "coeff": 0.0830719
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.742314109379011,
+          "coeff": -0.0006801
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.225424879459292,
+          "coeff": -0.0715253
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.985635670669597,
+          "coeff": -0.0179081
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.169028619086453,
+          "coeff": -0.2074242
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9541639104182391,
+          "coeff": 0.5634063
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.6805825046068247,
+          "coeff": 0.5081831
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 28.295386,
+          "coeff": 0.0016169
+        },
+        {
+          "nStar": 4,
+          "zeta": 22.128835,
+          "coeff": 0.0066219
+        },
+        {
+          "nStar": 3,
+          "zeta": 9.633176,
+          "coeff": 0.1418965
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.261006,
+          "coeff": 0.3508943
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.907149,
+          "coeff": 0.4053581
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.459171,
+          "coeff": 0.2240315
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.565609,
+          "coeff": 0.0213451
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.645754,
+          "coeff": -7.4e-06
+        }
+      ]
+    },
+    "E_tot": -1923.261007857,
+    "energies": {
+      "1s": -378.8184251,
+      "2s": -48.1684272,
+      "3s": -6.3946593,
+      "4s": -0.4245903,
+      "2p": -42.4940323,
+      "3p": -4.4823707,
+      "4p": -0.2084987,
+      "3d": -1.1933737
+    }
+  },
+  "Ge": {
+    "Z": 32,
+    "name": "Ge",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 80.97071548828231,
+          "coeff": -0.0018078
+        },
+        {
+          "nStar": 3,
+          "zeta": 48.503318214339195,
+          "coeff": 0.0095437
+        },
+        {
+          "nStar": 1,
+          "zeta": 35.54892086678178,
+          "coeff": 0.8454451
+        },
+        {
+          "nStar": 3,
+          "zeta": 25.31624005369761,
+          "coeff": -0.0516573
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.23182866875058,
+          "coeff": -0.1204391
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.719812584188933,
+          "coeff": -0.1111409
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.802698939232275,
+          "coeff": 0.3934758
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.810351281274834,
+          "coeff": 0.0006752
+        },
+        {
+          "nStar": 1,
+          "zeta": 4.261016624964201,
+          "coeff": -0.0004116
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.59136134593766,
+          "coeff": 0.0001034
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8842728569128887,
+          "coeff": 1.51e-05
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.8018155082275338,
+          "coeff": -2.58e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 80.97071548828231,
+          "coeff": 0.0019448
+        },
+        {
+          "nStar": 3,
+          "zeta": 48.503318214339195,
+          "coeff": -0.008092
+        },
+        {
+          "nStar": 1,
+          "zeta": 35.54892086678178,
+          "coeff": -0.1103075
+        },
+        {
+          "nStar": 3,
+          "zeta": 25.31624005369761,
+          "coeff": 0.0081985
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.23182866875058,
+          "coeff": 0.9323112
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.719812584188933,
+          "coeff": 0.8888362
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.802698939232275,
+          "coeff": -0.9655455
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.810351281274834,
+          "coeff": 0.0470433
+        },
+        {
+          "nStar": 1,
+          "zeta": 4.261016624964201,
+          "coeff": -0.0004295
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.59136134593766,
+          "coeff": 0.0007647
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8842728569128887,
+          "coeff": 0.0001016
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.8018155082275338,
+          "coeff": -0.0001848
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 80.97071548828231,
+          "coeff": 0.0009669
+        },
+        {
+          "nStar": 3,
+          "zeta": 48.503318214339195,
+          "coeff": -0.0041242
+        },
+        {
+          "nStar": 1,
+          "zeta": 35.54892086678178,
+          "coeff": -0.0487858
+        },
+        {
+          "nStar": 3,
+          "zeta": 25.31624005369761,
+          "coeff": 0.0126617
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.23182866875058,
+          "coeff": 0.0633297
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.719812584188933,
+          "coeff": 0.8844335
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.802698939232275,
+          "coeff": -0.5243957
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.810351281274834,
+          "coeff": 1.6725097
+        },
+        {
+          "nStar": 1,
+          "zeta": 4.261016624964201,
+          "coeff": -2.4962937
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.59136134593766,
+          "coeff": -0.0241003
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8842728569128887,
+          "coeff": -0.0001309
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.8018155082275338,
+          "coeff": 4.02e-05
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 80.97071548828231,
+          "coeff": 0.0001918
+        },
+        {
+          "nStar": 3,
+          "zeta": 48.503318214339195,
+          "coeff": -0.0008175
+        },
+        {
+          "nStar": 1,
+          "zeta": 35.54892086678178,
+          "coeff": -0.0142534
+        },
+        {
+          "nStar": 3,
+          "zeta": 25.31624005369761,
+          "coeff": 0.0082456
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.23182866875058,
+          "coeff": -0.0296369
+        },
+        {
+          "nStar": 2,
+          "zeta": 12.719812584188933,
+          "coeff": 0.2942394
+        },
+        {
+          "nStar": 1,
+          "zeta": 11.802698939232275,
+          "coeff": -0.097586
+        },
+        {
+          "nStar": 1,
+          "zeta": 6.810351281274834,
+          "coeff": 0.3053093
+        },
+        {
+          "nStar": 1,
+          "zeta": 4.261016624964201,
+          "coeff": -0.1116297
+        },
+        {
+          "nStar": 1,
+          "zeta": 2.59136134593766,
+          "coeff": -1.2393662
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8842728569128887,
+          "coeff": -0.7723292
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.8018155082275338,
+          "coeff": 2.238929
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 73.49989100828812,
+          "coeff": -0.0002894
+        },
+        {
+          "nStar": 3,
+          "zeta": 48.87958374300248,
+          "coeff": -0.0021391
+        },
+        {
+          "nStar": 2,
+          "zeta": 23.952620727614335,
+          "coeff": 0.1874945
+        },
+        {
+          "nStar": 3,
+          "zeta": 19.4690080778477,
+          "coeff": 0.1674549
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.22505515173174,
+          "coeff": 0.6453349
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.97148854593832,
+          "coeff": 0.0412213
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.5183267496438395,
+          "coeff": 0.0021424
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.325900066351487,
+          "coeff": 0.000965
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.481719003289061,
+          "coeff": 0.0001725
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.1228027455439644,
+          "coeff": 4.8e-06
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8018155082275338,
+          "coeff": -5.3e-06
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 73.49989100828812,
+          "coeff": 0.0001467
+        },
+        {
+          "nStar": 3,
+          "zeta": 48.87958374300248,
+          "coeff": 0.0010724
+        },
+        {
+          "nStar": 2,
+          "zeta": 23.952620727614335,
+          "coeff": -0.0207694
+        },
+        {
+          "nStar": 3,
+          "zeta": 19.4690080778477,
+          "coeff": 0.0316648
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.22505515173174,
+          "coeff": -0.4855325
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.97148854593832,
+          "coeff": 0.0727783
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.5183267496438395,
+          "coeff": 0.3973735
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.325900066351487,
+          "coeff": 0.4512341
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.481719003289061,
+          "coeff": 0.2423111
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.1228027455439644,
+          "coeff": 0.0017566
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8018155082275338,
+          "coeff": -0.0004771
+        }
+      ],
+      "4p": [
+        {
+          "nStar": 2,
+          "zeta": 73.49989100828812,
+          "coeff": -2.09e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 48.87958374300248,
+          "coeff": -0.0001602
+        },
+        {
+          "nStar": 2,
+          "zeta": 23.952620727614335,
+          "coeff": 0.0034417
+        },
+        {
+          "nStar": 3,
+          "zeta": 19.4690080778477,
+          "coeff": -0.0067488
+        },
+        {
+          "nStar": 2,
+          "zeta": 13.22505515173174,
+          "coeff": 0.1056609
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.97148854593832,
+          "coeff": 9e-05
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.5183267496438395,
+          "coeff": -0.0749832
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.325900066351487,
+          "coeff": 0.0073854
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.481719003289061,
+          "coeff": -0.3131488
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.1228027455439644,
+          "coeff": 0.7111911
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.8018155082275338,
+          "coeff": 0.390776
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 28.893923,
+          "coeff": 0.0017565
+        },
+        {
+          "nStar": 4,
+          "zeta": 22.744772,
+          "coeff": 0.0068668
+        },
+        {
+          "nStar": 3,
+          "zeta": 9.975534,
+          "coeff": 0.1520527
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.535857,
+          "coeff": 0.3529406
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.150742,
+          "coeff": 0.4126107
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.687443,
+          "coeff": 0.1985465
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.649905,
+          "coeff": 0.0121971
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.758093,
+          "coeff": -3.93e-05
+        }
+      ]
+    },
+    "E_tot": -2075.359731251,
+    "energies": {
+      "1s": -405.2444503,
+      "2s": -52.150339,
+      "3s": -7.1910003,
+      "4s": -0.5533671,
+      "2p": -46.2361639,
+      "3p": -5.1616015,
+      "4p": -0.2873527,
+      "3d": -1.6348997
+    }
+  },
+  "As": {
+    "Z": 33,
+    "name": "As",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 57.542995007429504,
+          "coeff": -0.0097888
+        },
+        {
+          "nStar": 3,
+          "zeta": 42.41357496835791,
+          "coeff": 0.0198534
+        },
+        {
+          "nStar": 1,
+          "zeta": 35.642023806110544,
+          "coeff": 0.979752
+        },
+        {
+          "nStar": 4,
+          "zeta": 24.08420766713194,
+          "coeff": -0.0227791
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.166423921018842,
+          "coeff": 0.0528492
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.311873948437182,
+          "coeff": -0.0175215
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.49226622628942,
+          "coeff": -0.0074662
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.4652317524008955,
+          "coeff": 0.0102517
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.865570220161626,
+          "coeff": -0.0001299
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.9209301312625788,
+          "coeff": -9.51e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3575354660868653,
+          "coeff": 0.000141
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9125504630846295,
+          "coeff": -0.000106
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 57.542995007429504,
+          "coeff": 0.0472799
+        },
+        {
+          "nStar": 3,
+          "zeta": 42.41357496835791,
+          "coeff": -0.0526307
+        },
+        {
+          "nStar": 1,
+          "zeta": 35.642023806110544,
+          "coeff": -0.3963765
+        },
+        {
+          "nStar": 4,
+          "zeta": 24.08420766713194,
+          "coeff": 0.1035166
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.166423921018842,
+          "coeff": 0.7947179
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.311873948437182,
+          "coeff": 0.1934033
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.49226622628942,
+          "coeff": -0.0413055
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.4652317524008955,
+          "coeff": 0.0681277
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.865570220161626,
+          "coeff": -0.0048316
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.9209301312625788,
+          "coeff": 0.0005478
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3575354660868653,
+          "coeff": -0.0005699
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9125504630846295,
+          "coeff": 0.0003827
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 57.542995007429504,
+          "coeff": 0.0196598
+        },
+        {
+          "nStar": 3,
+          "zeta": 42.41357496835791,
+          "coeff": -0.0221499
+        },
+        {
+          "nStar": 1,
+          "zeta": 35.642023806110544,
+          "coeff": -0.1569388
+        },
+        {
+          "nStar": 4,
+          "zeta": 24.08420766713194,
+          "coeff": 0.0387603
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.166423921018842,
+          "coeff": 0.4195814
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.311873948437182,
+          "coeff": 0.3662879
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.49226622628942,
+          "coeff": -0.1365817
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.4652317524008955,
+          "coeff": -1.036094
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.865570220161626,
+          "coeff": -0.131503
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.9209301312625788,
+          "coeff": 0.0048884
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3575354660868653,
+          "coeff": -0.0050606
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9125504630846295,
+          "coeff": 0.0031013
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 57.542995007429504,
+          "coeff": 0.0054786
+        },
+        {
+          "nStar": 3,
+          "zeta": 42.41357496835791,
+          "coeff": -0.0062164
+        },
+        {
+          "nStar": 1,
+          "zeta": 35.642023806110544,
+          "coeff": -0.0436365
+        },
+        {
+          "nStar": 4,
+          "zeta": 24.08420766713194,
+          "coeff": 0.0098545
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.166423921018842,
+          "coeff": 0.1211463
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.311873948437182,
+          "coeff": 0.1232891
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.49226622628942,
+          "coeff": 0.0138823
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.4652317524008955,
+          "coeff": -0.253092
+        },
+        {
+          "nStar": 2,
+          "zeta": 3.865570220161626,
+          "coeff": -0.5047831
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.9209301312625788,
+          "coeff": 0.4859887
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3575354660868653,
+          "coeff": 0.7161727
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9125504630846295,
+          "coeff": 0.0695486
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 53.840865853199546,
+          "coeff": -0.006159
+        },
+        {
+          "nStar": 3,
+          "zeta": 43.73507788051353,
+          "coeff": -0.0140545
+        },
+        {
+          "nStar": 2,
+          "zeta": 25.565537031126876,
+          "coeff": 0.3456543
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.219981382782613,
+          "coeff": 0.4376157
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.466322533905954,
+          "coeff": 0.308238
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.383662200054516,
+          "coeff": 0.0200905
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.798630805237142,
+          "coeff": -0.0059676
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.339231161629675,
+          "coeff": 0.0015992
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.9553268201963983,
+          "coeff": -0.0002968
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.1248625977295246,
+          "coeff": 0.000386
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9125504630846295,
+          "coeff": -0.0001796
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 53.840865853199546,
+          "coeff": 0.0037916
+        },
+        {
+          "nStar": 3,
+          "zeta": 43.73507788051353,
+          "coeff": 0.0084961
+        },
+        {
+          "nStar": 2,
+          "zeta": 25.565537031126876,
+          "coeff": -0.1640727
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.219981382782613,
+          "coeff": -0.2006209
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.466322533905954,
+          "coeff": -0.2996379
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.383662200054516,
+          "coeff": 0.644996
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.798630805237142,
+          "coeff": 0.4353153
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.339231161629675,
+          "coeff": 0.181663
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.9553268201963983,
+          "coeff": 0.0029471
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.1248625977295246,
+          "coeff": -0.0016209
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9125504630846295,
+          "coeff": 0.0005881
+        }
+      ],
+      "4p": [
+        {
+          "nStar": 2,
+          "zeta": 53.840865853199546,
+          "coeff": -0.0009478
+        },
+        {
+          "nStar": 3,
+          "zeta": 43.73507788051353,
+          "coeff": -0.0021377
+        },
+        {
+          "nStar": 2,
+          "zeta": 25.565537031126876,
+          "coeff": 0.0382923
+        },
+        {
+          "nStar": 3,
+          "zeta": 20.219981382782613,
+          "coeff": 0.0453519
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.466322533905954,
+          "coeff": 0.0772161
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.383662200054516,
+          "coeff": -0.1889786
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.798630805237142,
+          "coeff": -0.0794897
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.339231161629675,
+          "coeff": -0.1723025
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.9553268201963983,
+          "coeff": 0.216462
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.1248625977295246,
+          "coeff": 0.6834376
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9125504630846295,
+          "coeff": 0.1978196
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 31.332509,
+          "coeff": 0.0014237
+        },
+        {
+          "nStar": 4,
+          "zeta": 24.312793,
+          "coeff": 0.0062462
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.554143,
+          "coeff": 0.1460825
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.987846,
+          "coeff": 0.3475138
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.485271,
+          "coeff": 0.430922
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.935044,
+          "coeff": 0.1851549
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.733242,
+          "coeff": 0.0082224
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.859631,
+          "coeff": -2.52e-05
+        }
+      ]
+    },
+    "E_tot": -2234.238652211,
+    "energies": {
+      "1s": -432.5862026,
+      "2s": -56.3098277,
+      "3s": -8.0296221,
+      "4s": -0.6858969,
+      "2p": -50.1537452,
+      "3p": -5.8806934,
+      "4p": -0.3694825,
+      "3d": -2.1126572
+    }
+  },
+  "Se": {
+    "Z": 34,
+    "name": "Se",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 60.55616252128344,
+          "coeff": 0.0116221
+        },
+        {
+          "nStar": 3,
+          "zeta": 44.41843090615977,
+          "coeff": -0.021044
+        },
+        {
+          "nStar": 1,
+          "zeta": 37.00642761297731,
+          "coeff": -0.9787411
+        },
+        {
+          "nStar": 4,
+          "zeta": 25.28375467861017,
+          "coeff": 0.0252435
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.010902639359854,
+          "coeff": -0.0666383
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.995816988315903,
+          "coeff": 0.0299996
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.9394751375754,
+          "coeff": 0.0120725
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.746581303902227,
+          "coeff": -0.0170254
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.20849384574779,
+          "coeff": 0.000932
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.1246440401627105,
+          "coeff": 6.44e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.5035568003823674,
+          "coeff": -0.000104
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9564933595050447,
+          "coeff": 6.87e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 60.55616252128344,
+          "coeff": 0.0444538
+        },
+        {
+          "nStar": 3,
+          "zeta": 44.41843090615977,
+          "coeff": -0.051257
+        },
+        {
+          "nStar": 1,
+          "zeta": 37.00642761297731,
+          "coeff": -0.3916991
+        },
+        {
+          "nStar": 4,
+          "zeta": 25.28375467861017,
+          "coeff": 0.1049385
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.010902639359854,
+          "coeff": 0.8671612
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.995816988315903,
+          "coeff": 0.0972875
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.9394751375754,
+          "coeff": -0.0629209
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.746581303902227,
+          "coeff": 0.102854
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.20849384574779,
+          "coeff": -0.0107288
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.1246440401627105,
+          "coeff": 0.0011542
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.5035568003823674,
+          "coeff": -0.0009378
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9564933595050447,
+          "coeff": 0.0005024
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 60.55616252128344,
+          "coeff": -0.0185939
+        },
+        {
+          "nStar": 3,
+          "zeta": 44.41843090615977,
+          "coeff": 0.0217226
+        },
+        {
+          "nStar": 1,
+          "zeta": 37.00642761297731,
+          "coeff": 0.1564411
+        },
+        {
+          "nStar": 4,
+          "zeta": 25.28375467861017,
+          "coeff": -0.0392985
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.010902639359854,
+          "coeff": -0.4567798
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.995816988315903,
+          "coeff": -0.3055537
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.9394751375754,
+          "coeff": 0.2383658
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.746581303902227,
+          "coeff": 0.8959612
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.20849384574779,
+          "coeff": 0.1561662
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.1246440401627105,
+          "coeff": -0.0044467
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.5035568003823674,
+          "coeff": 0.0042356
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9564933595050447,
+          "coeff": -0.00196
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 60.55616252128344,
+          "coeff": 0.0054869
+        },
+        {
+          "nStar": 3,
+          "zeta": 44.41843090615977,
+          "coeff": -0.0064574
+        },
+        {
+          "nStar": 1,
+          "zeta": 37.00642761297731,
+          "coeff": -0.0461073
+        },
+        {
+          "nStar": 4,
+          "zeta": 25.28375467861017,
+          "coeff": 0.0105428
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.010902639359854,
+          "coeff": 0.1407371
+        },
+        {
+          "nStar": 3,
+          "zeta": 14.995816988315903,
+          "coeff": 0.1126788
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.9394751375754,
+          "coeff": -0.0101153
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.746581303902227,
+          "coeff": -0.1833988
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.20849384574779,
+          "coeff": -0.6121357
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.1246440401627105,
+          "coeff": 0.5140505
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.5035568003823674,
+          "coeff": 0.7311799
+        },
+        {
+          "nStar": 1,
+          "zeta": 0.9564933595050447,
+          "coeff": 0.0642519
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 55.93504729509563,
+          "coeff": -0.0064723
+        },
+        {
+          "nStar": 3,
+          "zeta": 45.56636935053845,
+          "coeff": -0.0144032
+        },
+        {
+          "nStar": 2,
+          "zeta": 26.7678142580311,
+          "coeff": 0.3393958
+        },
+        {
+          "nStar": 3,
+          "zeta": 21.152314122894737,
+          "coeff": 0.4351493
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.125553374174553,
+          "coeff": 0.3162317
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.714075882689445,
+          "coeff": 0.0221612
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.1205524301206475,
+          "coeff": -0.006967
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.565096813008427,
+          "coeff": 0.0019448
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.4062209446955305,
+          "coeff": 0.000614
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.205420987284295,
+          "coeff": -0.0006687
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9564933595050447,
+          "coeff": -9.71e-05
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 55.93504729509563,
+          "coeff": -0.0039597
+        },
+        {
+          "nStar": 3,
+          "zeta": 45.56636935053845,
+          "coeff": -0.0086921
+        },
+        {
+          "nStar": 2,
+          "zeta": 26.7678142580311,
+          "coeff": 0.1630156
+        },
+        {
+          "nStar": 3,
+          "zeta": 21.152314122894737,
+          "coeff": 0.2015918
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.125553374174553,
+          "coeff": 0.3039687
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.714075882689445,
+          "coeff": -0.6238082
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.1205524301206475,
+          "coeff": -0.4717771
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.565096813008427,
+          "coeff": -0.1636869
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.4062209446955305,
+          "coeff": 0.0038219
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.205420987284295,
+          "coeff": -0.0066164
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9564933595050447,
+          "coeff": 0.0003477
+        }
+      ],
+      "4p": [
+        {
+          "nStar": 2,
+          "zeta": 55.93504729509563,
+          "coeff": -0.0010594
+        },
+        {
+          "nStar": 3,
+          "zeta": 45.56636935053845,
+          "coeff": -0.0023336
+        },
+        {
+          "nStar": 2,
+          "zeta": 26.7678142580311,
+          "coeff": 0.0412546
+        },
+        {
+          "nStar": 3,
+          "zeta": 21.152314122894737,
+          "coeff": 0.0496825
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.125553374174553,
+          "coeff": 0.0849833
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.714075882689445,
+          "coeff": -0.2107925
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.1205524301206475,
+          "coeff": -0.0982097
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.565096813008427,
+          "coeff": -0.2430954
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.4062209446955305,
+          "coeff": -0.5070019
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.205420987284295,
+          "coeff": 1.5097405
+        },
+        {
+          "nStar": 2,
+          "zeta": 0.9564933595050447,
+          "coeff": 0.1154106
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 31.897983,
+          "coeff": 0.0015379
+        },
+        {
+          "nStar": 4,
+          "zeta": 24.931347,
+          "coeff": 0.006422
+        },
+        {
+          "nStar": 3,
+          "zeta": 10.86002,
+          "coeff": 0.1590899
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.194093,
+          "coeff": 0.3528155
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.709428,
+          "coeff": 0.43009
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.150997,
+          "coeff": 0.1600225
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.826977,
+          "coeff": 0.0063665
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.897613,
+          "coeff": -5.98e-05
+        }
+      ]
+    },
+    "E_tot": -2399.867609593,
+    "energies": {
+      "1s": -460.8674045,
+      "2s": -60.6688726,
+      "3s": -8.9321018,
+      "4s": -0.8373814,
+      "2p": -54.2689002,
+      "3p": -6.6615222,
+      "4p": -0.4028543,
+      "3d": -2.6496262
+    }
+  },
+  "Br": {
+    "Z": 35,
+    "name": "Br",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 62.59103426545681,
+          "coeff": 0.0132508
+        },
+        {
+          "nStar": 3,
+          "zeta": 46.04864188241198,
+          "coeff": -0.0219336
+        },
+        {
+          "nStar": 1,
+          "zeta": 38.33647799448341,
+          "coeff": -0.9789724
+        },
+        {
+          "nStar": 4,
+          "zeta": 26.32432639808697,
+          "coeff": 0.0253791
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.797680671457972,
+          "coeff": -0.0670808
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.784059096492827,
+          "coeff": 0.0289285
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.328858780602254,
+          "coeff": 0.0102296
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.101931761569126,
+          "coeff": -0.0146305
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.6691031848872715,
+          "coeff": 0.0008038
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.2178048636663545,
+          "coeff": 8.33e-05
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.6004072190728784,
+          "coeff": -0.0001113
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.022846235796612,
+          "coeff": 6.98e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 62.59103426545681,
+          "coeff": 0.0450195
+        },
+        {
+          "nStar": 3,
+          "zeta": 46.04864188241198,
+          "coeff": -0.0507053
+        },
+        {
+          "nStar": 1,
+          "zeta": 38.33647799448341,
+          "coeff": -0.3924497
+        },
+        {
+          "nStar": 4,
+          "zeta": 26.32432639808697,
+          "coeff": 0.1059948
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.797680671457972,
+          "coeff": 0.824616
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.784059096492827,
+          "coeff": 0.1376069
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.328858780602254,
+          "coeff": -0.0663372
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.101931761569126,
+          "coeff": 0.1110553
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.6691031848872715,
+          "coeff": -0.0121144
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.2178048636663545,
+          "coeff": 0.0007303
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.6004072190728784,
+          "coeff": -0.000641
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.022846235796612,
+          "coeff": 0.0003342
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 62.59103426545681,
+          "coeff": -0.0189118
+        },
+        {
+          "nStar": 3,
+          "zeta": 46.04864188241198,
+          "coeff": 0.0216413
+        },
+        {
+          "nStar": 1,
+          "zeta": 38.33647799448341,
+          "coeff": 0.1581023
+        },
+        {
+          "nStar": 4,
+          "zeta": 26.32432639808697,
+          "coeff": -0.0388122
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.797680671457972,
+          "coeff": -0.4284223
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.784059096492827,
+          "coeff": -0.3156266
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.328858780602254,
+          "coeff": 0.3531964
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.101931761569126,
+          "coeff": 0.6962321
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.6691031848872715,
+          "coeff": 0.2248232
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.2178048636663545,
+          "coeff": -0.0022267
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.6004072190728784,
+          "coeff": 0.0032532
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.022846235796612,
+          "coeff": -0.0014231
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 62.59103426545681,
+          "coeff": 0.0058177
+        },
+        {
+          "nStar": 3,
+          "zeta": 46.04864188241198,
+          "coeff": -0.006723
+        },
+        {
+          "nStar": 1,
+          "zeta": 38.33647799448341,
+          "coeff": -0.0486811
+        },
+        {
+          "nStar": 4,
+          "zeta": 26.32432639808697,
+          "coeff": 0.0105546
+        },
+        {
+          "nStar": 2,
+          "zeta": 15.797680671457972,
+          "coeff": 0.1395496
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.784059096492827,
+          "coeff": 0.1221182
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.328858780602254,
+          "coeff": -0.0316647
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.101931761569126,
+          "coeff": -0.0508543
+        },
+        {
+          "nStar": 2,
+          "zeta": 4.6691031848872715,
+          "coeff": -0.749055
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.2178048636663545,
+          "coeff": 0.6210919
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.6004072190728784,
+          "coeff": 0.6569533
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.022846235796612,
+          "coeff": 0.042071
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 57.73086637387437,
+          "coeff": -0.0063355
+        },
+        {
+          "nStar": 3,
+          "zeta": 47.15016974996163,
+          "coeff": -0.0138313
+        },
+        {
+          "nStar": 2,
+          "zeta": 27.779739210148485,
+          "coeff": 0.3363151
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.051010574252032,
+          "coeff": 0.4266203
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.838167762177427,
+          "coeff": 0.322053
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.628033840146523,
+          "coeff": 0.0256818
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.718291714517571,
+          "coeff": -0.0057859
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.965146983148026,
+          "coeff": 0.0017227
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.5867952721745442,
+          "coeff": 0.0005547
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3534526543333325,
+          "coeff": -0.0006631
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.022846235796612,
+          "coeff": -4.97e-05
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 57.73086637387437,
+          "coeff": -0.003951
+        },
+        {
+          "nStar": 3,
+          "zeta": 47.15016974996163,
+          "coeff": -0.0085171
+        },
+        {
+          "nStar": 2,
+          "zeta": 27.779739210148485,
+          "coeff": 0.1634189
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.051010574252032,
+          "coeff": 0.1987104
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.838167762177427,
+          "coeff": 0.306335
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.628033840146523,
+          "coeff": -0.4905817
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.718291714517571,
+          "coeff": -0.5755623
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.965146983148026,
+          "coeff": -0.1975788
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.5867952721745442,
+          "coeff": 0.0055771
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3534526543333325,
+          "coeff": -0.0096331
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.022846235796612,
+          "coeff": 0.0002427
+        }
+      ],
+      "4p": [
+        {
+          "nStar": 2,
+          "zeta": 57.73086637387437,
+          "coeff": -0.0011454
+        },
+        {
+          "nStar": 3,
+          "zeta": 47.15016974996163,
+          "coeff": -0.0024762
+        },
+        {
+          "nStar": 2,
+          "zeta": 27.779739210148485,
+          "coeff": 0.0445753
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.051010574252032,
+          "coeff": 0.0526007
+        },
+        {
+          "nStar": 3,
+          "zeta": 15.838167762177427,
+          "coeff": 0.0930826
+        },
+        {
+          "nStar": 2,
+          "zeta": 7.628033840146523,
+          "coeff": -0.1864795
+        },
+        {
+          "nStar": 3,
+          "zeta": 6.718291714517571,
+          "coeff": -0.1379073
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.965146983148026,
+          "coeff": -0.2798173
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.5867952721745442,
+          "coeff": -0.5058575
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.3534526543333325,
+          "coeff": 1.5077209
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.022846235796612,
+          "coeff": 0.1395336
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 32.846999,
+          "coeff": 0.0015744
+        },
+        {
+          "nStar": 4,
+          "zeta": 25.721481,
+          "coeff": 0.0065093
+        },
+        {
+          "nStar": 3,
+          "zeta": 11.166998,
+          "coeff": 0.1729358
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.37564,
+          "coeff": 0.3589234
+        },
+        {
+          "nStar": 3,
+          "zeta": 4.935945,
+          "coeff": 0.4257609
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.345405,
+          "coeff": 0.1382342
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.91634,
+          "coeff": 0.0047765
+        },
+        {
+          "nStar": 3,
+          "zeta": 0.956123,
+          "coeff": -2.1e-06
+        }
+      ]
+    },
+    "E_tot": -2572.44133138,
+    "energies": {
+      "1s": -490.0603389,
+      "2s": -65.1999591,
+      "3s": -9.8718922,
+      "4s": -0.9926803,
+      "2p": -58.5542228,
+      "3p": -7.4782081,
+      "4p": -0.4570857,
+      "3d": -3.2201741
+    }
+  },
+  "Kr": {
+    "Z": 36,
+    "name": "Kr",
+    "orbitals": {
+      "1s": [
+        {
+          "nStar": 1,
+          "zeta": 65.28324920144723,
+          "coeff": 0.0148759
+        },
+        {
+          "nStar": 3,
+          "zeta": 47.79847528892204,
+          "coeff": -0.0234416
+        },
+        {
+          "nStar": 1,
+          "zeta": 39.72025818874653,
+          "coeff": -0.9783877
+        },
+        {
+          "nStar": 4,
+          "zeta": 27.42163394142562,
+          "coeff": 0.0259097
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.573754007505258,
+          "coeff": -0.0689468
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.571104129470335,
+          "coeff": 0.0291144
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.736953196555394,
+          "coeff": 0.0095501
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.482360009003676,
+          "coeff": -0.0137021
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.10230202463518,
+          "coeff": 0.0006363
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.3511378530376428,
+          "coeff": 0.0001085
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.710178866207394,
+          "coeff": -0.0001339
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.0998025009459622,
+          "coeff": 8.24e-05
+        }
+      ],
+      "2s": [
+        {
+          "nStar": 1,
+          "zeta": 65.28324920144723,
+          "coeff": 0.0439991
+        },
+        {
+          "nStar": 3,
+          "zeta": 47.79847528892204,
+          "coeff": -0.0508013
+        },
+        {
+          "nStar": 1,
+          "zeta": 39.72025818874653,
+          "coeff": -0.3906898
+        },
+        {
+          "nStar": 4,
+          "zeta": 27.42163394142562,
+          "coeff": 0.1062937
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.573754007505258,
+          "coeff": 0.7865245
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.571104129470335,
+          "coeff": 0.1733641
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.736953196555394,
+          "coeff": -0.0684596
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.482360009003676,
+          "coeff": 0.1177337
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.10230202463518,
+          "coeff": -0.013415
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.3511378530376428,
+          "coeff": 0.0005485
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.710178866207394,
+          "coeff": -0.0005428
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.0998025009459622,
+          "coeff": 0.0002903
+        }
+      ],
+      "3s": [
+        {
+          "nStar": 1,
+          "zeta": 65.28324920144723,
+          "coeff": -0.0185648
+        },
+        {
+          "nStar": 3,
+          "zeta": 47.79847528892204,
+          "coeff": 0.0218088
+        },
+        {
+          "nStar": 1,
+          "zeta": 39.72025818874653,
+          "coeff": 0.158682
+        },
+        {
+          "nStar": 4,
+          "zeta": 27.42163394142562,
+          "coeff": -0.038455
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.573754007505258,
+          "coeff": -0.4023743
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.571104129470335,
+          "coeff": -0.3230848
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.736953196555394,
+          "coeff": 0.4573148
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.482360009003676,
+          "coeff": 0.4908703
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.10230202463518,
+          "coeff": 0.3098497
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.3511378530376428,
+          "coeff": -0.0005023
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.710178866207394,
+          "coeff": 0.0025103
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.0998025009459622,
+          "coeff": -0.0010443
+        }
+      ],
+      "4s": [
+        {
+          "nStar": 1,
+          "zeta": 65.28324920144723,
+          "coeff": 0.0059175
+        },
+        {
+          "nStar": 3,
+          "zeta": 47.79847528892204,
+          "coeff": -0.0070282
+        },
+        {
+          "nStar": 1,
+          "zeta": 39.72025818874653,
+          "coeff": -0.0507087
+        },
+        {
+          "nStar": 4,
+          "zeta": 27.42163394142562,
+          "coeff": 0.0106434
+        },
+        {
+          "nStar": 2,
+          "zeta": 16.573754007505258,
+          "coeff": 0.136939
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.571104129470335,
+          "coeff": 0.1300108
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.736953196555394,
+          "coeff": -0.0513369
+        },
+        {
+          "nStar": 2,
+          "zeta": 6.482360009003676,
+          "coeff": 0.0963564
+        },
+        {
+          "nStar": 2,
+          "zeta": 5.10230202463518,
+          "coeff": -0.9038936
+        },
+        {
+          "nStar": 2,
+          "zeta": 2.3511378530376428,
+          "coeff": 0.6794236
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.710178866207394,
+          "coeff": 0.6213645
+        },
+        {
+          "nStar": 1,
+          "zeta": 1.0998025009459622,
+          "coeff": 0.0338756
+        }
+      ],
+      "2p": [
+        {
+          "nStar": 2,
+          "zeta": 59.53198592352045,
+          "coeff": -0.0062132
+        },
+        {
+          "nStar": 3,
+          "zeta": 48.71005159314023,
+          "coeff": -0.0133944
+        },
+        {
+          "nStar": 2,
+          "zeta": 28.729114054313943,
+          "coeff": 0.3355068
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.878599041412382,
+          "coeff": 0.4219443
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.504236331615477,
+          "coeff": 0.3213774
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.673669507018952,
+          "coeff": 0.0286895
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.263991321316452,
+          "coeff": -0.0034907
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.324111961387213,
+          "coeff": 0.0012162
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.7628198158366646,
+          "coeff": 0.000376
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.4989190316276328,
+          "coeff": -0.0004632
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.0998025009459622,
+          "coeff": -1.7e-05
+        }
+      ],
+      "3p": [
+        {
+          "nStar": 2,
+          "zeta": 59.53198592352045,
+          "coeff": -0.0039511
+        },
+        {
+          "nStar": 3,
+          "zeta": 48.71005159314023,
+          "coeff": -0.0084081
+        },
+        {
+          "nStar": 2,
+          "zeta": 28.729114054313943,
+          "coeff": 0.1656088
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.878599041412382,
+          "coeff": 0.1992198
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.504236331615477,
+          "coeff": 0.3102247
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.673669507018952,
+          "coeff": -0.3970577
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.263991321316452,
+          "coeff": -0.6549448
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.324111961387213,
+          "coeff": -0.2207516
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.7628198158366646,
+          "coeff": 0.00568
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.4989190316276328,
+          "coeff": -0.0090577
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.0998025009459622,
+          "coeff": 0.0004744
+        }
+      ],
+      "4p": [
+        {
+          "nStar": 2,
+          "zeta": 59.53198592352045,
+          "coeff": -0.0012127
+        },
+        {
+          "nStar": 3,
+          "zeta": 48.71005159314023,
+          "coeff": -0.0025837
+        },
+        {
+          "nStar": 2,
+          "zeta": 28.729114054313943,
+          "coeff": 0.0478133
+        },
+        {
+          "nStar": 3,
+          "zeta": 22.878599041412382,
+          "coeff": 0.0558041
+        },
+        {
+          "nStar": 3,
+          "zeta": 16.504236331615477,
+          "coeff": 0.1007406
+        },
+        {
+          "nStar": 2,
+          "zeta": 8.673669507018952,
+          "coeff": -0.1665597
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.263991321316452,
+          "coeff": -0.1758964
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.324111961387213,
+          "coeff": -0.3108946
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.7628198158366646,
+          "coeff": -0.5032745
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.4989190316276328,
+          "coeff": 1.5227627
+        },
+        {
+          "nStar": 2,
+          "zeta": 1.0998025009459622,
+          "coeff": 0.1439485
+        }
+      ],
+      "3d": [
+        {
+          "nStar": 3,
+          "zeta": 33.868162,
+          "coeff": 0.0015784
+        },
+        {
+          "nStar": 4,
+          "zeta": 26.569736,
+          "coeff": 0.0064515
+        },
+        {
+          "nStar": 3,
+          "zeta": 11.514091,
+          "coeff": 0.1841738
+        },
+        {
+          "nStar": 3,
+          "zeta": 7.53664,
+          "coeff": 0.3761312
+        },
+        {
+          "nStar": 3,
+          "zeta": 5.124374,
+          "coeff": 0.4160275
+        },
+        {
+          "nStar": 3,
+          "zeta": 3.51057,
+          "coeff": 0.113999
+        },
+        {
+          "nStar": 3,
+          "zeta": 2.025551,
+          "coeff": 0.0039681
+        },
+        {
+          "nStar": 3,
+          "zeta": 1.023901,
+          "coeff": 9e-06
+        }
+      ]
+    },
+    "E_tot": -2752.054975504,
+    "energies": {
+      "1s": -520.1654687,
+      "2s": -69.9030823,
+      "3s": -10.8494654,
+      "4s": -1.1529352,
+      "2p": -63.009785,
+      "3p": -8.3315005,
+      "4p": -0.5241866,
+      "3d": -3.8252344
+    }
+  },
 };

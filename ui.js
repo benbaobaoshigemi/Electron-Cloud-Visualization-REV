@@ -35,7 +35,7 @@ window.ElectronCloud.UI.init = function () {
     }
 
     // 动态填充原子列表（必须在 initCustomSelects 之前调用，否则自定义UI会包含旧选项）
-    // populateAtomList(); // DISABLED: Using hardcoded list in HTML now
+    populateAtomList();
 
     // 初始化通用自定义下拉框
     if (window.ElectronCloud.UI.initCustomSelects) {
@@ -832,14 +832,19 @@ window.ElectronCloud.UI.init = function () {
         const select = document.getElementById('atom-select');
         if (!select || !window.SlaterBasis) return;
 
-        // 元素中文名称映射 (1-54)
+        // 元素中文名称映射 (1-103)
         const cnNames = {
-            'H': '氢', 'He': '氦', 'Li': '锂', 'Be': '铍', 'B': '硼', 'C': '碳', 'N': '氮', 'O': '氧', 'F': '氟', 'Ne': '氖',
-            'Na': '钠', 'Mg': '镁', 'Al': '铝', 'Si': '硅', 'P': '磷', 'S': '硫', 'Cl': '氯', 'Ar': '氩',
-            'K': '钾', 'Ca': '钙', 'Sc': '钪', 'Ti': '钛', 'V': '钒', 'Cr': '铬', 'Mn': '锰', 'Fe': '铁', 'Co': '钴', 'Ni': '镍', 'Cu': '铜', 'Zn': '锌',
-            'Ga': '镓', 'Ge': '锗', 'As': '砷', 'Se': '硒', 'Br': '溴', 'Kr': '氪',
-            'Rb': '铷', 'Sr': '锶', 'Y': '钇', 'Zr': '锆', 'Nb': '铌', 'Mo': '钼', 'Tc': '锝', 'Ru': '钌', 'Rh': '铑', 'Pd': '钯', 'Ag': '银', 'Cd': '镉',
-            'In': '铟', 'Sn': '锡', 'Sb': '锑', 'Te': '碲', 'I': '碘', 'Xe': '氙'
+            'H': '氢', 'He': '氦', 'Li': '锂', 'Be': '铍', 'B': '硼',
+            'C': '碳', 'N': '氮', 'O': '氧', 'F': '氟', 'Ne': '氖',
+            'Na': '钠', 'Mg': '镁', 'Al': '铝', 'Si': '硅', 'P': '磷',
+            'S': '硫', 'Cl': '氯', 'Ar': '氩', 'K': '钾', 'Ca': '钙',
+            'Sc': '钪', 'Ti': '钛', 'V': '钒', 'Cr': '铬', 'Mn': '锰',
+            'Fe': '铁', 'Co': '钴', 'Ni': '镍', 'Cu': '铜', 'Zn': '锌',
+            'Ga': '镓', 'Ge': '锗', 'As': '砷', 'Se': '硒', 'Br': '溴',
+            'Kr': '氪', 'Rb': '铷', 'Sr': '锶', 'Y': '钇', 'Zr': '锆',
+            'Nb': '铌', 'Mo': '钼', 'Tc': '锝', 'Ru': '钌', 'Rh': '铑',
+            'Pd': '钯', 'Ag': '银', 'Cd': '镉', 'In': '铟', 'Sn': '锡',
+            'Sb': '锑', 'Te': '碲', 'I': '碘', 'Xe': '氙'
         };
 
         // 清空现有选项

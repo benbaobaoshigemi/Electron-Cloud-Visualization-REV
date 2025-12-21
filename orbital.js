@@ -995,7 +995,7 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
             const theoryE = new Float32Array(numBins);
             if (paramsList.length > 0) {
                 for (const params of paramsList) {
-                    const res = window.Hydrogen.calculateCumulativePotential(params.n, params.l, Z, atomType, rMax, numBins);
+                    const res = window.Hydrogen.calculateCumulativeOrbitalEnergy(params.n, params.l, Z, atomType, rMax, numBins);
                     for (let j = 0; j < numBins; j++) theoryE[j] += res.E[j];
                 }
                 for (let j = 0; j < numBins; j++) theoryE[j] /= paramsList.length;

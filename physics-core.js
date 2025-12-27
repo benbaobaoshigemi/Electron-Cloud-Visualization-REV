@@ -72,7 +72,45 @@
         return pll;
     }
 
-    // ==================== 2. 线性代数工具 ====================
+    // ==================== 2. 线性代数工具 & 四元数 ====================
+
+    // 四元数工具 (Quaternion Utils)
+    function quatMultiply(p, q) {
+        return [
+            p[0] * q[0] - p[1] * q[1] - p[2] * q[2] - p[3] * q[3], // w
+            p[0] * q[1] + p[1] * q[0] + p[2] * q[3] - p[3] * q[2], // x
+            p[0] * q[2] - p[1] * q[3] + p[2] * q[0] + p[3] * q[1], // y
+            p[0] * q[3] + p[1] * q[2] - p[2] * q[1] + p[3] * q[0]  // z
+        ];
+    }
+
+    function quatRotateVector(q, v) {
+        // v' = q * v * q_inv
+        // vector v as quaternion [0, v]
+        const vq = [0, v[0], v[1], v[2]];
+        const qInv = [q[0], -q[1], -q[2], -q[3]]; // q must be normalized
+        const temp = quatMultiply(q, vq);
+        const res = quatMultiply(temp, qInv);
+        return [res[1], res[2], res[3]];
+    }
+
+    function quatNormalize(q) {
+        const norm = Math.sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+        if (norm < 1e-9) return [1, 0, 0, 0];
+        return [q[0] / norm, q[1] / norm, q[2] / norm, q[3] / norm];
+    }
+
+    function quatRandom() {
+        // Uniform random quaternion
+        const u1 = Math.random(), u2 = Math.random(), u3 = Math.random();
+        const sq10 = Math.sqrt(1 - u1), squ1 = Math.sqrt(u1);
+        return [
+            sq10 * Math.sin(TWO_PI * u2),
+            sq10 * Math.cos(TWO_PI * u2),
+            squ1 * Math.sin(TWO_PI * u3),
+            squ1 * Math.cos(TWO_PI * u3)
+        ];
+    }
 
     function matMul(A, B) {
         const m = A.length, n = A[0].length, p = B[0].length;
@@ -265,13 +303,16 @@
     const _hybridDirCache = {};
 
     function generateConstrainedDirections(orbitalParams) {
-        // 【核心修复】混合策略：
-        // 1. 使用 Fibonacci 球面分布获取 N 个均匀初始方向
-        // 2. 对于非 s 轨道（有明确方向性），将初始方向锚定到轨道峰值
-        // 3. Thomson 优化最终方向
+        // 【核心算法升级 v3.0】自适应投影体积最大化对齐 (Adaptive Projection Max-Volume Alignment)
+        // 
+        // 1. 生成各向同性的 Thomson 几何构型（无特定朝向）
+        // 2. 使用四元数旋转该构型，寻找与基组 (orbitalParams) 最匹配的方向
+        // 3. 匹配度定义为基组投影矩阵的体积指标 (Log-Singular-Value Sum)
+
         const n = orbitalParams.length;
         if (n <= 1) {
-            return [getOrbitalPeakDirection(orbitalParams[0])];
+            // N=1 简单处理 (z轴)
+            return [[0, 0, 1]];
         }
 
         // 生成缓存 key
@@ -283,137 +324,100 @@
             return JSON.parse(JSON.stringify(_hybridDirCache[cacheKey]));
         }
 
-        // 获取 Fibonacci 均匀分布作为基础
-        const fibDirs = getFibonacciDirections(n);
+        // 1. 获取 Thomson 几何 (Random Rotation)
+        const basePoints = optimizeThomson(n);
 
-        // 收集非 s 轨道的峰值方向（有明确方向性的轨道）
-        const nonS_orbitals = orbitalParams.filter(p => p.angKey.l !== 0);
-        const nonS_peaks = nonS_orbitals.map(p => getOrbitalPeakDirection(p));
+        // 2. 自适应对齐优化
+        const result = optimizeHybridAlignment(basePoints, orbitalParams);
 
-        // 【关键修复】去重峰值方向 - 避免 pz 和 dz2 争抢同一个 z 轴方向
-        const uniquePeaks = [];
-        const usedPeakDirs = [];
-        for (const peak of nonS_peaks) {
-            const norm = Math.sqrt(peak[0] ** 2 + peak[1] ** 2 + peak[2] ** 2);
-            const normalized = [peak[0] / norm, peak[1] / norm, peak[2] / norm];
-            // 检查是否已有相似方向（点积接近 1 或 -1）
-            let isDuplicate = false;
-            for (const used of usedPeakDirs) {
-                const dot = Math.abs(normalized[0] * used[0] + normalized[1] * used[1] + normalized[2] * used[2]);
-                if (dot > 0.95) { // 夹角小于 ~18°，视为重复
-                    isDuplicate = true;
-                    break;
-                }
-            }
-            if (!isDuplicate) {
-                uniquePeaks.push(normalized);
-                usedPeakDirs.push(normalized);
-            }
-        }
-
-        // 构建初始方向：对于每个唯一的峰值方向，替换最近的未使用的 Fibonacci 方向
-        const initialDirs = [...fibDirs];
-        const usedIndices = new Set();
-
-        for (const peak of uniquePeaks) {
-            // 找到最近的未使用的 Fibonacci 方向
-            let bestIdx = -1;
-            let bestDot = -Infinity;
-            for (let i = 0; i < n; i++) {
-                if (usedIndices.has(i)) continue;
-                const dot = peak[0] * fibDirs[i][0] + peak[1] * fibDirs[i][1] + peak[2] * fibDirs[i][2];
-                if (dot > bestDot) {
-                    bestDot = dot;
-                    bestIdx = i;
-                }
-            }
-            if (bestIdx >= 0) {
-                initialDirs[bestIdx] = [...peak];
-                usedIndices.add(bestIdx);
-            }
-        }
-
-        const result = optimizeThomsonFromInitial(initialDirs);
         _hybridDirCache[cacheKey] = JSON.parse(JSON.stringify(result));
         return result;
     }
 
-    // 生成 N 个 Fibonacci 球面均匀分布的方向
-    function getFibonacciDirections(n) {
-        if (n <= 1) return [[0, 0, 1]];
-        const gr = (1 + Math.sqrt(5)) / 2;
-        const dirs = [];
-        for (let i = 0; i < n; i++) {
-            const y = 1 - (i / (n - 1)) * 2;
-            const rad = Math.sqrt(1 - y * y);
-            const t = TWO_PI * i / gr;
-            dirs.push([Math.cos(t) * rad, y, Math.sin(t) * rad]);
+    // 【核心优化器】基于爬山法的四元数旋转优化
+    function optimizeHybridAlignment(initialPoints, orbitalParams) {
+        const N = initialPoints.length;
+        const M = orbitalParams.length; // usually N=M
+
+        // 目标函数：计算当前旋转下的 Vol Index
+        function calculateScore(q) {
+            // Apply rotation
+            const rotated = initialPoints.map(p => quatRotateVector(q, p));
+
+            // Build Matrix A (N x M)
+            const A = [];
+            for (let i = 0; i < N; i++) {
+                const p = rotated[i];
+                const r = Math.sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+                // Robust acos
+                const theta = Math.acos(Math.max(-1, Math.min(1, p[2] / r)));
+                const phi = Math.atan2(p[1], p[0]);
+
+                const row = orbitalParams.map(param => {
+                    const { l, m, t } = param.angKey;
+                    return realYlm_value(l, m, t, theta, phi);
+                });
+                A.push(row);
+            }
+
+            // SVD to get Singular Values
+            const { S } = jacobiSVD(A);
+
+            // Score = Sum(log(sigma + eps))
+            // 避免奇异值接近0导致的数值不稳定
+            let score = 0;
+            for (let k = 0; k < S.length; k++) {
+                score += Math.log(S[k] + 1e-12);
+            }
+            return score;
         }
-        return dirs;
-    }
 
-    // 获取单个轨道的峰值方向（最大振幅所在的方向）
-    function getOrbitalPeakDirection(orbitalParam) {
-        const { l, m, t } = orbitalParam.angKey;
+        let bestScore = -Infinity;
+        let bestPoints = initialPoints; // Fallback
 
-        // s 轨道 (l=0)：球对称，返回 z 轴
-        if (l === 0) return [0, 0, 1];
+        // Random Restart Hill Climbing
+        // N=20 restarts seems sufficient for low dim
+        const NUM_RESTARTS = 20;
+        const STEPS_PER_RUN = 50;
 
-        // p 轨道 (l=1)
-        if (l === 1) {
-            if (m === 0) return [0, 0, 1];        // pz -> z 轴
-            if (m === 1 && t === 'c') return [1, 0, 0];  // px -> x 轴
-            if (m === 1 && t === 's') return [0, 1, 0];  // py -> y 轴
-        }
+        for (let run = 0; run < NUM_RESTARTS; run++) {
+            // Random start
+            let currentQ = quatRandom();
+            let currentScore = calculateScore(currentQ);
 
-        // d 轨道 (l=2)
-        if (l === 2) {
-            if (m === 0) return [0, 0, 1];        // dz2 -> z 轴
-            if (m === 1 && t === 'c') return [1, 0, 1];  // dxz -> xz 平面
-            if (m === 1 && t === 's') return [0, 1, 1];  // dyz -> yz 平面
-            if (m === 2 && t === 'c') return [1, 1, 0];  // dx2-y2 -> xy 平面
-            if (m === 2 && t === 's') return [1, 1, 0];  // dxy -> xy 平面
-        }
+            // Simple Hill Climbing
+            let stepSize = 0.2;
+            for (let step = 0; step < STEPS_PER_RUN; step++) {
+                // Try perturbing quaternion
+                const perturb = [
+                    (Math.random() - 0.5) * stepSize,
+                    (Math.random() - 0.5) * stepSize,
+                    (Math.random() - 0.5) * stepSize,
+                    (Math.random() - 0.5) * stepSize
+                ];
+                const trialQ = quatNormalize([
+                    currentQ[0] + perturb[0], currentQ[1] + perturb[1],
+                    currentQ[2] + perturb[2], currentQ[3] + perturb[3]
+                ]);
 
-        // f 轨道 (l=3) 及更高: 使用默认方向
-        return [0, 0, 1];
-    }
+                const trialScore = calculateScore(trialQ);
 
-    // 从给定初始方向开始进行 Thomson 优化
-    function optimizeThomsonFromInitial(initialPoints, maxIter = 200, lr = 0.1) {
-        const n = initialPoints.length;
-        if (n <= 1) return initialPoints.map(p => [...p]);
-
-        // 归一化初始方向
-        let points = initialPoints.map(p => {
-            const norm = Math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) || 1;
-            return [p[0] / norm, p[1] / norm, p[2] / norm];
-        });
-
-        // Thomson 优化：最小化点间斥力
-        for (let iter = 0; iter < maxIter; iter++) {
-            const grad = points.map(() => [0, 0, 0]);
-            for (let i = 0; i < n; i++) {
-                for (let j = i + 1; j < n; j++) {
-                    const dx = points[i][0] - points[j][0];
-                    const dy = points[i][1] - points[j][1];
-                    const dz = points[i][2] - points[j][2];
-                    const d2 = dx * dx + dy * dy + dz * dz;
-                    const d3 = d2 * Math.sqrt(d2) + 1e-10;
-                    grad[i][0] -= dx / d3; grad[i][1] -= dy / d3; grad[i][2] -= dz / d3;
-                    grad[j][0] += dx / d3; grad[j][1] += dy / d3; grad[j][2] += dz / d3;
+                if (trialScore > currentScore) {
+                    currentScore = trialScore;
+                    currentQ = trialQ;
+                } else {
+                    // Decay step size if no improvement
+                    stepSize *= 0.95;
                 }
             }
-            for (let i = 0; i < n; i++) {
-                points[i][0] -= lr * grad[i][0];
-                points[i][1] -= lr * grad[i][1];
-                points[i][2] -= lr * grad[i][2];
-                const norm = Math.sqrt(points[i][0] ** 2 + points[i][1] ** 2 + points[i][2] ** 2);
-                points[i] = [points[i][0] / norm, points[i][1] / norm, points[i][2] / norm];
+
+            if (currentScore > bestScore) {
+                bestScore = currentScore;
+                bestPoints = initialPoints.map(p => quatRotateVector(currentQ, p));
             }
-            if (iter % 50 === 0) lr *= 0.8;
         }
-        return points;
+
+        return bestPoints;
     }
 
 

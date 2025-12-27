@@ -379,22 +379,6 @@
         order: 5,
       });
     }
-    if (theory && theory.wave && theory.wave.length) {
-      datasets.push({
-        type: 'line',
-        label: '波函数（幅值）',
-        data: theory.wave.map((y, i) => ({ x: i, y })),
-        borderColor: 'rgba(51, 51, 255, 0.9)',
-        backgroundColor: 'transparent',
-        pointRadius: 0,
-        borderWidth: 2.5,
-        yAxisID: 'y2',
-        borderDash: [4, 4],
-        tension: 0.2,
-        order: 0,
-        hidden: state.waveHidden
-      });
-    }
     chart.data.datasets = datasets;
 
     // 添加坐标轴配置
@@ -415,20 +399,6 @@
           font: { size: 12, weight: '500' }
         };
       }
-      // 波函数幅值轴 (右侧1)
-      if (theory && theory.wave && theory.wave.length) {
-        chart.options.scales.y2 = {
-          position: 'right',
-          grid: { drawOnChartArea: false },
-          ticks: { display: false },
-          title: {
-            display: true,
-            text: '波函数幅值',
-            color: 'rgba(160,160,160,0.8)',
-            font: { size: 10 }
-          }
-        };
-      }
     }
 
     // 优化x轴显示
@@ -438,13 +408,6 @@
     }
 
     try {
-      // 同步可见性状态
-      const waveIdx = chart.data.datasets.findIndex(ds => ds.label === '波函数（幅值）');
-      if (waveIdx !== -1) {
-        chart.data.datasets[waveIdx].hidden = state.waveHidden;
-        const meta = chart.getDatasetMeta(waveIdx);
-        if (meta) meta.hidden = state.waveHidden;
-      }
       chart.update('none');
     } catch (error) {
       console.error('图表更新失败:', error);
@@ -910,7 +873,7 @@
     if (theory && theory.epsDensity && theory.epsDensity.length > 0) {
       datasets.push({
         type: 'line',
-        label: 'ε·P(r) 理论',
+        label: '局域能量（理论）',
         data: theory.epsDensity.map((y, i) => ({ x: i, y })),
         borderColor: 'rgba(255, 255, 255, 0.95)',
         backgroundColor: 'transparent',
@@ -926,7 +889,7 @@
     if (theory && theory.Tdensity && theory.Tdensity.length > 0) {
       datasets.push({
         type: 'line',
-        label: 'T(r)·P(r) 动能密度',
+        label: '动能密度（理论）',
         data: theory.Tdensity.map((y, i) => ({ x: i, y })),
         borderColor: 'rgba(255, 255, 255, 0.9)',
         backgroundColor: 'transparent',
@@ -992,13 +955,17 @@
     if (experimental && experimental.points && experimental.points.length > 0) {
       labels = experimental.points.map(p => p.x.toFixed(2));
       datasets.push({
-        label: '采样 E(log r)',
+        type: 'bar',
+        label: '采样 V(log r)',
         data: experimental.points.map(p => p.y),
-        borderColor: 'rgba(255,255,255,0.8)',
-        backgroundColor: 'transparent',
-        borderWidth: 1.5,
-        pointRadius: 0,
-        tension: 0.2
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        borderColor: 'rgba(255, 255, 255, 0.9)',
+        borderWidth: 0,  // 【修复】无边框使柱子紧密排列
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+        borderRadius: 0,
+        borderSkipped: false,
+        order: 10,
       });
     }
 
@@ -1007,14 +974,18 @@
         labels = theory.points.map(p => p.x.toFixed(2));
       }
       datasets.push({
-        label: '理论 E(log r)',
-        // 【关键修复】使用{x,y}坐标对象，让Chart.js正确绑定x轴，而不是按labels索引对应
-        data: theory.points.map(p => ({ x: p.x, y: p.y })),
+        type: 'line',
+        label: '理论 V(log r)',
+        // 【关键修复】与直方图的 category axis 对齐，直接使用 y 值数组
+        // 这样可以确保折线点准确落在柱子的中心
+        data: theory.points.map(p => p.y),
         borderColor: 'rgba(255, 255, 255, 0.95)',
         backgroundColor: 'transparent',
         pointRadius: 0,
-        borderWidth: 2.5,
-        tension: 0.2,
+        borderWidth: 2.0,
+        tension: 0.4, // 【平滑】使用三次插值使曲线平滑连续
+        cubicInterpolationMode: 'monotone', // 防止过冲
+        order: 5,
         hidden: state.potentialLogTheoryHidden || false
       });
     }
@@ -1057,13 +1028,16 @@
     if (experimental && experimental.points && experimental.points.length > 0) {
       labels = experimental.points.map(p => p.x.toFixed(2));
       datasets.push({
+        type: 'bar', // 【修改】改为柱状图，符合密度分布的直观表示
         label: '采样 dE/dr',
         data: experimental.points.map(p => p.y),
-        borderColor: 'rgba(255,255,255,0.8)',
-        backgroundColor: 'transparent',
-        borderWidth: 1.5,
-        pointRadius: 0,
-        tension: 0.2
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        borderColor: 'rgba(255, 255, 255, 0.9)',
+        borderWidth: 0,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+        borderRadius: 0,
+        order: 10
       });
     }
 
@@ -1072,14 +1046,17 @@
         labels = theory.points.map(p => p.x.toFixed(2));
       }
       datasets.push({
+        type: 'line',
         label: '理论 dE/dr',
-        // 【关键修复】使用{x,y}坐标对象
-        data: theory.points.map(p => ({ x: p.x, y: p.y })),
+        // 【关键修复】与直方图对齐
+        data: theory.points.map(p => p.y),
         borderColor: 'rgba(255, 255, 255, 0.95)',
         backgroundColor: 'transparent',
         pointRadius: 0,
-        borderWidth: 2.5,
-        tension: 0.2,
+        borderWidth: 2.0,
+        tension: 0.4, // 平滑
+        cubicInterpolationMode: 'monotone',
+        order: 5,
         hidden: state.dEdrLogTheoryHidden || false
       });
     }
@@ -1369,7 +1346,7 @@
 
         // 提取径向数据
         const radialData = samples.map(s => s.r);
-        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true);
+        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true, false);
 
         // 计算bin中心
         centers = new Array(adaptiveBins);
@@ -1395,7 +1372,7 @@
         const adaptiveBins = Math.min(400, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
 
         const radialData = samples.map(s => s.r);
-        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true);
+        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true, false);
 
         centers = new Array(adaptiveBins);
         for (let i = 0; i < adaptiveBins; i++) {
@@ -1419,7 +1396,7 @@
         const adaptiveBins = Math.min(400, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
 
         const radialData = samples.map(s => s.r);
-        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true);
+        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true, false);
 
         centers = new Array(adaptiveBins);
         for (let i = 0; i < adaptiveBins; i++) {
@@ -1443,7 +1420,7 @@
         const adaptiveBins = Math.min(400, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
 
         const radialData = samples.map(s => s.r);
-        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true);
+        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true, false);
 
         const linearCenters = new Array(adaptiveBins);
         for (let i = 0; i < adaptiveBins; i++) {
@@ -1475,7 +1452,7 @@
         const adaptiveBins = Math.min(400, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
 
         const radialData = samples.map(s => s.r);
-        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true);
+        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true, false);
 
         const linearCenters = new Array(adaptiveBins);
         for (let i = 0; i < adaptiveBins; i++) {

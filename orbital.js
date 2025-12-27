@@ -649,6 +649,8 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
 
     if (!window.Hydrogen || state.radialSamples.length === 0) return;
 
+    if (!window.Hydrogen || state.radialSamples.length === 0) return;
+
     try {
         const angularBins = 180;
 
@@ -677,7 +679,8 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
             const sampleDensity = state.radialSamples.length / Math.max(1, dynamicRmax);
             const adaptiveBins = Math.min(400, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
 
-            const radialHist = Hydrogen.histogramRadialFromSamples(state.radialSamples, adaptiveBins, dynamicRmax, true);
+            // 【参数调整】禁用平滑 (smooth=false)，以便在能量积分中保留采样噪声
+            const radialHist = Hydrogen.histogramRadialFromSamples(state.radialSamples, adaptiveBins, dynamicRmax, true, false);
 
             // 横轴中心
             const centers = new Array(adaptiveBins);
@@ -755,11 +758,17 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
         }
 
         // ==================== 能量数据预计算 (RHF/Koga-DZ) ====================
-        // 使用后台径向直方图的 centers 作为 r 坐标网格
-        if (state.backgroundChartData.radial && state.backgroundChartData.radial.theory.centers) {
-            const radialCenters = state.backgroundChartData.radial.theory.centers;
+        // 【关键修复】使用直方图的 bins 作为 r 坐标网格，确保 counts 与 r 对齐
+        if (state.backgroundChartData.radial && state.backgroundChartData.radial.hist) {
             const radialHist = state.backgroundChartData.radial.hist;
-            const numBins = radialCenters.length;
+            const numBins = radialHist.counts.length;
+
+            // 从直方图边界计算中心点，确保与 counts 对齐
+            const radialCenters = new Array(numBins);
+            for (let i = 0; i < numBins; i++) {
+                radialCenters[i] = 0.5 * (radialHist.edges[i] + radialHist.edges[i + 1]);
+            }
+
             const atomType = state.currentAtom || 'H';
             const Z = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
 
@@ -802,11 +811,67 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                 }
             }
 
-            // 3. "作弊"策略：采样曲线直接使用理论值
-            //    采样数据仅提供 r 分布的"形状"（直方图），能量值直接复制理论计算结果
-            //    这样采样曲线和理论曲线会完全贴合
-            const expE = new Float32Array(theoryE);  // 直接复制理论值
-            const expDEdr = new Float32Array(theoryDEdr);  // 直接复制理论值
+
+            // 3. 计算采样能量曲线
+            //    【物理公式】使用与理论曲线同源的公式，用采样RDF替换理论RDF
+            //    理论公式: dEdr = dV_nuc/dr + P(r) × Vee
+            //    采样公式: dEdr_exp = dV_nuc/dr + f(r) × Vee （f(r)是采样PDF）
+            //    积分公式: E(R) = ∫₀^R dEdr dr
+            const expE = new Float32Array(numBins);
+            const expDEdr = new Float32Array(numBins);
+
+            const totalSamples = radialHist.counts.reduce((a, b) => a + b, 0);
+            const dr = radialHist.dr || (radialCenters[1] - radialCenters[0]);
+
+            if (totalSamples > 0) {
+                // 从 theoryDEdr 中反推 dV_nuc/dr 和 Vee 的贡献
+                // 理论公式: theoryDEdr[i] = dV_nuc_dr[i] + theoryPDF[i] * Vee[i]
+                // 如果我们直接替换 theoryPDF -> sampledPDF，会得到：
+                // expDEdr[i] = dV_nuc_dr[i] + sampledPDF[i] * Vee[i]
+                // 
+                // 但由于 dV_nuc_dr 和 Vee 没有分开返回，我们用另一种等效方式：
+                // 设 dV_nuc_dr = theoryDEdr - theoryPDF * Vee
+                // 
+                // 【简化策略】直接使用采样权重缩放理论能量密度
+                // expDEdr[i] = theoryDEdr[i] × (sampledPDF[i] / theoryPDF[i])
+                // 当 sampledPDF[i] 为零时，该区域的贡献为零
+
+                for (let i = 0; i < numBins; i++) {
+                    const r = radialCenters[i];
+
+                    // 【关键修复】radialHist.counts 已经是归一化的 PDF（∫counts*dr = 1）
+                    // 不需要再除以 totalSamples*dr，否则是双重归一化！
+                    const sampledPDF = radialHist.counts[i];
+
+                    // 计算理论PDF: P(r)
+                    let theoryPDF = 0;
+                    for (const p of paramsList) {
+                        theoryPDF += window.Hydrogen.radialPDF(p.n, p.l, r, 1, 1, atomType);
+                    }
+                    theoryPDF /= paramsList.length;
+
+
+
+                    // 【核心公式】采样能量密度 = 理论能量密度 × (采样PDF / 理论PDF)
+                    // 这等价于用采样分布替换波函数概率分布
+                    if (theoryPDF > 1e-15 && theoryDEdr[i] !== 0) {
+                        expDEdr[i] = theoryDEdr[i] * (sampledPDF / theoryPDF);
+                    } else {
+                        expDEdr[i] = 0;
+                    }
+                }
+
+                // 使用梯形法则累积积分（与理论曲线同源）
+                let currentE = 0;
+                for (let i = 0; i < numBins; i++) {
+                    const prevDEdr = i > 0 ? expDEdr[i - 1] : 0;
+                    currentE += 0.5 * (expDEdr[i] + prevDEdr) * dr;
+                    expE[i] = currentE;
+
+                }
+
+
+            }
 
             // 4. 计算对数坐标数据 (symlog: 保留符号的对数变换)
             // symlog(v) = sign(v) × log₁₀|v|，保留负值信息
@@ -822,21 +887,97 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
             const dEdrLogExpPoints = [];
             const dEdrLogTheoryPoints = [];
 
-            for (let i = 0; i < numBins; i++) {
-                const r = radialCenters[i];
+            // ==================== 完全重构：直接解析求值 ====================
+            // 不再从线性网格插值，消除阶梯和物理误差
+            const rawSamples = state.radialSamples || [];
+            const rMin = 0.01;
+            const rMax = radialCenters[numBins - 1] > 0 ? radialCenters[numBins - 1] : 50;
+            const logMin = Math.log10(rMin);
+            const logMax = Math.log10(rMax);
+            const numLogBins = 200; // 与线性图表保持一致的 bin 数量
+            const logStep = (logMax - logMin) / numLogBins;
+
+            // 1. 生成对数空间的 r 坐标数组
+            const logRValues = new Float32Array(numLogBins);
+            for (let i = 0; i < numLogBins; i++) {
+                const logR = logMin + (i + 0.5) * logStep;
+                logRValues[i] = Math.pow(10, logR);
+            }
+
+            // 2. 直接调用物理引擎计算理论曲线（100% 精确，无插值）
+            let logTheoryE = new Float32Array(numLogBins);
+            let logTheoryDEdr = new Float32Array(numLogBins);
+
+            for (const p of paramsList) {
+                const result = window.Hydrogen.calculateCumulativeOrbitalEnergy(
+                    p.n, p.l, 1, atomType, logRValues
+                );
+                for (let i = 0; i < numLogBins; i++) {
+                    logTheoryE[i] += result.E[i] / paramsList.length;
+                    logTheoryDEdr[i] += result.dEdr[i] / paramsList.length;
+                }
+            }
+
+            // 3. 创建采样直方图 (log 空间)
+            const logCounts = new Float32Array(numLogBins);
+            const logTotalSamples = rawSamples.length;
+            for (let s = 0; s < logTotalSamples; s++) {
+                const r = rawSamples[s];
                 if (r <= 0) continue;
                 const logR = Math.log10(r);
+                const idx = Math.floor((logR - logMin) / logStep);
+                if (idx >= 0 && idx < numLogBins) logCounts[idx]++;
+            }
 
-                // 双对数 E(r)：x = log(r), y = symlog(E)
-                const lyExpE = symlog(expE[i]);
-                const lyTheoE = symlog(theoryE[i]);
+            // 4. 计算采样能量曲线
+            // 归一化方式与线性图表统一：count / (totalSamples * dr)
+            const logExpDEdr = new Float32Array(numLogBins);
+            const logExpE = new Float32Array(numLogBins);
+
+            for (let i = 0; i < numLogBins; i++) {
+                const r = logRValues[i];
+                // log 空间 bin 对应的线性宽度
+                const drLinear = r * Math.LN10 * logStep;
+
+                // 采样 PDF (归一化到线性 r 空间)
+                const sampledPDF = logTotalSamples > 0 ? logCounts[i] / (logTotalSamples * drLinear) : 0;
+
+                // 理论 PDF (直接计算)
+                let theoryPDF = 0;
+                for (const p of paramsList) {
+                    theoryPDF += window.Hydrogen.radialPDF(p.n, p.l, r, 1, 1, atomType);
+                }
+                theoryPDF /= paramsList.length;
+
+                // 采样能量密度 = 理论能量密度 × (采样PDF / 理论PDF)
+                if (theoryPDF > 1e-15 && logTheoryDEdr[i] !== 0) {
+                    logExpDEdr[i] = logTheoryDEdr[i] * (sampledPDF / theoryPDF);
+                } else {
+                    logExpDEdr[i] = 0;
+                }
+            }
+
+            // 5. 梯形积分累积
+            let cumLogE = 0;
+            for (let i = 0; i < numLogBins; i++) {
+                const r = logRValues[i];
+                const drLinear = r * Math.LN10 * logStep;
+                const prevDEdr = i > 0 ? logExpDEdr[i - 1] : 0;
+                cumLogE += 0.5 * (logExpDEdr[i] + prevDEdr) * drLinear;
+                logExpE[i] = cumLogE;
+            }
+
+            // 6. 生成输出点 (symlog 变换)
+            for (let i = 0; i < numLogBins; i++) {
+                const logR = logMin + (i + 0.5) * logStep;
+
+                const lyExpE = symlog(logExpE[i]);
+                const lyTheoE = symlog(logTheoryE[i]);
                 if (lyExpE !== null) potentialLogExpPoints.push({ x: logR, y: lyExpE });
                 if (lyTheoE !== null) potentialLogTheoryPoints.push({ x: logR, y: lyTheoE });
 
-                // 双对数 dE/dr：x = log(r), y = symlog(dE/dr)
-                // 不再使用 dE/d(log r) 变换，直接用 dE/dr
-                const lyExpD = symlog(expDEdr[i]);
-                const lyTheoD = symlog(theoryDEdr[i]);
+                const lyExpD = symlog(logExpDEdr[i]);
+                const lyTheoD = symlog(logTheoryDEdr[i]);
                 if (lyExpD !== null) dEdrLogExpPoints.push({ x: logR, y: lyExpD });
                 if (lyTheoD !== null) dEdrLogTheoryPoints.push({ x: logR, y: lyTheoD });
             }
@@ -917,19 +1058,29 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                 }
             }
 
-            // 采样数据每次都需要更新
             const expEpsDensity = new Float32Array(numBins);
             const expTdensity = new Float32Array(numBins);
-            const totalSamples = radialHist.counts.reduce((a, b) => a + b, 0);
-            const dr = radialHist.dr || (radialCenters[1] - radialCenters[0]);
+            const localTotalSamples = radialHist.counts.reduce((a, b) => a + b, 0);
+            const localDr = radialHist.dr || (radialCenters[1] - radialCenters[0]);
 
             for (let i = 0; i < numBins; i++) {
-                const sampledPDF = totalSamples > 0 ? (radialHist.counts[i] / totalSamples) / dr : 0;
+                const sampledPDF = localTotalSamples > 0 ? (radialHist.counts[i] / localTotalSamples) / localDr : 0;
                 expEpsDensity[i] = avgEpsilon * sampledPDF;
-                // 使用理论 T_rec 乘以采样 PDF（用于浮动柱状图）
-                const Trec = hasCachedTheoryData && isRollingUpdate
-                    ? (theoryTdensity[i] / (theoryEpsDensity[i] / avgEpsilon || 1)) // 反推 T_rec
-                    : (theoryTdensity[i] / (theoryEpsDensity[i] / avgEpsilon || 1));
+
+                // 【修复】直接从理论动能密度和理论概率密度反推 T_rec
+                // theoryTdensity[i] = T_rec × theoryPDF  =>  T_rec = theoryTdensity[i] / theoryPDF
+                // 然后 expTdensity = T_rec × sampledPDF
+                const r = radialCenters[i];
+                let theoryPDF = 0;
+                if (paramsList.length > 0 && window.Hydrogen.radialPDF) {
+                    for (const p of paramsList) {
+                        theoryPDF += window.Hydrogen.radialPDF(p.n, p.l, r, 1, 1, atomType);
+                    }
+                    theoryPDF /= paramsList.length;
+                }
+
+                // T_rec = theoryTdensity / theoryPDF（当 theoryPDF 不为零时）
+                const Trec = theoryPDF > 1e-15 ? (theoryTdensity[i] / theoryPDF) : 0;
                 expTdensity[i] = Trec * sampledPDF;
             }
 

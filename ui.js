@@ -248,6 +248,11 @@ window.ElectronCloud.UI.init = function () {
     // 初始化单选模式的选中样式
     window.ElectronCloud.UI.updateSingleSelectStyle();
 
+    // 【新增】初始化轨道→原子约束（禁用不支持选中轨道的原子）
+    if (window.ElectronCloud.UI.updateAtomOptionsDisableState) {
+        window.ElectronCloud.UI.updateAtomOptionsDisableState();
+    }
+
     // 确保初始状态下显示开关的状态正确
     window.ElectronCloud.UI.updateAngular3DToggleState();
 

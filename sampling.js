@@ -1410,11 +1410,21 @@ window.ElectronCloud.Sampling.performRollingUpdate = function () {
             ({ x, y, z, r, theta, phi } = result);
         }
 
+        if (state.debugRollingCounter === undefined) state.debugRollingCounter = 0;
+        state.debugRollingCounter++;
+
         // 3. 更新位置
         const i3 = targetIndex * 3;
         positions[i3] = x;
         positions[i3 + 1] = y;
         positions[i3 + 2] = z;
+
+        // 【关键修复】同步更新 radialSamples 和 angularSamples
+        // 确保直方图和能量分析图表能反映滚动更新后的数据！
+        // targetIndex 是被替换的点的索引，直接覆盖
+        if (state.radialSamples) state.radialSamples[targetIndex] = r;
+        if (state.angularSamples) state.angularSamples[targetIndex] = theta;
+        if (state.phiSamples) state.phiSamples[targetIndex] = phi;
 
         // 【关键修复】同步更新 originalPositions（用于位置隐藏方式的恢复）
         if (state.originalPositions) {

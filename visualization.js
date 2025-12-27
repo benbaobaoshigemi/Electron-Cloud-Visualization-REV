@@ -132,7 +132,7 @@ window.ElectronCloud.Visualization.createOrbitalMesh = function (group, params, 
     // 获取杂化系数矩阵（如果是杂化模式）
     let coeffMatrix = null;
     if (isHybridMode && numOrbitals > 1 && Hydrogen.getHybridCoefficients) {
-        coeffMatrix = Hydrogen.getHybridCoefficients(numOrbitals, orbitalParams);
+        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams);
     }
 
     // 【关键】确定网格极点的目标方向（最高次对称轴）
@@ -537,7 +537,7 @@ window.ElectronCloud.Visualization.enableContourHighlight = function () {
     // 获取杂化系数矩阵
     let coeffMatrix = null;
     if (isHybridMode && Hydrogen.getHybridCoefficients && orbitalParams.length > 1) {
-        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams.length, orbitalParams);
+        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams);
     }
 
     // 是否为比照模式
@@ -734,7 +734,7 @@ window.ElectronCloud.Visualization.createContourInterpolationPoints = function (
     // 获取杂化系数
     let coeffMatrix = null;
     if (isHybridMode && Hydrogen.getHybridCoefficients && orbitalParams.length > 1) {
-        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams.length, orbitalParams);
+        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams);
     }
 
     // 计算波函数值
@@ -958,7 +958,7 @@ window.ElectronCloud.Visualization.updatePointColors = function () {
 
     let coeffMatrix = null;
     if (isHybridMode && orbitalParams.length > 1 && Hydrogen.getHybridCoefficients) {
-        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams.length, orbitalParams);
+        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams);
     }
 
     // 使用全局 phaseColors 常量，与所有采样函数保持一致
@@ -1051,7 +1051,7 @@ window.ElectronCloud.Visualization.createContourMesh = function (group, baseRadi
 
     let coeffMatrix = null;
     if (isHybridMode && orbitalParams.length > 1 && Hydrogen.getHybridCoefficients) {
-        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams.length, orbitalParams);
+        coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams);
     }
 
     // 波函数计算 (直角坐标) - 用于计算 isovalue
@@ -1431,7 +1431,7 @@ window.ElectronCloud.Visualization.createHybridContourOverlays = function () {
     }
 
     const numOrbitals = orbitalParams.length;
-    const coeffMatrix = Hydrogen.getHybridCoefficients ? Hydrogen.getHybridCoefficients(numOrbitals, orbitalParams) : null;
+    const coeffMatrix = Hydrogen.getHybridCoefficients ? Hydrogen.getHybridCoefficients(orbitalParams) : null;
 
     if (!coeffMatrix) return overlays;
 

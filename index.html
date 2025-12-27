@@ -550,10 +550,10 @@
                         <option value="radial">径向分布</option>
                         <option value="angular">角向分布 (θ)</option>
                         <option value="azimuthal">角向分布 (φ)</option>
-                        <option value="potential">轨道能量积分 E(r)</option>
-                        <option value="dEdr">能量密度 dE/dr</option>
-                        <option value="potentialLog">轨道能量积分 E(log r)</option>
-                        <option value="dEdrLog">能量密度 dE/d(log r)</option>
+                        <option value="potential">累积势能 V(r)</option>
+                        <option value="dEdr">势能密度 dV/dr</option>
+                        <option value="potentialLog">V(r) 双对数</option>
+                        <option value="localEnergy">局域能量 T(r)</option>
                     </select>
                 </div>
                 <div class="control-group">
@@ -591,8 +591,9 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <script src="slater_basis.js?v=2"></script>
+    <script src="vee_cache.js?v=1"></script>
     <script src="physics-core.js?v=1"></script>
-    <script src="physics.js?v=4"></script>
+    <script src="physics.js?v=37"></script>
     <script src="marching_cubes.js"></script>
     <script src="data_panel.js?v=2"></script>
     <!-- 模块化脚本文件 -->

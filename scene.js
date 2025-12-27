@@ -712,7 +712,7 @@ window.ElectronCloud.Scene.animate = function () {
                             // 获取杂化系数矩阵
                             let coeffMatrix = null;
                             if (isHybridMode && Hydrogen.getHybridCoefficients) {
-                                coeffMatrix = Hydrogen.getHybridCoefficients(state.waveOrbitalParams.length, state.waveOrbitalParams);
+                                coeffMatrix = Hydrogen.getHybridCoefficients(state.waveOrbitalParams);
                             }
 
                             // 第一步：计算每个点的密度

@@ -170,7 +170,7 @@
     if (!paramsList || paramsList.length === 0) return 0;
 
     const numOrbitals = paramsList.length;
-    const coeffMatrix = getHybridCoefficients(numOrbitals, paramsList);
+    const coeffMatrix = getHybridCoefficients(paramsList);
 
     // 确保索引有效
     const idx = hybridIndex % numOrbitals;
@@ -198,7 +198,7 @@
     if (!paramsList || paramsList.length === 0) return 0;
 
     const numOrbitals = paramsList.length;
-    const coeffMatrix = getHybridCoefficients(numOrbitals, paramsList);
+    const coeffMatrix = getHybridCoefficients(paramsList);
     const idx = hybridIndex % numOrbitals;
     const coeffs = coeffMatrix[idx];
 
@@ -1454,7 +1454,7 @@
     const sortedParams = sortOrbitalsForHybridization(paramsList);
 
     const numOrbitals = sortedParams.length;
-    const coeffMatrix = getHybridCoefficients(numOrbitals, sortedParams);
+    const coeffMatrix = getHybridCoefficients(sortedParams);
     const coeffs = coeffMatrix[hybridIndex % numOrbitals];
 
     // 【关键修复】使用全3D密度计算，而非仅角向强度
@@ -1586,7 +1586,7 @@
 
     const sortedParams = sortOrbitalsForHybridization(paramsList);
     const numOrbitals = sortedParams.length;
-    const coeffMatrix = getHybridCoefficients(numOrbitals, sortedParams);
+    const coeffMatrix = getHybridCoefficients(sortedParams);
     const coeffs = coeffMatrix[hybridIndex % numOrbitals];
 
     let vecX = 0, vecY = 0, vecZ = 0;
@@ -1739,16 +1739,20 @@
     histogramThetaFromSamples,
     histogramPhiFromSamples,
     recommendRmax,
-    orbitalParamsFromKey,
     orbitalKey,
     angularPDF_Theta,
     angularPDF_Phi,
     // 精确逆CDF采样
     buildRadialCDF,
     sampleRadialExact,
+    importanceSample,  // 【修复】导出用于滚动生成模式
     // 有效核电荷（Slater规则）
     orbitalParamsFromKey: core.orbitalParamsFromKey,
     // 杂化轨道相关函数
+    hybridRadialPDF: hybridRadialPDF,
+    getHybridCoefficients: getHybridCoefficients,
+    hybridPreciseSample: hybridPreciseSample,
+    sortOrbitalsForHybridization: sortOrbitalsForHybridization,
     hybridDensity3D: core.allHybridOrbitalsDensity3D, // 别名：用于兼容性
     allHybridOrbitalsDensity3D: core.allHybridOrbitalsDensity3D,
     singleHybridDensity3D: core.singleHybridDensity3D,
@@ -1776,38 +1780,140 @@
      * @param {number} l - 角量子数
      * @param {number} Z - 核电荷数
      * @param {string} atomType - 原子类型
-     * @param {number} rMax - 最大半径
-     * @param {number} steps - 采样步数
+     * @param {number|Array<number>|Float32Array|Float64Array} rMaxOrPoints - 最大半径或采样点数组
+     * @param {number} steps - 采样步数 (当rMaxOrPoints为数字时有效)
      * @returns {Object} { r: [], E: [], T: [], V: [] }
      */
-    calculateCumulativeOrbitalEnergy: function (n, l, Z, atomType, rMax, steps = 500) {
+    calculateCumulativeOrbitalEnergy: function (n, l, Z, atomType, rMaxOrPoints, steps = 500) {
+      // ==================== 氢原子解析解分支 ====================
+      // 对于氢原子(H)，使用精确的解析径向波函数，而不是 Slater 基组
+      if (!atomType || atomType === 'H') {
+        let rValues;
+        if (Array.isArray(rMaxOrPoints) || (rMaxOrPoints instanceof Float32Array) || (rMaxOrPoints instanceof Float64Array)) {
+          rValues = rMaxOrPoints;
+          steps = rValues.length;
+        } else {
+          const rMax = rMaxOrPoints;
+          const dr = rMax / steps;
+          rValues = new Float32Array(steps);
+          for (let s = 0; s < steps; s++) {
+            rValues[s] = (s + 1) * dr;
+          }
+        }
+
+        const eValues = new Float32Array(steps);
+        const dEdrValues = new Float32Array(steps);
+
+        // 氢原子轨道能量的精确解析值: ε = -Z²/(2n²) Hartree
+        const epsilon = -Z * Z / (2 * n * n);
+
+        // 对于氢原子，使用 CDF 方法计算累积能量
+        // E(R) = ε × P(r ≤ R)，其中 P(r ≤ R) 是累积概率
+        // dE/dr = ε × P(r) = ε × |R_nl(r)|² × r²
+        for (let s = 0; s < steps; s++) {
+          const R = rValues[s];
+
+          // 计算累积概率 P(r ≤ R) 使用不完全伽马函数
+          // 对于氢原子: P(r) = r² |R_nl(r)|² = 4(Z/n)³ r² × [L_n-l-1^(2l+1)(2Zr/n)]² × exp(-2Zr/n) / n
+          // 积分结果是不完全伽马函数的组合
+
+          // 简化方法：使用数值积分近似累积概率
+          const dr_fine = R / 100;
+          let cumulativeProb = 0;
+          for (let i = 0; i < 100; i++) {
+            const r = (i + 0.5) * dr_fine;
+            const Rnl = radialR(n, l, r, Z); // 解析径向波函数
+            const pdf = r * r * Rnl * Rnl;
+            cumulativeProb += pdf * dr_fine;
+          }
+
+          // E(R) = ε × CDF(R)
+          eValues[s] = epsilon * cumulativeProb;
+
+          // dE/dr = ε × PDF(r) = ε × r² |R_nl(r)|²
+          const Rnl_R = radialR(n, l, R, Z);
+          dEdrValues[s] = epsilon * R * R * Rnl_R * Rnl_R;
+        }
+
+        return { r: rValues, E: eValues, T: null, V: null, dEdr: dEdrValues };
+      }
+
+      // ==================== 非氢原子：使用 Slater 基组 ====================
       const atomData = globalScope.SlaterBasis[atomType];
       if (!atomData) return { r: [], E: [] };
-      const basis = atomData.orbitals[getOrbitalKey(n, l)];
+      const orbitalKey = getOrbitalKey(n, l);
+      const basis = atomData.orbitals[orbitalKey];
       if (!basis) return { r: [], E: [] };
 
-      const dr = rMax / steps;
-      const rValues = new Float32Array(steps);
+      let rValues;
+      // Handle rMaxOrPoints: if array, use it; if number, generate grid
+      if (Array.isArray(rMaxOrPoints) || (rMaxOrPoints instanceof Float32Array) || (rMaxOrPoints instanceof Float64Array)) {
+        rValues = rMaxOrPoints;
+        steps = rValues.length;
+      } else {
+        // Generate linear grid (Restored for backward compatibility with Histogram logic)
+        // Note: Unless caller specifically wants log, linear is safer for mapping to linear histograms
+        const rMax = rMaxOrPoints;
+        const dr = rMax / steps;
+        rValues = new Float32Array(steps);
+        for (let s = 0; s < steps; s++) {
+          rValues[s] = (s + 1) * dr;
+        }
+      }
+
       const eValues = new Float32Array(steps); // Total E(R)
       const tValues = new Float32Array(steps); // Kinetic T(R)
-      const vValues = new Float32Array(steps); // Potential V(R)
+      const vValues = new Float32Array(steps); // Potential V(R) = V_nuc + V_ee
+      const dEdrValues = new Float32Array(steps); // dE/dr (Density)
 
-      // 预计算基组及其 T_hat 作用后的项
-      // ψ = Σ c_i N_i χ_i
-      // T_hat ψ = Σ c_j N_j (-1/2) [A_j r^(n_j-3) + B_j r^(n_j-2) + C_j r^(n_j-1)] e^-ζ_j r
+      // Check if we have cached Vee data
+      let veeCache = null;
+      let veeCacheGrid = null;
+      if (globalScope.VeeCache && globalScope.VeeCache.atoms[atomType]) {
+        const atomVee = globalScope.VeeCache.atoms[atomType];
+        if (atomVee[orbitalKey]) {
+          veeCache = atomVee[orbitalKey];
+          veeCacheGrid = globalScope.VeeCache.r_grid;
+        }
+      }
+
+      // Precompute basis terms
       const terms = basis.map(term => {
         const ni = term.nStar;
         const zi = term.zeta;
         const ci = term.coeff;
-        // Normalization N = (2ζ)^n * sqrt(2ζ / (2n)!)
         const Ni = Math.pow(2 * zi, ni) * Math.sqrt(2 * zi / factorial(2 * ni));
         return { ni, zi, ci, Ni };
       });
 
-      for (let s = 1; s <= steps; s++) {
-        const R = s * dr;
-        let T_R = 0;
-        let V_R = 0;
+      // Internal Helper for Vee Interpolation
+      const _getVeeInternal = (r) => {
+        if (!veeCache || !veeCacheGrid) return 0;
+        const grid = veeCacheGrid;
+        const values = veeCache;
+        const n = grid.length;
+
+        // Clamp r to grid range
+        if (r <= grid[0]) return values[0];
+        if (r >= grid[n - 1]) return values[n - 1];
+
+        // Binary search for interval
+        let lo = 0, hi = n - 1;
+        while (hi - lo > 1) {
+          const mid = (lo + hi) >> 1;
+          if (grid[mid] <= r) lo = mid;
+          else hi = mid;
+        }
+
+        // Linear interpolation (fast, sufficient for dense grid)
+        const t = (r - grid[lo]) / (grid[hi] - grid[lo]);
+        return values[lo] * (1 - t) + values[hi] * t;
+      };
+
+      for (let s = 0; s < steps; s++) {
+        const R = rValues[s];
+        let V_nuc_R = 0;
+        let dEdr_val = 0;
 
         for (let i = 0; i < terms.length; i++) {
           const ti = terms[i];
@@ -1816,33 +1922,131 @@
             const alpha = ti.zi + tj.zi;
             const pref = ti.ci * tj.ci * ti.Ni * tj.Ni;
 
-            // 1. 势能项 V_nuc = ∫[0->R] ψ* (-Z/r) ψ r² dr = -Z ∫[0->R] r^(ni+nj-1) e^-alpha*r dr
+            // Nuclear potential: V_nuc = -Z ∫ψ*(1/r)ψ r² dr
             const v_integral = radialPowerExpIntegral(ti.ni + tj.ni - 1, alpha, R);
-            V_R += -Z * pref * v_integral;
+            V_nuc_R += -Z * pref * v_integral;
 
-            // 2. 动能项 T = ∫[0->R] ψ* T_hat ψ r² dr
-            // T_hat ψ_j = -0.5 * [Aj r^(nj-3) + Bj r^(nj-2) + Cj r^(nj-1)] e^-ζj r
-            const Aj = tj.ni * (tj.ni - 1) - l * (l + 1);
-            const Bj = -2 * tj.zeta * tj.ni;
-            const Cj = tj.zeta * tj.zeta;
+            // Integrand contribution to dV/dr
+            const dv_integrand = -Z * pref * Math.pow(R, ti.ni + tj.ni - 1) * Math.exp(-alpha * R);
+            dEdr_val += dv_integrand;
 
-            // Integrand contains terms r^(ni-1 + nj-3 + 2) = r^(ni+nj-2), etc.
-            const t_integral = -0.5 * (
-              Aj * radialPowerExpIntegral(ti.ni + tj.ni - 2, alpha, R) +
-              Bj * radialPowerExpIntegral(ti.ni + tj.ni - 1, alpha, R) +
-              Cj * radialPowerExpIntegral(ti.ni + tj.ni, alpha, R)
-            );
-            T_R += pref * t_integral;
+            // NOTE: Kinetic energy T is intentionally omitted to avoid Cusp artifact
           }
         }
 
-        rValues[s - 1] = R;
-        tValues[s - 1] = T_R;
-        vValues[s - 1] = V_R;
-        eValues[s - 1] = T_R + V_R;
+        // Electron-electron repulsion from cache
+        const Vee_pot = _getVeeInternal(R);
+
+        // Calculate radial PDF P(R) for Vee scaling
+        let sumPDF = 0;
+        for (let i = 0; i < terms.length; i++) {
+          const ti = terms[i];
+          for (let j = 0; j < terms.length; j++) {
+            const tj = terms[j];
+            const pref = ti.ci * tj.ci * ti.Ni * tj.Ni;
+            sumPDF += pref * Math.pow(R, ti.ni + tj.ni) * Math.exp(-(ti.zi + tj.zi) * R);
+          }
+        }
+
+        // Energy Density at R: dV/dr = dV_nuc/dr + P(R)*Vee_pot (no kinetic energy)
+        dEdr_val += sumPDF * Vee_pot;
+        dEdrValues[s] = dEdr_val;
+
+        vValues[s] = V_nuc_R;
+        eValues[s] = V_nuc_R; // Only potential energy, no kinetic
       }
 
-      return { r: rValues, E: eValues, T: tValues, V: vValues };
+      // Compute cumulative E using trapezoidal sum of dEdr for consistency
+      // This ensures E and dEdr match exactly
+      let currentE = 0;
+      for (let s = 0; s < steps; s++) {
+        const R = rValues[s];
+        const prevR = s > 0 ? rValues[s - 1] : 0;
+        const dr = R - prevR;
+        const currentDensity = dEdrValues[s];
+        const prevDensity = s > 0 ? dEdrValues[s - 1] : 0;
+        currentE += 0.5 * (currentDensity + prevDensity) * dr;
+        eValues[s] = currentE;
+      }
+
+      return { r: rValues, E: eValues, T: null, V: vValues, dEdr: dEdrValues };
+    },
+
+    /**
+     * 获取指定 1r 处的有效核电荷 Z_eff = Z - r * Vee
+     * @param {number} r - 径向距离
+     * @param {number} Z - 裸核电荷
+     * @param {string} atomType - 原子类型
+     * @param {string} orbitalKey - 轨道标识 (例如 '2s')
+     */
+    calculateZeff: function (r, Z, atomType, orbitalKey) {
+      if (atomType === 'H') return Z;
+      if (!globalScope.VeeCache || !globalScope.VeeCache.atoms[atomType]) return Z;
+
+      const cache = globalScope.VeeCache.atoms[atomType][orbitalKey];
+      const grid = globalScope.VeeCache.r_grid;
+      if (!cache || !grid) return Z;
+
+      // 使用线性插值
+      const n = grid.length;
+      let vee = 0;
+      if (r <= grid[0]) vee = cache[0];
+      else if (r >= grid[n - 1]) vee = cache[n - 1];
+      else {
+        let lo = 0, hi = n - 1;
+        while (hi - lo > 1) {
+          const mid = (lo + hi) >> 1;
+          if (grid[mid] <= r) lo = mid;
+          else hi = mid;
+        }
+        const t = (r - grid[lo]) / (grid[hi] - grid[lo]);
+        vee = cache[lo] * (1 - t) + cache[hi] * t;
+      }
+
+      return Z - r * vee;
+    },
+
+    /**
+     * 计算重构动能 T_rec(r) = ε - V_nuc(r) - V_ee(r)
+     * 这是基于薛定谔方程的物理精确动能，无基组伪影
+     * 
+     * @param {number} r - 径向距离
+     * @param {number} epsilon - 轨道本征值 (Hartree)
+     * @param {number} Z - 核电荷
+     * @param {string} atomType - 原子类型
+     * @param {string} orbitalKey - 轨道标识 (例如 '2s')
+     * @returns {number} - 重构动能 T_rec(r)
+     */
+    calculateReconstructedKineticEnergy: function (r, epsilon, Z, atomType, orbitalKey) {
+      if (r <= 0) return 0;
+
+      // V_nuc = -Z/r
+      const V_nuc = -Z / r;
+
+      // V_ee from cache (0 for H)
+      let V_ee = 0;
+      if (atomType !== 'H' && globalScope.VeeCache && globalScope.VeeCache.atoms[atomType]) {
+        const cache = globalScope.VeeCache.atoms[atomType][orbitalKey];
+        const grid = globalScope.VeeCache.r_grid;
+        if (cache && grid) {
+          const n = grid.length;
+          if (r <= grid[0]) V_ee = cache[0];
+          else if (r >= grid[n - 1]) V_ee = cache[n - 1];
+          else {
+            let lo = 0, hi = n - 1;
+            while (hi - lo > 1) {
+              const mid = (lo + hi) >> 1;
+              if (grid[mid] <= r) lo = mid;
+              else hi = mid;
+            }
+            const t = (r - grid[lo]) / (grid[hi] - grid[lo]);
+            V_ee = cache[lo] * (1 - t) + cache[hi] * t;
+          }
+        }
+      }
+
+      // T_rec = ε - V_nuc - V_ee
+      return epsilon - V_nuc - V_ee;
     },
 
     /**

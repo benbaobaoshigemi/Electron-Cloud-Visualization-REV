@@ -261,11 +261,161 @@
         return points;
     }
 
+    // 杂化方向缓存：基于轨道参数的完整 key
+    const _hybridDirCache = {};
+
     function generateConstrainedDirections(orbitalParams) {
-        // 彻底移除所有硬编码的几何对齐逻辑 (如 sp3 -> 四面体)
-        // 回退到纯粹的数值推演：解 Thomson 问题 (极外层电子斥能最小化)
-        return optimizeThomson(orbitalParams.length);
+        // 【核心修复】混合策略：
+        // 1. 使用 Fibonacci 球面分布获取 N 个均匀初始方向
+        // 2. 对于非 s 轨道（有明确方向性），将初始方向锚定到轨道峰值
+        // 3. Thomson 优化最终方向
+        const n = orbitalParams.length;
+        if (n <= 1) {
+            return [getOrbitalPeakDirection(orbitalParams[0])];
+        }
+
+        // 生成缓存 key
+        const cacheKey = orbitalParams.map(p =>
+            `${p.angKey.l}_${p.angKey.m}_${p.angKey.t}`
+        ).sort().join('|');
+
+        if (_hybridDirCache[cacheKey]) {
+            return JSON.parse(JSON.stringify(_hybridDirCache[cacheKey]));
+        }
+
+        // 获取 Fibonacci 均匀分布作为基础
+        const fibDirs = getFibonacciDirections(n);
+
+        // 收集非 s 轨道的峰值方向（有明确方向性的轨道）
+        const nonS_orbitals = orbitalParams.filter(p => p.angKey.l !== 0);
+        const nonS_peaks = nonS_orbitals.map(p => getOrbitalPeakDirection(p));
+
+        // 【关键修复】去重峰值方向 - 避免 pz 和 dz2 争抢同一个 z 轴方向
+        const uniquePeaks = [];
+        const usedPeakDirs = [];
+        for (const peak of nonS_peaks) {
+            const norm = Math.sqrt(peak[0] ** 2 + peak[1] ** 2 + peak[2] ** 2);
+            const normalized = [peak[0] / norm, peak[1] / norm, peak[2] / norm];
+            // 检查是否已有相似方向（点积接近 1 或 -1）
+            let isDuplicate = false;
+            for (const used of usedPeakDirs) {
+                const dot = Math.abs(normalized[0] * used[0] + normalized[1] * used[1] + normalized[2] * used[2]);
+                if (dot > 0.95) { // 夹角小于 ~18°，视为重复
+                    isDuplicate = true;
+                    break;
+                }
+            }
+            if (!isDuplicate) {
+                uniquePeaks.push(normalized);
+                usedPeakDirs.push(normalized);
+            }
+        }
+
+        // 构建初始方向：对于每个唯一的峰值方向，替换最近的未使用的 Fibonacci 方向
+        const initialDirs = [...fibDirs];
+        const usedIndices = new Set();
+
+        for (const peak of uniquePeaks) {
+            // 找到最近的未使用的 Fibonacci 方向
+            let bestIdx = -1;
+            let bestDot = -Infinity;
+            for (let i = 0; i < n; i++) {
+                if (usedIndices.has(i)) continue;
+                const dot = peak[0] * fibDirs[i][0] + peak[1] * fibDirs[i][1] + peak[2] * fibDirs[i][2];
+                if (dot > bestDot) {
+                    bestDot = dot;
+                    bestIdx = i;
+                }
+            }
+            if (bestIdx >= 0) {
+                initialDirs[bestIdx] = [...peak];
+                usedIndices.add(bestIdx);
+            }
+        }
+
+        const result = optimizeThomsonFromInitial(initialDirs);
+        _hybridDirCache[cacheKey] = JSON.parse(JSON.stringify(result));
+        return result;
     }
+
+    // 生成 N 个 Fibonacci 球面均匀分布的方向
+    function getFibonacciDirections(n) {
+        if (n <= 1) return [[0, 0, 1]];
+        const gr = (1 + Math.sqrt(5)) / 2;
+        const dirs = [];
+        for (let i = 0; i < n; i++) {
+            const y = 1 - (i / (n - 1)) * 2;
+            const rad = Math.sqrt(1 - y * y);
+            const t = TWO_PI * i / gr;
+            dirs.push([Math.cos(t) * rad, y, Math.sin(t) * rad]);
+        }
+        return dirs;
+    }
+
+    // 获取单个轨道的峰值方向（最大振幅所在的方向）
+    function getOrbitalPeakDirection(orbitalParam) {
+        const { l, m, t } = orbitalParam.angKey;
+
+        // s 轨道 (l=0)：球对称，返回 z 轴
+        if (l === 0) return [0, 0, 1];
+
+        // p 轨道 (l=1)
+        if (l === 1) {
+            if (m === 0) return [0, 0, 1];        // pz -> z 轴
+            if (m === 1 && t === 'c') return [1, 0, 0];  // px -> x 轴
+            if (m === 1 && t === 's') return [0, 1, 0];  // py -> y 轴
+        }
+
+        // d 轨道 (l=2)
+        if (l === 2) {
+            if (m === 0) return [0, 0, 1];        // dz2 -> z 轴
+            if (m === 1 && t === 'c') return [1, 0, 1];  // dxz -> xz 平面
+            if (m === 1 && t === 's') return [0, 1, 1];  // dyz -> yz 平面
+            if (m === 2 && t === 'c') return [1, 1, 0];  // dx2-y2 -> xy 平面
+            if (m === 2 && t === 's') return [1, 1, 0];  // dxy -> xy 平面
+        }
+
+        // f 轨道 (l=3) 及更高: 使用默认方向
+        return [0, 0, 1];
+    }
+
+    // 从给定初始方向开始进行 Thomson 优化
+    function optimizeThomsonFromInitial(initialPoints, maxIter = 200, lr = 0.1) {
+        const n = initialPoints.length;
+        if (n <= 1) return initialPoints.map(p => [...p]);
+
+        // 归一化初始方向
+        let points = initialPoints.map(p => {
+            const norm = Math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) || 1;
+            return [p[0] / norm, p[1] / norm, p[2] / norm];
+        });
+
+        // Thomson 优化：最小化点间斥力
+        for (let iter = 0; iter < maxIter; iter++) {
+            const grad = points.map(() => [0, 0, 0]);
+            for (let i = 0; i < n; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    const dx = points[i][0] - points[j][0];
+                    const dy = points[i][1] - points[j][1];
+                    const dz = points[i][2] - points[j][2];
+                    const d2 = dx * dx + dy * dy + dz * dz;
+                    const d3 = d2 * Math.sqrt(d2) + 1e-10;
+                    grad[i][0] -= dx / d3; grad[i][1] -= dy / d3; grad[i][2] -= dz / d3;
+                    grad[j][0] += dx / d3; grad[j][1] += dy / d3; grad[j][2] += dz / d3;
+                }
+            }
+            for (let i = 0; i < n; i++) {
+                points[i][0] -= lr * grad[i][0];
+                points[i][1] -= lr * grad[i][1];
+                points[i][2] -= lr * grad[i][2];
+                const norm = Math.sqrt(points[i][0] ** 2 + points[i][1] ** 2 + points[i][2] ** 2);
+                points[i] = [points[i][0] / norm, points[i][1] / norm, points[i][2] / norm];
+            }
+            if (iter % 50 === 0) lr *= 0.8;
+        }
+        return points;
+    }
+
 
     function sortOrbitalsForHybridization(paramsList) {
         return [...paramsList].sort((a, b) => {
@@ -297,12 +447,27 @@
         });
     }
 
+    // 杂化系数矩阵缓存
+    const _hybridCoeffCache = {};
+
     function getHybridCoefficients(orbitalParams) {
+        // 生成缓存 key
+        const cacheKey = orbitalParams.map(p =>
+            `${p.n}_${p.l}_${p.angKey.l}_${p.angKey.m}_${p.angKey.t}`
+        ).join('|');
+
+        if (_hybridCoeffCache[cacheKey]) {
+            return _hybridCoeffCache[cacheKey];
+        }
+
         const sorted = sortOrbitalsForHybridization(orbitalParams);
         const directions = generateConstrainedDirections(sorted);
         const A = buildDirectionMatrix(directions, sorted);
         const { U, V } = jacobiSVD(A);
-        return matMul(U, matTranspose(V));
+        const result = matMul(U, matTranspose(V));
+
+        _hybridCoeffCache[cacheKey] = result;
+        return result;
     }
 
     // ==================== 5. 高级分布计算 ====================

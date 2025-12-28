@@ -874,112 +874,62 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
             }
 
             // 4. 计算对数坐标数据 (symlog: 保留符号的对数变换)
-            // symlog(v) = sign(v) × log₁₀|v|，保留负值信息
+            // 使用 Base 100 以减少视觉上的"放大"效应
+            // log100(x) = log(x) / log(100) = 0.5 * log10(x)
             const symlog = (v) => {
                 const absV = Math.abs(v);
                 if (absV < 1e-12) return null;
                 const sign = v < 0 ? -1 : 1;
-                return sign * Math.log10(absV);
+                return sign * (Math.log(absV) / Math.log(100));
             };
 
             const potentialLogExpPoints = [];
             const potentialLogTheoryPoints = [];
+
+            // 直接复用线性网格数据 (theoryE 和 expE)
+            // 确保与 V(r) 曲线完全一致
+            for (let i = 0; i < numBins; i++) {
+                const r = radialCenters[i];
+                if (r <= 0) continue; // log(r) undefined for r<=0
+
+                const rLog = Math.log10(r);
+
+                // 理论值
+                if (theoryE[i] !== 0) {
+                    const val = symlog(theoryE[i]);
+                    if (val !== null) {
+                        potentialLogTheoryPoints.push({ x: rLog, y: val });
+                    }
+                }
+
+                // 实验值
+                if (expE[i] !== 0) {
+                    const val = symlog(expE[i]);
+                    if (val !== null) {
+                        potentialLogExpPoints.push({ x: rLog, y: val });
+                    }
+                }
+            }
+
+            // dEdr 的对数图保持原样或也复用 (用户主要关注 V(r))
+            // 这里我们也复用 theoryDEdr 和 expDEdr 以保持一致性
             const dEdrLogExpPoints = [];
             const dEdrLogTheoryPoints = [];
 
-            // ==================== 完全重构：直接解析求值 ====================
-            // 不再从线性网格插值，消除阶梯和物理误差
-            const rawSamples = state.radialSamples || [];
-            const rMin = 0.01;
-            const rMax = radialCenters[numBins - 1] > 0 ? radialCenters[numBins - 1] : 50;
-            const logMin = Math.log10(rMin);
-            const logMax = Math.log10(rMax);
-            const numLogBins = 200; // 与线性图表保持一致的 bin 数量
-            const logStep = (logMax - logMin) / numLogBins;
-
-            // 1. 生成对数空间的 r 坐标数组
-            const logRValues = new Float32Array(numLogBins);
-            for (let i = 0; i < numLogBins; i++) {
-                const logR = logMin + (i + 0.5) * logStep;
-                logRValues[i] = Math.pow(10, logR);
-            }
-
-            // 2. 直接调用物理引擎计算理论曲线（100% 精确，无插值）
-            let logTheoryE = new Float32Array(numLogBins);
-            let logTheoryDEdr = new Float32Array(numLogBins);
-
-            for (const p of paramsList) {
-                const result = window.Hydrogen.calculateCumulativeOrbitalEnergy(
-                    p.n, p.l, 1, atomType, logRValues
-                );
-                for (let i = 0; i < numLogBins; i++) {
-                    logTheoryE[i] += result.E[i] / paramsList.length;
-                    logTheoryDEdr[i] += result.dEdr[i] / paramsList.length;
-                }
-            }
-
-            // 3. 创建采样直方图 (log 空间)
-            const logCounts = new Float32Array(numLogBins);
-            const logTotalSamples = rawSamples.length;
-            for (let s = 0; s < logTotalSamples; s++) {
-                const r = rawSamples[s];
+            for (let i = 0; i < numBins; i++) {
+                const r = radialCenters[i];
                 if (r <= 0) continue;
-                const logR = Math.log10(r);
-                const idx = Math.floor((logR - logMin) / logStep);
-                if (idx >= 0 && idx < numLogBins) logCounts[idx]++;
-            }
+                const rLog = Math.log10(r);
 
-            // 4. 计算采样能量曲线
-            // 归一化方式与线性图表统一：count / (totalSamples * dr)
-            const logExpDEdr = new Float32Array(numLogBins);
-            const logExpE = new Float32Array(numLogBins);
-
-            for (let i = 0; i < numLogBins; i++) {
-                const r = logRValues[i];
-                // log 空间 bin 对应的线性宽度
-                const drLinear = r * Math.LN10 * logStep;
-
-                // 采样 PDF (归一化到线性 r 空间)
-                const sampledPDF = logTotalSamples > 0 ? logCounts[i] / (logTotalSamples * drLinear) : 0;
-
-                // 理论 PDF (直接计算)
-                let theoryPDF = 0;
-                for (const p of paramsList) {
-                    theoryPDF += window.Hydrogen.radialPDF(p.n, p.l, r, 1, 1, atomType);
+                if (theoryDEdr[i] !== 0) {
+                    const val = symlog(theoryDEdr[i]);
+                    if (val !== null) dEdrLogTheoryPoints.push({ x: rLog, y: val });
                 }
-                theoryPDF /= paramsList.length;
 
-                // 采样能量密度 = 理论能量密度 × (采样PDF / 理论PDF)
-                if (theoryPDF > 1e-15 && logTheoryDEdr[i] !== 0) {
-                    logExpDEdr[i] = logTheoryDEdr[i] * (sampledPDF / theoryPDF);
-                } else {
-                    logExpDEdr[i] = 0;
+                if (expDEdr[i] !== 0) {
+                    const val = symlog(expDEdr[i]);
+                    if (val !== null) dEdrLogExpPoints.push({ x: rLog, y: val });
                 }
-            }
-
-            // 5. 梯形积分累积
-            let cumLogE = 0;
-            for (let i = 0; i < numLogBins; i++) {
-                const r = logRValues[i];
-                const drLinear = r * Math.LN10 * logStep;
-                const prevDEdr = i > 0 ? logExpDEdr[i - 1] : 0;
-                cumLogE += 0.5 * (logExpDEdr[i] + prevDEdr) * drLinear;
-                logExpE[i] = cumLogE;
-            }
-
-            // 6. 生成输出点 (symlog 变换)
-            for (let i = 0; i < numLogBins; i++) {
-                const logR = logMin + (i + 0.5) * logStep;
-
-                const lyExpE = symlog(logExpE[i]);
-                const lyTheoE = symlog(logTheoryE[i]);
-                if (lyExpE !== null) potentialLogExpPoints.push({ x: logR, y: lyExpE });
-                if (lyTheoE !== null) potentialLogTheoryPoints.push({ x: logR, y: lyTheoE });
-
-                const lyExpD = symlog(logExpDEdr[i]);
-                const lyTheoD = symlog(logTheoryDEdr[i]);
-                if (lyExpD !== null) dEdrLogExpPoints.push({ x: logR, y: lyExpD });
-                if (lyTheoD !== null) dEdrLogTheoryPoints.push({ x: logR, y: lyTheoD });
             }
 
             // 5. 计算 Z_eff 数据

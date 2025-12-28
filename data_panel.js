@@ -953,18 +953,21 @@
     let labels = [];
 
     if (experimental && experimental.points && experimental.points.length > 0) {
-      labels = experimental.points.map(p => p.x.toFixed(2));
+      if (labels.length === 0) {
+        labels = experimental.points.map(p => p.x.toFixed(2));
+      }
       datasets.push({
-        type: 'bar',
+        type: 'line',
         label: '采样 V(log r)',
+        // 使用与直方图的 category axis 对齐
         data: experimental.points.map(p => p.y),
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        borderColor: 'rgba(255, 255, 255, 0.9)',
-        borderWidth: 0,  // 【修复】无边框使柱子紧密排列
-        barPercentage: 1.0,
-        categoryPercentage: 1.0,
-        borderRadius: 0,
-        borderSkipped: false,
+        borderColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        borderWidth: 2.0,
+        borderDash: [], // 实线
+        tension: 0.4, // 平滑
+        cubicInterpolationMode: 'monotone',
         order: 10,
       });
     }
@@ -976,14 +979,13 @@
       datasets.push({
         type: 'line',
         label: '理论 V(log r)',
-        // 【关键修复】与直方图的 category axis 对齐，直接使用 y 值数组
-        // 这样可以确保折线点准确落在柱子的中心
         data: theory.points.map(p => p.y),
         borderColor: 'rgba(255, 255, 255, 0.95)',
         backgroundColor: 'transparent',
         pointRadius: 0,
         borderWidth: 2.0,
-        tension: 0.4, // 【平滑】使用三次插值使曲线平滑连续
+        borderDash: [5, 5], // 虚线
+        tension: 0.4, // 平滑
         cubicInterpolationMode: 'monotone', // 防止过冲
         order: 5,
         hidden: state.potentialLogTheoryHidden || false
@@ -998,7 +1000,7 @@
         chart.options.scales.x.title = { display: true, text: 'log₁₀(r) (r in a₀)', color: '#d0d0d0', font: { size: 12 } };
       }
       if (chart.options.scales.y) {
-        chart.options.scales.y.title = { display: true, text: 'log₁₀|累积势能 V(r)| (Hartree)', color: '#d0d0d0', font: { size: 12 } };
+        chart.options.scales.y.title = { display: true, text: 'log₁₀₀|累积势能 V(r)| (Hartree)', color: '#d0d0d0', font: { size: 12 } };
       }
     }
 

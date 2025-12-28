@@ -7,7 +7,7 @@
 ### 📚 学术合规化 (Academic Rigor & Alignment)
 
 1.  **论文标题升级 (Title Alignment)**
-    -   新增英文标题，突出 **Clementi-Roetti 基组**与**实时蒙特卡洛采样**。
+    -   新增英文标题，突出 **Koga & Thakkar 基组**与**实时蒙特卡洛采样**。
 2.  **方法论重定义 (Methodology Evolution)**
     -   将 AI 辅助开发模式正式定义为 **AI-Assisted Domain-Driven Development (AI-ADRD)**，强调物理定律作为质量护栏。
 3.  **物理基础澄清 (Physics Clarification)**
@@ -86,9 +86,9 @@
 
 ### 🚀 物理引擎更新
 
-1.  **多电子原子支持 (He - Xe)**
-    -   集成 **Clementi-Roetti (1974)** 标准 STO (Slater-Type Orbitals) 基组数据。
-    -   支持从氦 (He) 到氙 (Xe) 以及镧系元素的电子轨道模拟。
+1.  **多电子原子支持 (He - Kr)**
+    -   集成 **Koga & Thakkar (1999/2000)** 标准 STO (Slater-Type Orbitals) 基组数据。
+    -   支持从氦 (He) 到氪 (Kr) 的电子轨道模拟。
     -   实现多指数波函数叠加，还原原子轨道的径向节点结构。
 
 2.  **STO 相位校正**
@@ -102,7 +102,7 @@
     -   **实现**：在采样中引入双重循环 CDF 构建。
 
 4.  **动态半径估算 (Min-Zeta Strategy)**
-    -   采用 **最小指数优先 (Minimum Zeta)** 策略，更准确地估算重原子 (如 Xe-5p) 的电子云边界。
+    -   采用 **最小指数优先 (Minimum Zeta)** 策略，更准确地估算较重原子 (如 Kr-4p) 的电子云边界。
 
 ### 🎨 可视化与交互
 

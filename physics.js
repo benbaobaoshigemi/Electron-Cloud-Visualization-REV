@@ -458,16 +458,15 @@
     }
   }
 
-  // ==================== 精确逆CDF采样 (Inverse CDF Sampling) ====================
-  // 
-  // 【物理准确性保证】
-  // 利用解析式 P(r) = r² |R_nl(r)|² 构建精确的累积分布函数
+  // ==================== 逆CDF采样 (Inverse CDF Sampling) ====================
+  //
+  // 基于 P(r) = r² |R_nl(r)|² 构建数值CDF
   // 通过数值积分预计算 CDF，然后使用二分查找进行逆变换采样
-  // 
-  // 优势：
-  // 1. 100% 接受率（无拒绝采样）
-  // 2. 精确服从理论分布
-  // 3. 没有提议分布匹配问题
+  //
+  // 特点：
+  // 1. 无拒绝采样（径向环节）
+  // 2. 受网格与插值精度限制的数值近似
+  // 3. 不涉及提议分布匹配
   // ====================
 
   // CDF 表缓存
@@ -489,18 +488,21 @@
 
     // 确定积分范围：到概率密度下降到峰值的 1e-8 为止
     const rMax = Math.max(4 * n * n * A0, 50 * A0);
-    const dr = rMax / numPoints;
 
+    // 使用线性网格
+    const dr = rMax / numPoints;
     const r = new Float64Array(numPoints + 1);
     const cdf = new Float64Array(numPoints + 1);
 
-    // 使用梯形法则进行数值积分
+    // 数值积分
     r[0] = 0;
     cdf[0] = 0;
     let cumulative = 0;
 
     for (let i = 1; i <= numPoints; i++) {
+      // 线性分布网格点
       r[i] = i * dr;
+
       const P_prev = radialPDF(n, l, r[i - 1], 1, 1, atomType);
       const P_curr = radialPDF(n, l, r[i], 1, 1, atomType);
       // 梯形法则：积分 ≈ (f(a) + f(b)) * h / 2
@@ -511,8 +513,8 @@
     // 归一化 CDF 到 [0, 1]
     const totalProb = cdf[numPoints];
     if (totalProb > 0) {
-      for (let i = 0; i <= numPoints; i++) {
-        cdf[i] /= totalProb;
+      for (let j = 0; j <= numPoints; j++) {
+        cdf[j] /= totalProb;
       }
     }
 
@@ -522,7 +524,7 @@
   }
 
   /**
-   * 精确逆CDF采样：从径向分布 P(r) 精确采样
+   * 逆CDF采样：从径向分布 P(r) 数值采样
    * @param {number} n - 主量子数
    * @param {number} l - 角量子数
    * @param {string} atomType - 原子类型
@@ -716,7 +718,7 @@
 
   /**
    * 计算径向权重的理论上界
-   * 【物理优化】使用数值搜索找到精确的最大权重
+   * 【数值优化】使用数值搜索估计最大权重
    * 这避免了保守估计导致的效率损失和激进估计导致的偏差
    */
   function getMaxRadialWeight(n, l) {
@@ -762,16 +764,16 @@
   /**
    * 重要性采样：生成一个采样点
    * 
-   * 【物理准确性保证】
+   * 【数值一致性说明】
    * 采用"分离变量"策略：
-   * - 径向：使用精确逆CDF采样（100%接受率，无偏差）
+   * - 径向：使用逆CDF采样（无拒绝环节，仍为数值近似）
    * - 角向：均匀球面采样 + |Y|² 权重接受-拒绝
    * 
-   * 这确保最终分布精确等于 |ψ|² = R²(r) × |Y|²(θ,φ)
+   * 该策略在数值精度范围内逼近 |ψ|² = R²(r) × |Y|²(θ,φ)
    */
   function importanceSample(n, l, angKey, samplingBoundary = Infinity, atomType = 'H') {
-    // ==================== 第一步：径向采样（精确逆CDF） ====================
-    // 直接从精确的 P(r) 分布采样，无需接受-拒绝
+    // ==================== 第一步：径向采样（逆CDF） ====================
+    // 直接从数值CDF采样，无需接受-拒绝
     let r = sampleRadialExact(n, l, atomType);
 
     // 边界检查
@@ -786,7 +788,7 @@
     const Y2 = realYlm_abs2(angKey.l, angKey.m, angKey.t, theta, phi);
     const w_angular = 4 * PI * Y2;
 
-    // 【物理修正】角向权重上界的精确计算
+    // 【数值修正】角向权重上界的保守估计
     // 对于实球谐函数：
     // - m=0: 最大值 = (2l+1)/(4π)，所以 4π|Y|² ≤ 2l+1
     // - m≠0: 由于 cos² 或 sin² 因子，最大值可能更大
@@ -916,14 +918,14 @@
   // ====================
 
   /**
-   * 杂化轨道的精确采样（基于逆CDF混合）
+   * 杂化轨道的高效采样（基于逆CDF混合）
    * 
    * 【物理原理】
    * 杂化轨道密度 |Σ c_i ψ_i|² 不是简单的各轨道密度之和
    * 但我们可以用各轨道的混合分布作为高效的提议分布
    * 
    * 【采样策略】
-   * 1. 径向：从参与轨道中随机选择一个，使用其精确逆CDF采样
+   * 1. 径向：从参与轨道中随机选择一个，使用其逆CDF采样
    * 2. 角向：均匀球面采样
    * 3. 接受-拒绝：按杂化密度权重决定接受
    * 
@@ -937,7 +939,7 @@
     const defaultCoeff = 1.0 / Math.sqrt(numOrbitals);
 
     // ==================== 第一步：从混合提议分布采样径向距离 ====================
-    // 随机选择一个参与轨道，使用其精确逆CDF采样
+    // 随机选择一个参与轨道，使用其逆CDF采样
     const orbitalIndex = Math.floor(Math.random() * numOrbitals);
     const selectedOrbital = paramsList[orbitalIndex];
     const r = sampleRadialExact(selectedOrbital.n, selectedOrbital.l);
@@ -1040,7 +1042,8 @@
     }
     rMax = Math.max(rMax, 50 * A0);
 
-    const dr = rMax / numPoints;
+    // 使用指数网格或幂律网格来提高核心处的采样精度
+    const k = 3.0; // 幂律指数
     const r = new Float64Array(numPoints + 1);
     const cdf = new Float64Array(numPoints + 1);
 
@@ -1050,7 +1053,12 @@
     let cumulative = 0;
 
     for (let i = 1; i <= numPoints; i++) {
-      r[i] = i * dr;
+      // 幂律分布网格点
+      const t = i / numPoints;
+      r[i] = rMax * Math.pow(t, k);
+
+      // 当前段步长
+      const currentDr = r[i] - r[i - 1];
 
       // 计算 P(r) = r² × Σ |c_i|² × |R_i(r)|²
       let P_prev = 0, P_curr = 0;
@@ -1069,7 +1077,7 @@
       }
 
       // 梯形法则
-      cumulative += (P_prev + P_curr) * dr / 2;
+      cumulative += (P_prev + P_curr) * currentDr / 2;
       cdf[i] = cumulative;
     }
 
@@ -1081,7 +1089,7 @@
       }
     }
 
-    const result = { r, cdf, rMax, dr, numPoints, totalProb };
+    const result = { r, cdf, rMax, dr: 0, numPoints, totalProb };
     _cdfCache['hybrid_' + key] = result;
     return result;
   }
@@ -1090,11 +1098,11 @@
    * 杂化轨道的高精度采样（基于杂化CDF + 角向接受-拒绝）
    * 
    * 【最高效方法】
-   * 1. 使用杂化轨道自己的径向CDF精确采样r
+   * 1. 使用杂化轨道自己的径向CDF采样r
    * 2. 均匀球面采样角度
    * 3. 按角向权重接受-拒绝
    * 
-   * 这个方法在理论上最接近"精确采样"，效率最高
+   * 这个方法在数值上较接近目标分布，效率最高
    */
   function hybridPreciseSample(paramsList, samplingBoundary, atomType = 'H') {
     if (!paramsList || paramsList.length === 0) return null;
@@ -1106,7 +1114,7 @@
     const cdfData = buildHybridRadialCDF(paramsList, 2000, atomType);
     if (!cdfData) return null;
 
-    // ==================== 第一步：从杂化径向CDF精确采样 ====================
+    // ==================== 第一步：从杂化径向CDF采样 ====================
     const { r: rTable, cdf, numPoints } = cdfData;
     const u = Math.random();
 
@@ -1742,7 +1750,7 @@
     orbitalKey,
     angularPDF_Theta,
     angularPDF_Phi,
-    // 精确逆CDF采样
+    // 逆CDF采样
     buildRadialCDF,
     sampleRadialExact,
     importanceSample,  // 【修复】导出用于滚动生成模式
@@ -1774,7 +1782,7 @@
 
     /**
      * 计算解析累积轨道能量曲线 E(R) = T(R) + V_nuc(R)
-     * 使用不完全伽马函数进行解析积分，实现 100% 物理精确度。
+     * 使用不完全伽马函数进行解析积分，降低数值积分误差。
      * 
      * @param {number} n - 主量子数
      * @param {number} l - 角量子数
@@ -1803,6 +1811,9 @@
 
         const eValues = new Float32Array(steps);
         const dEdrValues = new Float32Array(steps);
+        const dVnucDrValues = new Float32Array(steps); // 【新增】
+        const veeValues = new Float32Array(steps);     // 【新增】
+        const vValues = new Float32Array(steps);       // 【新增】
 
         // 氢原子轨道能量的精确解析值: ε = -Z²/(2n²) Hartree
         const epsilon = -Z * Z / (2 * n * n);
@@ -1810,14 +1821,13 @@
         // 对于氢原子，使用 CDF 方法计算累积能量
         // E(R) = ε × P(r ≤ R)，其中 P(r ≤ R) 是累积概率
         // dE/dr = ε × P(r) = ε × |R_nl(r)|² × r²
+        let currentV = 0;
         for (let s = 0; s < steps; s++) {
           const R = rValues[s];
+          const prevR = s > 0 ? rValues[s - 1] : 0;
+          const dr = R - prevR;
 
-          // 计算累积概率 P(r ≤ R) 使用不完全伽马函数
-          // 对于氢原子: P(r) = r² |R_nl(r)|² = 4(Z/n)³ r² × [L_n-l-1^(2l+1)(2Zr/n)]² × exp(-2Zr/n) / n
-          // 积分结果是不完全伽马函数的组合
-
-          // 简化方法：使用数值积分近似累积概率
+          // 计算累积概率 P(r ≤ R) 使用数值积分近似
           const dr_fine = R / 100;
           let cumulativeProb = 0;
           for (let i = 0; i < 100; i++) {
@@ -1832,10 +1842,22 @@
 
           // dE/dr = ε × PDF(r) = ε × r² |R_nl(r)|²
           const Rnl_R = radialR(n, l, R, Z);
-          dEdrValues[s] = epsilon * R * R * Rnl_R * Rnl_R;
+          const pdf_R = R * R * Rnl_R * Rnl_R;
+          dEdrValues[s] = epsilon * pdf_R;
+
+          // 对于氢原子，Vee 为 0，dVnuc/dr 等于势能密度
+          // 势能密度 = P(r) * (-Z/r) = -Z * r * |R_nl(r)|²
+          const dVnuc_dr = -Z * R * Rnl_R * Rnl_R;
+          dVnucDrValues[s] = dVnuc_dr;
+          veeValues[s] = 0;
+
+          // 累积势能 V(R)
+          const prevDVnuc_dr = s > 0 ? dVnucDrValues[s - 1] : 0;
+          currentV += 0.5 * (dVnuc_dr + prevDVnuc_dr) * dr;
+          vValues[s] = currentV;
         }
 
-        return { r: rValues, E: eValues, T: null, V: null, dEdr: dEdrValues };
+        return { r: rValues, E: eValues, T: null, V: vValues, dEdr: dVnucDrValues, dVnucDr: dVnucDrValues, Vee: veeValues };
       }
 
       // ==================== 非氢原子：使用 Slater 基组 ====================
@@ -1865,6 +1887,8 @@
       const tValues = new Float32Array(steps); // Kinetic T(R)
       const vValues = new Float32Array(steps); // Potential V(R) = V_nuc + V_ee
       const dEdrValues = new Float32Array(steps); // dE/dr (Density)
+      const dVnucDrValues = new Float32Array(steps); // Nuclear-only derivative for stability
+      const veeValues = new Float32Array(steps); // 【新增】电子-电子排斥势能 Vee(r)
 
       // Check if we have cached Vee data
       let veeCache = null;
@@ -1929,6 +1953,7 @@
             // Integrand contribution to dV/dr
             const dv_integrand = -Z * pref * Math.pow(R, ti.ni + tj.ni - 1) * Math.exp(-alpha * R);
             dEdr_val += dv_integrand;
+            dVnucDrValues[s] += dv_integrand;
 
             // NOTE: Kinetic energy T is intentionally omitted to avoid Cusp artifact
           }
@@ -1936,6 +1961,7 @@
 
         // Electron-electron repulsion from cache
         const Vee_pot = _getVeeInternal(R);
+        veeValues[s] = Vee_pot;  // 【新增】保存Vee值
 
         // Calculate radial PDF P(R) for Vee scaling
         let sumPDF = 0;
@@ -1969,7 +1995,7 @@
         eValues[s] = currentE;
       }
 
-      return { r: rValues, E: eValues, T: null, V: vValues, dEdr: dEdrValues };
+      return { r: rValues, E: eValues, T: null, V: vValues, dEdr: dEdrValues, dVnucDr: dVnucDrValues, Vee: veeValues };
     },
 
     /**
@@ -2008,7 +2034,7 @@
 
     /**
      * 计算重构动能 T_rec(r) = ε - V_nuc(r) - V_ee(r)
-     * 这是基于薛定谔方程的物理精确动能，无基组伪影
+     * 这是基于薛定谔方程的模型内一致动能表达
      * 
      * @param {number} r - 径向距离
      * @param {number} epsilon - 轨道本征值 (Hartree)
@@ -2067,27 +2093,6 @@
      * @param {number} Z - 核电荷数
      * @returns {Array} 累积能量值数组 (与counts长度相同)
      */
-    transformHistogramToPotential: function (counts, edges, totalSamples, Z) {
-      if (totalSamples === 0) return new Float32Array(counts.length);
-
-      const eValues = new Float32Array(counts.length);
-      let cumulativeE = 0;
-
-      for (let i = 0; i < counts.length; i++) {
-        const count = counts[i];
-        if (count > 0) {
-          // Bin center r
-          const r = 0.5 * (edges[i] + edges[i + 1]);
-          // 概率 P_i = count / totalSamples
-          const prob = count / totalSamples;
-          // 该 bin 的平均势能贡献贡献: P_i * (-Z / r)
-          // 注意：这里我们用 bin 中心的势能近似整个 bin 的平均势能
-          const contribution = prob * (-Z / r);
-          cumulativeE += contribution;
-        }
-        eValues[i] = cumulativeE;
-      }
-      return eValues;
-    }
+    // transformHistogramToPotential removed (unused legacy helper)
   };
 })();

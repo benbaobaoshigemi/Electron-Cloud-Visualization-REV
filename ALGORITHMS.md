@@ -1,6 +1,6 @@
 # 核心算法技术文档 (v3.0 物理深度解析版)
 
-本文档旨在提供对本项目物理引擎的**严格物理层级**解析。本文不仅描述算法实现，更侧重于揭示底层的物理近似、数学工具的选用依据以及系统边界。
+本文档旨在提供对本项目物理引擎的**物理层级**解析。本文不仅描述算法实现，更侧重于揭示底层的物理近似、数学工具的选用依据以及系统边界。
 
 **核心约定**：
 *   所有计算均在**原子单位制 (Atomic Units, a.u.)** 下进行：$\hbar = m_e = e = 1 / 4\pi\epsilon_0 = 1$。
@@ -17,7 +17,7 @@
 $$ H = -\sum_i \frac{1}{2}\nabla_i^2 - \sum_i \frac{Z}{r_i} + \sum_{i<j} \frac{1}{|r_i - r_j|} $$
 
 *   **非相对论近似 (Non-relativistic Limit)**：
-    *   我们在 $Z \le 54$ (Xe) 范围内主要使用非相对论基组。
+    *   我们在 $Z \le 36$ (Kr) 范围内主要使用非相对论基组。
     *   **严重局限**：对于重元素（如 Au, Hg, U），内层电子速度接近光速，相对论效应（质量修正、Darwin 项）显著收缩 $s$ 轨道并扩张 $d/f$ 轨道。虽然代码库中包含 `Au_R` (Relativistic Gold) 等特定修正数据，但总体上**忽略了自旋-轨道耦合 (Spin-Orbit Coupling)** 导致能级分裂（如 $2p_{1/2}, 2p_{3/2}$ degeneracy breaking）。
 *   **单电子近似 (Single Particle Approximation)**：
     *   我们展示的是 **Hartree-Fock (HF)** 意义下的单电子轨道。这意味着忽略了**电子关联能 (Electron Correlation Energy)**。因此，电子云形状是“平均场”下的结果，无法体现多体波函数的纠缠特性。
@@ -47,11 +47,11 @@ $$ -\frac{1}{2}\nabla^2\psi - \frac{1}{r}\psi = E\psi $$
     该算法在 $n=1\sim 100$ 范围内具有优异的数值稳定性。
 
 ### 2.2 实球谐函数 (Real Spherical Harmonics)
-为了可视化轨道波瓣方向，我们只使用实形式 $Y_{lm}$。
+为了可视化轨道波瓣方向，我们在内部采用复球谐函数并线性组合得到实球谐函数。
 **Condon-Shortley 相位**：
-代码显式引入了 $(-1)^m$ 相位因子：
-$$ Y_{lm} \propto (-1)^m \sqrt{\frac{(2l+1)}{4\pi} \frac{(l-m)!}{(l+m)!}} P_l^m(\cos\theta) e^{im\phi} $$
-这确保了基组展开时的正负号与标准量子化学软件（如 Gaussian）一致，避免了 $p_x, p_y$ 混合时的符号混乱。
+代码显式引入了 $(-1)^m$ 相位因子，复球谐的规范形式为：
+$$ Y_l^m \propto (-1)^m \sqrt{\frac{(2l+1)}{4\pi} \frac{(l-m)!}{(l+m)!}} P_l^m(\cos\theta) e^{im\phi} $$
+实球谐通过 $Y_l^{m}$ 与 $Y_l^{-m}$ 的线性组合得到，这保证了基组展开时的正负号与标准量子化学软件（如 Gaussian）一致，避免了 $p_x, p_y$ 混合时的符号混乱。
 
 ---
 
@@ -65,7 +65,7 @@ $$ Y_{lm} \propto (-1)^m \sqrt{\frac{(2l+1)}{4\pi} \frac{(l-m)!}{(l+m)!}} P_l^m(
 代码库实现了 **Koga et al. (1999)** 发表的 "High-precision analytical limits of atomic Hartree-Fock calculations"。
 *   **基函数类型**：Slater-Type Orbitals (STOs)。
     $$ \chi(r) = N r^{n-1} e^{-\zeta r} $$
-*   **非相对论性**：Koga (1999) 的基组是基于**非相对论**哈密顿量优化的。虽然它们在总能量上达到了 Hartree-Fock 极限（误差 $10^{-9} E_h$），但对于重原子（如 Kr, Xe），忽略相对论效应会导致内层轨道半径偏大，能级偏高。
+*   **非相对论性**：Koga (1999) 的基组是基于**非相对论**哈密顿量优化的。虽然它们在总能量上达到了 Hartree-Fock 极限（误差 $10^{-9} E_h$），但对于较重原子（如 Kr），忽略相对论效应会导致内层轨道半径偏大，能级偏高。
 *   **展开式**：每个原子轨道表示为多个 Slater 函数的线性组合 (LCAO)：
     $$ R_{nl}(r) = \sum_{j=1}^{M} c_j \chi_j(r; n_j, \zeta_j) $$
     例如，碳原子的 $2p$ 轨道由 4 个不同的 STO 组合而成，以精确模拟径向节点的缺失和尾部衰减。
@@ -107,9 +107,9 @@ $$ -\frac{Z_{eff}(r)}{r} = -\frac{Z}{r} + V_{ee}(r) \implies Z_{eff}(r) = Z - r 
 我们利用薛定谔方程作为恒等式：
 $$ \hat{T}\psi + \hat{V}\psi = E_{orb}\psi \implies T_{local}(r) = E_{orb} - V_{total}(r) $$
 
-*   $E_{orb}$：是 Koga 论文中给出的精确轨道本征值（Eigenvalues）。
+*   $E_{orb}$：是 Koga 论文中给出的轨道本征值（Eigenvalues）。
 *   $V_{total}(r)$：是解析计算的 $V_{nuc}$ 加上插值得到的 $V_{ee}$。
-*   **优势**：这种方法从数学上保证了 $T(r)$ 的平滑性，完美规避了 Cusp 处的数值微分问题，且确保 $T+V$ 在任何位置都精确等于常数 $E_{orb}$。
+*   **优势**：这种方法在模型内保证了 $T(r)$ 的平滑性，显著减弱了 Cusp 处的数值微分问题，并满足 $T+V=E_{orb}$ 的恒等关系（在同一近似与数值框架下）。
 
 ---
 
@@ -117,13 +117,13 @@ $$ \hat{T}\psi + \hat{V}\psi = E_{orb}\psi \implies T_{local}(r) = E_{orb} - V_{
 
 这是本项目实现“百万级点云”实时生成的关键。
 
-### 6.1 径向：精确逆 CDF (Exact Inverse CDF)
-对于径向分布函数 $P(r) = r^2 |R(r)|^2$，我们拒绝使用效率低下的 Metropolis-Hastings。
+### 6.1 径向：数值逆 CDF (Inverse CDF)
+对于径向分布函数 $P(r) = r^2 |R(r)|^2$，我们避免使用效率较低的 Metropolis-Hastings。
 *   **实现**：
     1.  预计算 CDF: $F(r) = \int_0^r P(t) dt$（4000 个采样点，梯形积分）。
     2.  逆变换：生成均匀随机数 $\xi \in [0,1]$，求解 $F(r) = \xi$。
-*   **精度保证**：由于 CDF 是单调递增的，二分查找 (Binary Search) 保证了 $O(\log N)$ 的时间复杂度。由于 $P(r)$ 是平滑函数，线性插值带来的误差远小于像素分辨率。
-*   **无拒绝 (Rejection-Free)**：此步骤效率为 100%。
+*   **精度说明**：由于 CDF 是单调递增的，二分查找 (Binary Search) 保证了 $O(\log N)$ 的时间复杂度。由于 $P(r)$ 是平滑函数，线性插值在可视化尺度上通常足够。
+*   **无拒绝 (Rejection-Free)**：该步骤无额外拒绝环节，但仍属于数值近似采样。
 
 ### 6.2 角向：局部拒绝采样 (Local Rejection)
 角向分布 $|Y_{lm}(\theta, \phi)|^2$ 比较复杂，且难以构建 2D 逆 CDF。
@@ -132,7 +132,7 @@ $$ \hat{T}\psi + \hat{V}\psi = E_{orb}\psi \implies T_{local}(r) = E_{orb} - V_{
 
 ### 6.3 摩尔纹 (Moiré Patterns) 与抖动 (Dithering)
 *   **现象**：由于逆 CDF 表的离散性（4000点），在生成数百万个粒子时，径向会出现肉眼可见的同心圆环（离散化伪影）。
-*   **解决方案**：在最终坐标上叠加幅度为 $0.01 a_0$ 的高斯噪声（Dithering）。这是一种计算机图形学中的 Anti-aliasing 技术，物理上对应于海森堡测不准原理的微扰，但在视觉上有效消除了人工纹理。
+*   **解决方案**：在最终坐标上叠加幅度为 $0.01 a_0$ 的高斯噪声（Dithering）。这是一种计算机图形学中的 Anti-aliasing 技术，用于削弱离散采样造成的视觉纹理。
 
 ---
 
@@ -167,7 +167,7 @@ $$ J(q) = \sum \log(\sigma_k(A(q))) $$
 
 ### 8.2 优势
 - **sp3d (TBP)**: 自动将轴向对齐到 Z 轴，使 $d_{z^2}$ 正确参与轴向成键。
-- **sp3d2 (Oct)**: 自动对齐 XYZ 轴，实现轨道成分的完美解耦。
+- **sp3d2 (Oct)**: 自动对齐 XYZ 轴，促成轨道成分的清晰分离。
 - **通用性**: 支持任意 $s, p, d$ 轨道的组合，无需硬编码。
 - **鲁棒性**: 能够检测并处理“线性相关”或“不兼容”的杂化请求（此时体积 $\det \to 0$）。
 

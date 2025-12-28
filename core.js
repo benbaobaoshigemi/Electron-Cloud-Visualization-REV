@@ -262,7 +262,8 @@ window.ElectronCloud.resetState = function () {
     // 重置图表数据
     state.backgroundChartData = {
         radial: null,
-        angular: null
+        angular: null,
+        energy: null  // 【关键修复】添加energy字段的清理
     };
 
     // 更新UI显示
@@ -362,7 +363,8 @@ window.ElectronCloud.resetSamplingState = function () {
     // 重置图表数据
     state.backgroundChartData = {
         radial: null,
-        angular: null
+        angular: null,
+        energy: null  // 【关键修复】添加energy字段的清理
     };
 
     // 更新UI显示

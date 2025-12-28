@@ -81,7 +81,7 @@ function buildRadialCDF(n, l, numPoints = 2000, atomType = 'H') {
 }
 
 /**
- * 精确逆CDF采样：从径向分布 P(r) 精确采样
+ * 逆CDF采样：从径向分布 P(r) 数值采样
  */
 function sampleRadialExact(n, l, atomType = 'H') {
     const { r, cdf, numPoints } = buildRadialCDF(n, l, 2000, atomType);
@@ -248,7 +248,7 @@ const _maxWeightCache = {};
 
 /**
  * 计算径向权重的理论上界
- * 【物理优化】使用数值搜索找到精确的最大权重
+ * 【数值优化】使用数值搜索估计最大权重
  */
 function getMaxRadialWeight(n, l) {
     const key = `${n}_${l}`;
@@ -292,13 +292,13 @@ function getMaxRadialWeight(n, l) {
 /**
  * 重要性采样：生成一个采样点
  * 
- * 【物理准确性保证】
+ * 【数值一致性说明】
  * 采用"分离变量"策略：
- * - 径向：使用精确逆CDF采样（100%接受率，无偏差）
+ * - 径向：使用逆CDF采样（无拒绝环节，仍为数值近似）
  * - 角向：均匀球面采样 + |Y|² 权重接受-拒绝
  */
 function importanceSample(n, l, angKey, samplingBoundary, atomType = 'H') {
-    // ==================== 第一步：径向采样（精确逆CDF） ====================
+    // ==================== 第一步：径向采样（逆CDF） ====================
     let r = sampleRadialExact(n, l, atomType);
 
     if (r > samplingBoundary * 2) {
@@ -310,7 +310,7 @@ function importanceSample(n, l, angKey, samplingBoundary, atomType = 'H') {
 
     const Y2 = realYlm_abs2(angKey.l, angKey.m, angKey.t, theta, phi);
     const w_angular = 4 * PI * Y2;
-    // 【物理修正】角向权重上界的精确计算
+    // 【数值修正】角向权重上界的保守估计
     const maxAngularWeight = (angKey.m === 0) ? (2 * angKey.l + 1.2) : (2 * (2 * angKey.l + 1) + 0.5);
 
     if (Math.random() * maxAngularWeight > w_angular) {
@@ -898,7 +898,7 @@ function sampleUniformSphere() {
 }
 
 /**
- * 高效杂化轨道采样（基于精确径向CDF + 角向接受-拒绝）
+ * 高效杂化轨道采样（基于径向CDF + 角向接受-拒绝）
  */
 function hybridPreciseSample(paramsList, samplingBoundary, atomType = 'H') {
     if (!paramsList || paramsList.length === 0) return null;
@@ -910,7 +910,7 @@ function hybridPreciseSample(paramsList, samplingBoundary, atomType = 'H') {
     const cdfData = buildHybridRadialCDF(paramsList, 2000, atomType);
     if (!cdfData) return null;
 
-    // 第一步：从杂化径向CDF精确采样
+    // 第一步：从杂化径向CDF采样
     const { r: rTable, cdf, numPoints } = cdfData;
     const u = Math.random();
 
@@ -998,7 +998,7 @@ function hybridPreciseSample(paramsList, samplingBoundary, atomType = 'H') {
  * 概率密度为 |Ψ_hybrid|² = |Σ c_i × R_i(r) × Y_i(θ,φ)|²
  * 
  * 【采样方法】
- * 优先使用高效的精确CDF方法，回退到基础拒绝采样
+ * 优先使用高效的CDF方法，回退到基础拒绝采样
  * 
  * @param {Array} paramsList - 轨道参数列表
  * @param {number} samplingBoundary - 采样边界

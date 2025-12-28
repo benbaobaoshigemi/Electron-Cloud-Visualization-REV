@@ -566,19 +566,20 @@ window.ElectronCloud.Orbital.initTheoryData = function () {
         // 【关键修复】检测杂化模式，使用正确的物理公式
         const isHybridMode = state.isHybridMode === true;
         const atomType = state.currentAtom || 'H'; // 支持非氢原子
+        const atomZ = (window.SlaterBasis && window.SlaterBasis[atomType]) ? window.SlaterBasis[atomType].Z : 1;
 
         for (let i = 0; i < radialBins; i++) {
             radialCenters[i] = 0.5 * (radialEdges[i] + radialEdges[i + 1]);
 
             if (isHybridMode) {
                 // 【杂化模式】使用专门的杂化径向PDF：P(r) = r² × Σ|cᵢ|²|Rᵢ(r)|²
-                radialTheoryValues[i] = Hydrogen.hybridRadialPDF(paramsList, radialCenters[i], 1, 1, atomType);
+                radialTheoryValues[i] = Hydrogen.hybridRadialPDF(paramsList, radialCenters[i], atomZ, 1, atomType);
                 // 波函数：取加权和
                 let sumWave = 0;
                 const defaultCoeff = 1.0 / Math.sqrt(paramsList.length);
                 for (const params of paramsList) {
                     const coeff = params.coefficient !== undefined ? params.coefficient : defaultCoeff;
-                    sumWave += coeff * Math.abs(Hydrogen.radialR(params.n, params.l, radialCenters[i], 1, 1, atomType));
+                    sumWave += coeff * Math.abs(Hydrogen.radialR(params.n, params.l, radialCenters[i], atomZ, 1, atomType));
                 }
                 radialWave[i] = sumWave;
             } else {
@@ -586,8 +587,8 @@ window.ElectronCloud.Orbital.initTheoryData = function () {
                 let sumPDF = 0;
                 let sumWave = 0;
                 for (const params of paramsList) {
-                    sumPDF += Hydrogen.radialPDF(params.n, params.l, radialCenters[i], 1, 1, atomType);
-                    sumWave += Math.abs(Hydrogen.radialR(params.n, params.l, radialCenters[i], 1, 1, atomType));
+                    sumPDF += Hydrogen.radialPDF(params.n, params.l, radialCenters[i], atomZ, 1, atomType);
+                    sumWave += Math.abs(Hydrogen.radialR(params.n, params.l, radialCenters[i], atomZ, 1, atomType));
                 }
                 radialTheoryValues[i] = sumPDF / paramsList.length;
                 radialWave[i] = sumWave / paramsList.length;
@@ -689,6 +690,7 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
             // 【关键修复】检测杂化模式，使用正确的物理公式
             const isHybridMode = state.isHybridMode === true;
             const atomType = state.currentAtom || 'H';
+            const atomZ = (window.SlaterBasis && window.SlaterBasis[atomType]) ? window.SlaterBasis[atomType].Z : 1;
             const values = new Array(adaptiveBins);
             const wave = new Array(adaptiveBins);
             const zeff = new Array(adaptiveBins);
@@ -696,12 +698,12 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
             for (let i = 0; i < adaptiveBins; i++) {
                 if (isHybridMode) {
                     // 【杂化模式】使用专门的杂化径向PDF
-                    values[i] = Hydrogen.hybridRadialPDF(paramsList, centers[i], 1, 1, atomType);
+                    values[i] = Hydrogen.hybridRadialPDF(paramsList, centers[i], atomZ, 1, atomType);
                     let sumWave = 0;
                     const defaultCoeff = 1.0 / Math.sqrt(paramsList.length);
                     for (const params of paramsList) {
                         const coeff = params.coefficient !== undefined ? params.coefficient : defaultCoeff;
-                        sumWave += coeff * Math.abs(Hydrogen.radialR(params.n, params.l, centers[i], 1, 1, atomType));
+                        sumWave += coeff * Math.abs(Hydrogen.radialR(params.n, params.l, centers[i], atomZ, 1, atomType));
                     }
                     wave[i] = sumWave;
                 } else {
@@ -709,8 +711,8 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                     let sumPDF = 0;
                     let sumWave = 0;
                     for (const params of paramsList) {
-                        sumPDF += Hydrogen.radialPDF(params.n, params.l, centers[i], 1, 1, atomType);
-                        sumWave += Math.abs(Hydrogen.radialR(params.n, params.l, centers[i], 1, 1, atomType));
+                        sumPDF += Hydrogen.radialPDF(params.n, params.l, centers[i], atomZ, 1, atomType);
+                        sumWave += Math.abs(Hydrogen.radialR(params.n, params.l, centers[i], atomZ, 1, atomType));
                     }
                     values[i] = sumPDF / paramsList.length;
                     wave[i] = sumWave / paramsList.length;
@@ -786,9 +788,11 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                 paramsWithAtom = paramsList.map(p => ({ ...p, atomType }));
             }
 
-            // 2. 计算理论能量曲线 (使用 RHF calculateCumulativeOrbitalEnergy)
+            // 2. 计算理论能量曲线 (RHF calculateCumulativeOrbitalEnergy)
             const theoryE = new Float32Array(numBins);
             const theoryDEdr = new Float32Array(numBins);
+            const theoryDVnucDr = new Float32Array(numBins);
+            const theoryVee = new Float32Array(numBins);  // 【新增】理论e-e排斥势能
 
             if (paramsWithAtom.length > 0 && window.Hydrogen.calculateCumulativeOrbitalEnergy) {
                 for (const p of paramsWithAtom) {
@@ -797,17 +801,41 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                         p.n, p.l, pZ, p.atomType, radialCenters
                     );
                     if (res && res.E) {
+                        // 优先使用物理层返回的核势导数，避免数值差分噪声
+                        const localDVnucDr = new Float32Array(numBins);
+                        if (res.dVnucDr && res.dVnucDr.length >= numBins) {
+                            for (let j = 0; j < numBins; j++) localDVnucDr[j] = res.dVnucDr[j];
+                        } else if (res.V && res.V.length >= numBins && res.r && res.r.length >= numBins) {
+                            // 回退：有限差分（中心差分，端点用一侧）
+                            for (let j = 0; j < numBins; j++) {
+                                if (j === 0) {
+                                    const drLocal = res.r[1] - res.r[0];
+                                    localDVnucDr[j] = drLocal !== 0 ? (res.V[1] - res.V[0]) / drLocal : 0;
+                                } else if (j === numBins - 1) {
+                                    const drLocal = res.r[j] - res.r[j - 1];
+                                    localDVnucDr[j] = drLocal !== 0 ? (res.V[j] - res.V[j - 1]) / drLocal : 0;
+                                } else {
+                                    const drLocal = res.r[j + 1] - res.r[j - 1];
+                                    localDVnucDr[j] = drLocal !== 0 ? (res.V[j + 1] - res.V[j - 1]) / drLocal : 0;
+                                }
+                            }
+                        }
+
                         for (let j = 0; j < numBins && j < res.E.length; j++) {
-                            theoryE[j] += res.E[j];
+                            // theoryE[j] += res.E[j]; // 【修改】不再使用物理层返回的梯形积分结果
                             theoryDEdr[j] += (res.dEdr ? res.dEdr[j] : 0);
+                            theoryDVnucDr[j] += localDVnucDr[j];
+                            theoryVee[j] += (res.Vee ? res.Vee[j] : 0);  // 【新增】累加Vee
                         }
                     }
                 }
                 // 取平均
                 const count = paramsWithAtom.length;
                 for (let j = 0; j < numBins; j++) {
-                    theoryE[j] /= count;
+                    // theoryE[j] /= count;
                     theoryDEdr[j] /= count;
+                    theoryDVnucDr[j] /= count;
+                    theoryVee[j] /= count;  // 【新增】平均Vee
                 }
             }
 
@@ -822,6 +850,18 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
 
             const totalSamples = radialHist.counts.reduce((a, b) => a + b, 0);
             const dr = radialHist.dr || (radialCenters[1] - radialCenters[0]);
+
+            // 【关键修复】重新计算理论积分曲线，使用与采样曲线完全一致的矩形积分法（中点法则）
+            // 物理层的 calculateCumulativeOrbitalEnergy 使用梯形法则且假设 dE/dr(0)=0，
+            // 这在近核处（dE/dr极大）会导致显著的系统性低估（丢失了第一项的一半能量）。
+            // 使用中点法则（Rectangular Sum）能更准确地捕捉第一项的贡献，且保证了理论与采样在方法上的一致性。
+            if (paramsWithAtom.length > 0) {
+                let currentTheoryE = 0;
+                for (let i = 0; i < numBins; i++) {
+                    currentTheoryE += theoryDEdr[i] * dr;
+                    theoryE[i] = currentTheoryE;
+                }
+            }
 
             if (totalSamples > 0) {
                 // 从 theoryDEdr 中反推 dV_nuc/dr 和 Vee 的贡献
@@ -839,35 +879,31 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                 for (let i = 0; i < numBins; i++) {
                     const r = radialCenters[i];
 
-                    // 【关键修复】radialHist.counts 已经是归一化的 PDF（∫counts*dr = 1）
-                    // 不需要再除以 totalSamples*dr，否则是双重归一化！
                     const sampledPDF = radialHist.counts[i];
 
-                    // 计算理论PDF: P(r)
+                    // 计算理论PDF: P(r) 在中心的点值
                     let theoryPDF = 0;
                     for (const p of paramsList) {
-                        theoryPDF += window.Hydrogen.radialPDF(p.n, p.l, r, 1, 1, atomType);
+                        theoryPDF += window.Hydrogen.radialPDF(p.n, p.l, r, Z, 1, atomType);
                     }
                     theoryPDF /= paramsList.length;
 
-
-
-                    // 【核心公式】采样能量密度 = 理论能量密度 × (采样PDF / 理论PDF)
-                    // 这等价于用采样分布替换波函数概率分布
-                    if (theoryPDF > 1e-15 && theoryDEdr[i] !== 0) {
-                        expDEdr[i] = theoryDEdr[i] * (sampledPDF / theoryPDF);
+                    // 【关键修复】在理论PDF很小的区域，直接使用理论值
+                    const pdfThreshold = 1e-6;
+                    if (theoryPDF < pdfThreshold) {
+                        expDEdr[i] = theoryDEdr[i];
                     } else {
-                        expDEdr[i] = 0;
+                        // 【新方法】直接使用理论e-e排斥势能 Vee(r)
+                        // 公式: dE/dr = dV_nuc/dr + P_sampled(r) * Vee(r)
+                        expDEdr[i] = theoryDVnucDr[i] + sampledPDF * theoryVee[i];
                     }
                 }
 
-                // 使用梯形法则累积积分（与理论曲线同源）
+                // 使用矩形法则直接累加直方图（符合用户"逐个bin累加"的要求）
                 let currentE = 0;
                 for (let i = 0; i < numBins; i++) {
-                    const prevDEdr = i > 0 ? expDEdr[i - 1] : 0;
-                    currentE += 0.5 * (expDEdr[i] + prevDEdr) * dr;
+                    currentE += expDEdr[i] * dr;
                     expE[i] = currentE;
-
                 }
 
 
@@ -882,34 +918,6 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                 const sign = v < 0 ? -1 : 1;
                 return sign * (Math.log(absV) / Math.log(100));
             };
-
-            const potentialLogExpPoints = [];
-            const potentialLogTheoryPoints = [];
-
-            // 直接复用线性网格数据 (theoryE 和 expE)
-            // 确保与 V(r) 曲线完全一致
-            for (let i = 0; i < numBins; i++) {
-                const r = radialCenters[i];
-                if (r <= 0) continue; // log(r) undefined for r<=0
-
-                const rLog = Math.log10(r);
-
-                // 理论值
-                if (theoryE[i] !== 0) {
-                    const val = symlog(theoryE[i]);
-                    if (val !== null) {
-                        potentialLogTheoryPoints.push({ x: rLog, y: val });
-                    }
-                }
-
-                // 实验值
-                if (expE[i] !== 0) {
-                    const val = symlog(expE[i]);
-                    if (val !== null) {
-                        potentialLogExpPoints.push({ x: rLog, y: val });
-                    }
-                }
-            }
 
             // dEdr 的对数图保持原样或也复用 (用户主要关注 V(r))
             // 这里我们也复用 theoryDEdr 和 expDEdr 以保持一致性
@@ -988,7 +996,7 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                     // 理论概率密度 P(r)
                     let sumPDF = 0;
                     for (const p of paramsList) {
-                        sumPDF += window.Hydrogen.radialPDF(p.n, p.l, r, 1, 1, atomType);
+                        sumPDF += window.Hydrogen.radialPDF(p.n, p.l, r, Z, 1, atomType);
                     }
                     const theoryPDF = sumPDF / paramsList.length;
 
@@ -1024,7 +1032,7 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                 let theoryPDF = 0;
                 if (paramsList.length > 0 && window.Hydrogen.radialPDF) {
                     for (const p of paramsList) {
-                        theoryPDF += window.Hydrogen.radialPDF(p.n, p.l, r, 1, 1, atomType);
+                        theoryPDF += window.Hydrogen.radialPDF(p.n, p.l, r, Z, 1, atomType);
                     }
                     theoryPDF /= paramsList.length;
                 }
@@ -1038,7 +1046,6 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                 centers: radialCenters,
                 potential: { exp: expE, theory: theoryE },
                 dEdr: { exp: expDEdr, theory: theoryDEdr },
-                potentialLog: { expPoints: potentialLogExpPoints, theoryPoints: potentialLogTheoryPoints },
                 dEdrLog: { expPoints: dEdrLogExpPoints, theoryPoints: dEdrLogTheoryPoints },
                 zeff: theoryZeff,
                 localEnergy: {
@@ -1129,8 +1136,6 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
             const expPoints = c.map((r, i) => ({ x: r, y: e.dEdr.exp[i] }));
             const theoryPoints = c.map((r, i) => ({ x: r, y: e.dEdr.theory[i] }));
             DataPanel.renderChartDEdr({ points: expPoints }, { points: theoryPoints });
-        } else if (type === 'potentialLog') {
-            DataPanel.renderChartPotentialLog({ points: e.potentialLog.expPoints }, { points: e.potentialLog.theoryPoints });
         } else if (type === 'dEdrLog') {
             DataPanel.renderChartDEdrLog({ points: e.dEdrLog.expPoints }, { points: e.dEdrLog.theoryPoints });
         } else if (type === 'localEnergy' && e.localEnergy) {
@@ -1186,18 +1191,19 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
         // 【关键修复】检测杂化模式，使用正确的物理公式
         const isHybridMode = state.isHybridMode === true;
         const atomType = state.currentAtom || 'H';
+        const atomZ = (window.SlaterBasis && window.SlaterBasis[atomType]) ? window.SlaterBasis[atomType].Z : 1;
         const values = new Array(adaptiveBins);
         const wave = new Array(adaptiveBins);
 
         for (let i = 0; i < adaptiveBins; i++) {
             if (isHybridMode) {
                 // 【杂化模式】使用专门的杂化径向PDF
-                values[i] = Hydrogen.hybridRadialPDF(paramsList, centers[i], 1, 1, atomType);
+                values[i] = Hydrogen.hybridRadialPDF(paramsList, centers[i], atomZ, 1, atomType);
                 let sumWave = 0;
                 const defaultCoeff = 1.0 / Math.sqrt(paramsList.length);
                 for (const params of paramsList) {
                     const coeff = params.coefficient !== undefined ? params.coefficient : defaultCoeff;
-                    sumWave += coeff * Math.abs(Hydrogen.radialR(params.n, params.l, centers[i], 1, 1, atomType));
+                    sumWave += coeff * Math.abs(Hydrogen.radialR(params.n, params.l, centers[i], atomZ, 1, atomType));
                 }
                 wave[i] = sumWave;
             } else {
@@ -1205,8 +1211,8 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
                 let sumPDF = 0;
                 let sumWave = 0;
                 for (const params of paramsList) {
-                    sumPDF += Hydrogen.radialPDF(params.n, params.l, centers[i], 1, 1, atomType);
-                    sumWave += Math.abs(Hydrogen.radialR(params.n, params.l, centers[i], 1, 1, atomType));
+                    sumPDF += Hydrogen.radialPDF(params.n, params.l, centers[i], atomZ, 1, atomType);
+                    sumWave += Math.abs(Hydrogen.radialR(params.n, params.l, centers[i], atomZ, 1, atomType));
                 }
                 values[i] = sumPDF / paramsList.length;
                 wave[i] = sumWave / paramsList.length;

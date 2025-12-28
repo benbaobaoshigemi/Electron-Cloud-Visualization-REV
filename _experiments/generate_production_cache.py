@@ -128,8 +128,8 @@ def generate_full_cache():
     if not Path(basis_path).exists(): basis_path = "slater_basis.js"
     data = parse_slater_basis(basis_path)
     
-    # 500 point log-spaced grid
-    r_grid = np.geomspace(1e-4, 10.0, 500).tolist()
+    # 700 point log-spaced grid, extended to 50.0 a.u.
+    r_grid = np.geomspace(1e-4, 50.0, 700).tolist()
     
     full_cache = {
         "r_grid": r_grid,

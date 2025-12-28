@@ -1,8 +1,8 @@
 # 补充材料 (Supporting Information)
 
-## 1. Clementi-Roetti (1974) 基组解析逻辑
+## 1. Koga & Thakkar (1999/2000) 基组解析逻辑
 
-本虚拟实验室使用的核心数据来源于 Clementi 和 Roetti (1974) 的原始文献。数据以 JSON 格式存储，解析逻辑如下：
+本虚拟实验室使用的核心数据来源于 Koga & Thakkar (1999/2000) 的原始文献。数据以 JSON 格式存储，解析逻辑如下：
 
 ```javascript
 // 简单的 STO 径向波函数计算示例 (JavaScript)

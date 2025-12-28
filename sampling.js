@@ -843,7 +843,7 @@ function computeParamsHash(paramsList) {
  * 
  * 【采样方法】
  * 优先使用高效的混合提议分布采样（hybridPreciseSample）
- * - 基于杂化轨道的精确径向CDF采样
+ * - 基于杂化轨道的径向CDF采样
  * - 然后使用角向权重接受-拒绝
  * 
  * 如果高效方法不可用，回退到基础拒绝采样
@@ -921,8 +921,8 @@ function processSingleHybridPoint(paramsList, hybridIndex, positions, colors) {
         coefficient: coeffs[i]
     }));
 
-    // 3. 使用精确采样
-    // 这比基础拒绝采样快得多，且物理上更准确
+    // 3. 使用CDF采样
+    // 这比基础拒绝采样快得多，且数值上更稳定
     const currentAtom = state.currentAtom || 'H';
     const result = Hydrogen.hybridPreciseSample(paramsWithCoeffs, state.samplingBoundary, currentAtom);
 

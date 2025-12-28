@@ -22,6 +22,12 @@ window.ElectronCloud.Orbital.startDrawing = function () {
         return;
     }
 
+    // 【v11.0】杂化模式下验证轨道组合是否为支持的标准构型
+    if (state.isHybridMode && !state.hybridizationValid) {
+        alert('当前轨道组合不支持杂化计算\\n\\n仅支持：sp、sp²、sp³、sp³d、sp³d²');
+        return;
+    }
+
     // 停止当前绘制
     state.isDrawing = false;
 

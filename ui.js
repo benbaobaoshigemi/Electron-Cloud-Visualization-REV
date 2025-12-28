@@ -1088,6 +1088,15 @@ window.ElectronCloud.UI.setupLockedAxisRotation = function (axis) {
         if (state.customAxes) {
             state.customAxes.rotateOnWorldAxis(rotationAxis, angle);
         }
+        // 【v11.0 修复】同步轮廓图旋转
+        if (state.contourOverlay) {
+            state.contourOverlay.rotateOnWorldAxis(rotationAxis, angle);
+        }
+        if (state.hybridContourOverlays) {
+            for (const overlay of state.hybridContourOverlays) {
+                if (overlay) overlay.rotateOnWorldAxis(rotationAxis, angle);
+            }
+        }
     };
 
     // 缩放处理
@@ -3590,6 +3599,25 @@ window.ElectronCloud.UI.updateHybridOrbitalButtons = function () {
 
     // 重置可见性状态
     state.hybridOrbitalVisibility = {};
+
+    // ======= 构型验证 (v11.0) =======
+    // 将轨道键转为 orbitalParams 格式供 isValidHybridization 使用
+    const orbitalParams = selectedOrbitals.map(val => window.PhysicsCore.orbitalParamsFromKey(val));
+
+    // 检验是否为支持的杂化组合
+    const isValid = orbitalParams.length > 0 && window.PhysicsCore.isValidHybridization(orbitalParams);
+    state.hybridizationValid = isValid;
+
+    if (!isValid && numOrbitals > 0) {
+        // 显示不支持信息
+        const msg = document.createElement('div');
+        msg.className = 'hybrid-unsupported-msg';
+        msg.textContent = '⚠️ 构型不支持';
+        msg.title = '仅支持 sp, sp², sp³, sp³d, sp³d² 杂化';
+        msg.style.cssText = 'color: #ff6b6b; padding: 12px; text-align: center; font-size: 14px; font-weight: 500;';
+        container.appendChild(msg);
+        return; // 不生成轨道按钮
+    }
 
     // 为每个杂化轨道创建按钮
     for (let i = 0; i < numOrbitals; i++) {

@@ -1580,11 +1580,16 @@ window.ElectronCloud.Sampling.performRollingUpdate = function () {
     if ((isCompareMode || isMultiselectMode) && state.rollingMode && state.rollingMode.enabled) {
         // 每200ms更新一次图表，与其他模式保持一致
         if (!state.lastChartUpdate || now - state.lastChartUpdate > 200) {
-            // 清理过大的样本数据（移至循环外以优化性能）
+            // 【修复】渐进式清理过大的样本数据，避免突然截断导致直方图跳变
+            // 原来一次性截断50%会导致直方图突变，改为每次只删除1%的旧数据
             if (state.orbitalSamplesMap) {
+                const maxSamples = 100000;
+                const cleanupRate = 0.01; // 每次清理1%
                 for (const key in state.orbitalSamplesMap) {
-                    if (state.orbitalSamplesMap[key].length > 200000) {
-                        state.orbitalSamplesMap[key] = state.orbitalSamplesMap[key].slice(-100000);
+                    const arr = state.orbitalSamplesMap[key];
+                    if (arr.length > maxSamples) {
+                        const toRemove = Math.ceil(arr.length * cleanupRate);
+                        state.orbitalSamplesMap[key] = arr.slice(toRemove);
                     }
                 }
             }

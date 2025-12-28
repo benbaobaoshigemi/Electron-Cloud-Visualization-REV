@@ -351,17 +351,121 @@
         return quatNormalize([1 + dot, cross[0], cross[1], cross[2]]);
     }
 
+    /**
+     * 检验杂化轨道组合是否为支持的标准构型
+     * 只允许: sp, sp2, sp3, sp3d, sp3d2
+     * @param {Array} orbitalParams - 轨道参数数组
+     * @returns {boolean} - 是否为有效的杂化组合
+     */
+    function isValidHybridization(orbitalParams) {
+        const n = orbitalParams.length;
+        const counts = { s: 0, p: 0, d: 0, f: 0 };
+        orbitalParams.forEach(p => {
+            if (p.angKey.l === 0) counts.s++;
+            else if (p.angKey.l === 1) counts.p++;
+            else if (p.angKey.l === 2) counts.d++;
+            else counts.f++;
+        });
+
+        // Allowed: sp, sp2, sp3, sp3d, sp3d2
+        if (n === 2 && counts.s === 1 && counts.p === 1) return true; // sp
+        if (n === 3 && counts.s === 1 && counts.p === 2) return true; // sp2
+        if (n === 4 && counts.s === 1 && counts.p === 3) return true; // sp3
+        if (n === 5 && counts.s === 1 && counts.p === 3 && counts.d === 1) return true; // sp3d
+        if (n === 6 && counts.s === 1 && counts.p === 3 && counts.d === 2) return true; // sp3d2
+
+        return false; // 其他组合不支持
+    }
+
     function generateConstrainedDirections(orbitalParams) {
-        // 【核心算法 v5.0】确定性轨道锚定方向生成
-        // 
-        // 算法：
-        // 1. Thomson 优化得到相对几何正确的方向（夹角正确）
-        // 2. 计算轨道极值方向作为锚点
-        // 3. 穷举所有可能的 Thomson 点-锚点配对，找最优旋转
-        // 4. 用 Kabsch 算法计算整体旋转
+        // 【v11.0 终极方案】硬编码优先 + 通用兜底
+        // 用户指令：允许硬编码以保证教科书式的完美构型。
 
         const n = orbitalParams.length;
 
+        // 1. 尝试匹配标准杂化 (Hardcoded Lookup)
+        const counts = { s: 0, p: 0, d: 0, f: 0 };
+        const p_axes = []; // To track which p orbitals are used (for sp/sp2 alignment)
+
+        orbitalParams.forEach(p => {
+            if (p.angKey.l === 0) counts.s++;
+            else if (p.angKey.l === 1) {
+                counts.p++;
+                // Identify axis: pz(m=0), px(m=1,c), py(m=1,s)
+                // Simplified check:
+                if (p.angKey.m === 0) p_axes.push([0, 0, 1]);
+                else if (p.angKey.t === 'c') p_axes.push([1, 0, 0]);
+                else p_axes.push([0, 1, 0]);
+            }
+            else if (p.angKey.l === 2) counts.d++;
+            else counts.f++;
+        });
+
+        // sp3 (tetrahedral) -> [1,1,1] family
+        if (n === 4 && counts.s === 1 && counts.p === 3) {
+            const sqrt3 = 1 / Math.sqrt(3);
+            return [
+                [sqrt3, sqrt3, sqrt3],
+                [sqrt3, -sqrt3, -sqrt3],
+                [-sqrt3, sqrt3, -sqrt3],
+                [-sqrt3, -sqrt3, sqrt3]
+            ];
+        }
+
+        // sp2 (trigonal planar) -> Aligned to the plane of the two p-orbitals
+        if (n === 3 && counts.s === 1 && counts.p === 2) {
+            // Determine plane normal (cross product of the two p axes)
+            // But usually it's xy plane (px, py).
+            // Let's perform a simple robust generation:
+            // If we have px and py, generate in XY plane.
+            // If px and pz, generate in XZ plane.
+            // Standard Reference: x-axis aligned.
+
+            // Default to XY if ambig, or use p-axes to define plane.
+            // But for simplicity, let's just return standard XY plane if typical case.
+            // Setup standard trigonal: 0, 120, 240.
+            const base = [[1, 0, 0], [-0.5, 0.866, 0], [-0.5, -0.866, 0]];
+
+            // If p-orbitals are NOT px,py, we might need rotation. 
+            // But let's trust the general algorithm for weird sp2 (like s+py+pz).
+            // Only hardcode s+px+py.
+            const hasPx = p_axes.some(v => Math.abs(v[0]) > 0.9);
+            const hasPy = p_axes.some(v => Math.abs(v[1]) > 0.9);
+            if (hasPx && hasPy) return base;
+        }
+
+        // sp (linear) -> Aligned to the p-orbital axis
+        if (n === 2 && counts.s === 1 && counts.p === 1) {
+            const axis = p_axes[0]; // The p-orbital direction
+            return [axis, [-axis[0], -axis[1], -axis[2]]];
+        }
+
+        // sp3d (trigonal bipyramidal)
+        if (n === 5 && counts.s === 1 && counts.p === 3 && counts.d === 1) {
+            // Axial (z), Equatorial (xy)
+            return [
+                [0, 0, 1], [0, 0, -1],
+                [1, 0, 0], [-0.5, 0.866, 0], [-0.5, -0.866, 0]
+            ];
+        }
+
+        // sp3d2 (octahedral)
+        if (n === 6 && counts.s === 1 && counts.p === 3 && counts.d === 2) {
+            return [
+                [0, 0, 1], [0, 0, -1],
+                [1, 0, 0], [-1, 0, 0],
+                [0, 1, 0], [0, -1, 0]
+            ];
+        }
+
+        // px + py (Orthogonal)
+        if (n === 2 && counts.s === 0 && counts.p === 2) {
+            // Just return the p-axes themselves
+            return [p_axes[0], p_axes[1]];
+        }
+
+
+        // 生成缓存 key (通用算法兜底)
         const cacheKey = orbitalParams.map(p =>
             `${p.angKey.l}_${p.angKey.m}_${p.angKey.t}`
         ).join('|');
@@ -370,131 +474,106 @@
             return JSON.parse(JSON.stringify(_hybridDirCache[cacheKey]));
         }
 
-        // Step 1: 提取所有非 s 轨道的极值方向
-        const anchorDirs = [];
-        for (let i = 0; i < n; i++) {
-            const p = orbitalParams[i];
+        // 1. 计算锚点（物理极值方向）
+        const anchors = [];
+        for (const p of orbitalParams) {
             const dir = computeOrbitalPeakDirection(p.angKey.l, p.angKey.m, p.angKey.t);
-            anchorDirs.push(dir); // null for s orbitals
+            if (dir) anchors.push(dir);
         }
 
-        // Step 2: 生成 Thomson 几何
+        // 2. 尝试生成 Thomson 几何（理想斥力模型）
         const thomsonPoints = optimizeThomson(n);
 
-        // Step 3: 找到有效锚点
-        const validAnchors = [];
-        const validIndices = [];
+        // 3. 【核心判据】物理可行性检验 (Rank Check)
+        // 检查选定的轨道基组是否在数学上能够支撑起 Thomson 几何
+        const A = [];
         for (let i = 0; i < n; i++) {
-            if (anchorDirs[i]) {
-                validAnchors.push(anchorDirs[i]);
-                validIndices.push(i);
-            }
+            const p = thomsonPoints[i];
+            const theta = Math.acos(p[2]);
+            const phi = Math.atan2(p[1], p[0]);
+            const row = orbitalParams.map(param =>
+                realYlm_value(param.angKey.l, param.angKey.m, param.angKey.t, theta, phi)
+            );
+            A.push(row);
         }
 
-        // 如果没有锚点（全是 s 轨道），返回原始 Thomson
-        // 如果没有锚点（全是 s 轨道），返回原始 Thomson
-        if (validAnchors.length === 0) {
-            _hybridDirCache[cacheKey] = thomsonPoints;
-            return JSON.parse(JSON.stringify(thomsonPoints));
+        const { S } = jacobiSVD(A);
+        const minSingularValue = Math.min(...S); // 最小奇异值
+        const isGeometricallyCompatible = minSingularValue > 1e-4;
+
+        if (!isGeometricallyCompatible) {
+            // [CASE A] 几何不兼容 -> 回退到锚点（自然正交基）
+            if (anchors.length !== n) {
+                _hybridDirCache[cacheKey] = thomsonPoints; // 兜底
+                return thomsonPoints;
+            }
+            _hybridDirCache[cacheKey] = JSON.parse(JSON.stringify(anchors));
+            return anchors;
         }
 
-        // Step 4: 使用 Kabsch 算法计算最优旋转
-        // 
-        // 思路：
-        // 1. 穷举所有可能的 Thomson-锚点配对
-        // 2. 对每种配对计算 Kabsch 旋转
-        // 3. 评估旋转后所有锚点的对齐度，选最优
+        // [CASE B] 几何兼容 -> 使用 Thomson + 对齐优化
+        let bestPoints = thomsonPoints;
 
-        // 生成所有可能的配对（排列）
-        function* permutations(arr, k) {
-            if (k === 0) { yield []; return; }
-            for (let i = 0; i < arr.length; i++) {
-                const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
-                for (const perm of permutations(rest, k - 1)) {
-                    yield [arr[i], ...perm];
-                }
-            }
-        }
+        if (anchors.length > 0) {
+            let bestScore = -Infinity;
+            let bestR = [1, 0, 0, 0];
 
-        const thomsonIndices = Array.from({ length: n }, (_, i) => i);
-        let bestScore = -Infinity;
-        let bestR = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]; // 单位矩阵
+            // 扩展锚点
+            const fullAnchors = [];
+            anchors.forEach(a => {
+                fullAnchors.push(a);
+                fullAnchors.push([-a[0], -a[1], -a[2]]);
+            });
 
-        // 穷举：选 validAnchors.length 个 Thomson 点与锚点配对
-        for (const perm of permutations(thomsonIndices, validAnchors.length)) {
-            const pairedThomson = perm.map(i => thomsonPoints[i]);
-            const pairedAnchor = [];
+            // 全局搜索对齐
+            for (let i = 0; i < n; i++) {
+                const P = thomsonPoints[i];
+                for (const A of fullAnchors) {
+                    const qBase = quatFromVectors(P, A);
 
-            // 确定每个锚点的符号
-            for (let k = 0; k < validAnchors.length; k++) {
-                const anchor = validAnchors[k];
-                const tp = pairedThomson[k];
-                const dot = anchor[0] * tp[0] + anchor[1] * tp[1] + anchor[2] * tp[2];
-                if (dot >= 0) {
-                    pairedAnchor.push(anchor);
-                } else {
-                    pairedAnchor.push([-anchor[0], -anchor[1], -anchor[2]]);
-                }
-            }
+                    for (let angle = 0; angle < TWO_PI; angle += 0.174) { // 10 degree step
+                        const half = angle / 2;
+                        const s = Math.sin(half);
+                        const qRot = [Math.cos(half), A[0] * s, A[1] * s, A[2] * s];
+                        const q = quatMultiply(qRot, qBase);
 
-            // Kabsch: H = P^T * Q
-            const H = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
-            for (let k = 0; k < pairedThomson.length; k++) {
-                const p = pairedThomson[k];
-                const q = pairedAnchor[k];
-                for (let i = 0; i < 3; i++) {
-                    for (let j = 0; j < 3; j++) {
-                        H[i][j] += p[i] * q[j];
+                        const rotated = thomsonPoints.map(pt => quatRotateVector(q, pt));
+
+                        // v10.0: 对称性优先评分
+                        const dots = [];
+                        let sumMaxDot = 0;
+                        for (const rp of rotated) {
+                            let maxDot = 0;
+                            for (const fa of fullAnchors) {
+                                const d = rp[0] * fa[0] + rp[1] * fa[1] + rp[2] * fa[2];
+                                if (d > maxDot) maxDot = d;
+                            }
+                            dots.push(maxDot);
+                            sumMaxDot += maxDot;
+                        }
+
+                        // 计算标准差
+                        const mean = sumMaxDot / n;
+                        let sqDiffSum = 0;
+                        for (let k = 0; k < n; k++) sqDiffSum += (dots[k] - mean) * (dots[k] - mean);
+                        const stdev = Math.sqrt(sqDiffSum / n);
+
+                        // Score = Sum - 100 * Stdev
+                        let score = sumMaxDot - 100 * stdev;
+
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestR = q;
+                        }
                     }
                 }
             }
-
-            const { U, V } = jacobiSVD(H);
-            const UT = matTranspose(U);
-            let R = matMul(V, UT);
-
-            // 检查行列式
-            const det = R[0][0] * (R[1][1] * R[2][2] - R[1][2] * R[2][1])
-                - R[0][1] * (R[1][0] * R[2][2] - R[1][2] * R[2][0])
-                + R[0][2] * (R[1][0] * R[2][1] - R[1][1] * R[2][0]);
-
-            if (det < 0) {
-                V[0][2] = -V[0][2]; V[1][2] = -V[1][2]; V[2][2] = -V[2][2];
-                R = matMul(V, UT);
-            }
-
-            // 评分：配对点的对齐度 + 旋转后对锚点的覆盖度
-            const rotated = thomsonPoints.map(p => [
-                R[0][0] * p[0] + R[0][1] * p[1] + R[0][2] * p[2],
-                R[1][0] * p[0] + R[1][1] * p[1] + R[1][2] * p[2],
-                R[2][0] * p[0] + R[2][1] * p[1] + R[2][2] * p[2]
-            ]);
-
-            // 配对点的对齐度（主评分）
-            let score = 0;
-            for (let k = 0; k < validAnchors.length; k++) {
-                const anchor = pairedAnchor[k];
-                const rp = rotated[perm[k]];
-                score += anchor[0] * rp[0] + anchor[1] * rp[1] + anchor[2] * rp[2];
-            }
-
-            if (score > bestScore) {
-                bestScore = score;
-                bestR = R;
-            }
+            bestPoints = thomsonPoints.map(p => quatRotateVector(bestR, p));
         }
 
-        // 应用最优旋转
-        const result = thomsonPoints.map(p => [
-            bestR[0][0] * p[0] + bestR[0][1] * p[1] + bestR[0][2] * p[2],
-            bestR[1][0] * p[0] + bestR[1][1] * p[1] + bestR[1][2] * p[2],
-            bestR[2][0] * p[0] + bestR[2][1] * p[1] + bestR[2][2] * p[2]
-        ]);
-
-        _hybridDirCache[cacheKey] = JSON.parse(JSON.stringify(result));
-        return result;
+        _hybridDirCache[cacheKey] = JSON.parse(JSON.stringify(bestPoints));
+        return bestPoints;
     }
-
     // 【核心优化器】基于爬山法的四元数旋转优化
     function optimizeHybridAlignment(initialPoints, orbitalParams) {
         const N = initialPoints.length;
@@ -730,7 +809,10 @@
         matMul, matTranspose, jacobiSVD,
         Ylm_complex, realYlm_value, realYlm_abs2, getOrbitalKey, slaterRadialR, radialR, radialPDF,
         optimizeThomson, generateConstrainedDirections, sortOrbitalsForHybridization, getHybridCoefficients,
-        allHybridOrbitalsDensity3D, singleHybridDensity3D, singleHybridWavefunction, hybridEstimateMaxDensity, orbitalParamsFromKey
+        allHybridOrbitalsDensity3D, singleHybridDensity3D, singleHybridWavefunction, hybridEstimateMaxDensity, orbitalParamsFromKey,
+        computeOrbitalPeakDirection,
+        quatFromVectors, quatRotateVector, quatNormalize, quatMultiply,
+        isValidHybridization
     };
 
     if (typeof module !== 'undefined' && module.exports) module.exports = PhysicsCore;

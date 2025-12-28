@@ -662,7 +662,7 @@
       if (chart.options.scales.y) {
         chart.options.scales.y.title = {
           display: true,
-          text: '势能期望值 ⟨V⟩(r) (Hartree)',
+          text: '势能径向积分 E(r) (Hartree)',
           color: '#d0d0d0',
           font: { size: 12, weight: '500' }
         };
@@ -853,7 +853,7 @@
     if (theory && theory.epsDensity && theory.epsDensity.length > 0) {
       datasets.push({
         type: 'line',
-        label: '总能量密度 ε(r)',
+        label: '理论能量密度 ε(r)',
         data: theory.epsDensity.map((y, i) => ({ x: i, y })),
         borderColor: 'rgba(255, 255, 255, 0.95)',
         backgroundColor: 'transparent',
@@ -870,7 +870,7 @@
     if (theory && theory.Tdensity && theory.Tdensity.length > 0) {
       datasets.push({
         type: 'line',
-        label: '动能贡献密度 T(r)·P(r)',
+        label: '理论动能密度 T(r)·P(r)',
         data: theory.Tdensity.map((y, i) => ({ x: i, y })),
         borderColor: 'rgba(255, 255, 255, 0.9)',
         backgroundColor: 'transparent',
@@ -978,7 +978,7 @@
         chart.options.scales.x.title = { display: true, text: 'log₁₀(r) (r in a₀)', color: '#d0d0d0', font: { size: 12 } };
       }
       if (chart.options.scales.y) {
-        chart.options.scales.y.title = { display: true, text: '势能期望值 ⟨V⟩(r) (Hartree) [对数刻度]', color: '#d0d0d0', font: { size: 12 } };
+        chart.options.scales.y.title = { display: true, text: '势能径向积分 E(r) (Hartree) [对数刻度]', color: '#d0d0d0', font: { size: 12 } };
       }
     }
 
@@ -1206,7 +1206,7 @@
               type: 'linear',
               title: {
                 display: true,
-                text: type === 'potential' ? '势能期望值 ⟨V⟩(r) (Hartree)' :
+                text: type === 'potential' ? '势能径向积分 E(r) (Hartree)' :
                   type === 'dEdr' ? '势能贡献密度 dV/dr (Hartree/a₀)' :
                     '概率密度',
                 color: '#d0d0d0',
@@ -1250,7 +1250,7 @@
         }
         if (state.chart.options.scales.y && state.chart.options.scales.y.title) {
           if (type === 'potential') {
-            state.chart.options.scales.y.title.text = '势能期望值 ⟨V⟩(r) (Hartree)';
+            state.chart.options.scales.y.title.text = '势能径向积分 E(r) (Hartree)';
           } else if (type === 'dEdr') {
             state.chart.options.scales.y.title.text = '势能贡献密度 dV/dr (Hartree/a₀)';
           } else {

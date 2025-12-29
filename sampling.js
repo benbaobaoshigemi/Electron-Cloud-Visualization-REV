@@ -1445,21 +1445,9 @@ window.ElectronCloud.Sampling.performRollingUpdate = function () {
             if (!state.orbitalPointsMap[orbitalKey]) state.orbitalPointsMap[orbitalKey] = [];
             state.orbitalPointsMap[orbitalKey].push(targetIndex);
 
-            // 【新增】比照模式动态图表更新的数据采集
-            if (isCompareMode || isMultiselectMode) {
-                let chartDataKey = orbitalKey;
-                // 比照模式下需要使用复合键，与 handleWorkerResult 保持一致
-                if (isCompareMode && state.compareMode && state.compareMode.activeSlots) {
-                    const slot = state.compareMode.activeSlots[orbitalIndex];
-                    if (slot) {
-                        chartDataKey = `${slot.atom}_${orbitalKey}_slot${slot.slotIndex}`;
-                    }
-                }
-
-                if (!state.orbitalSamplesMap[chartDataKey]) state.orbitalSamplesMap[chartDataKey] = [];
-                state.orbitalSamplesMap[chartDataKey].push({ r, theta, phi, probability: 0, orbitalIndex });
-
-            }
+            // 【v11.0 修复】滚动生成模式下不再累积 orbitalSamplesMap
+            // 原来的累积+截断模式会导致直方图闪烁
+            // 直方图应该直接使用 radialSamples（已在 Line 1425 通过替换模式正确更新）
         }
 
         if (isHybridMode && state.hybridOrbitalPointsMap) {
@@ -1580,19 +1568,7 @@ window.ElectronCloud.Sampling.performRollingUpdate = function () {
     if ((isCompareMode || isMultiselectMode) && state.rollingMode && state.rollingMode.enabled) {
         // 每200ms更新一次图表，与其他模式保持一致
         if (!state.lastChartUpdate || now - state.lastChartUpdate > 200) {
-            // 【修复】渐进式清理过大的样本数据，避免突然截断导致直方图跳变
-            // 原来一次性截断50%会导致直方图突变，改为每次只删除1%的旧数据
-            if (state.orbitalSamplesMap) {
-                const maxSamples = 100000;
-                const cleanupRate = 0.01; // 每次清理1%
-                for (const key in state.orbitalSamplesMap) {
-                    const arr = state.orbitalSamplesMap[key];
-                    if (arr.length > maxSamples) {
-                        const toRemove = Math.ceil(arr.length * cleanupRate);
-                        state.orbitalSamplesMap[key] = arr.slice(toRemove);
-                    }
-                }
-            }
+            // 【v11.0】orbitalSamplesMap 不再在滚动模式下累积，无需截断
             state.lastChartUpdate = now;
             if (window.ElectronCloud.Orbital.drawProbabilityChart) {
                 // false 表示非 final 更新，可能触发轻量级渲染

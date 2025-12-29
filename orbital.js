@@ -1029,12 +1029,10 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
 
             for (let i = 0; i < numBins; i++) {
                 const sampledPDF = localTotalSamples > 0 ? (radialHist.counts[i] / localTotalSamples) / localDr : 0;
-                expEpsDensity[i] = avgEpsilon * sampledPDF;
-
-                // 【修复】直接从理论动能密度和理论概率密度反推 T_rec
-                // theoryTdensity[i] = T_rec × theoryPDF  =>  T_rec = theoryTdensity[i] / theoryPDF
-                // 然后 expTdensity = T_rec × sampledPDF
                 const r = radialCenters[i];
+
+                // 【算法决策 v11.3 - 纯理论可视化】
+                // 计算理论PDF用于能量展示，彻底消除蒙特卡洛噪声
                 let theoryPDF = 0;
                 if (paramsList.length > 0 && window.Hydrogen.radialPDF) {
                     for (const p of paramsList) {
@@ -1043,9 +1041,15 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                     theoryPDF /= paramsList.length;
                 }
 
+                // 核心修改：使用理论PDF计算“采样”能量密度
+                // 这样图表展示的是完美的物理分布，不再随采样抖动
+                expEpsDensity[i] = avgEpsilon * theoryPDF;
+
                 // T_rec = theoryTdensity / theoryPDF（当 theoryPDF 不为零时）
                 const Trec = theoryPDF > 1e-15 ? (theoryTdensity[i] / theoryPDF) : 0;
-                expTdensity[i] = Trec * sampledPDF;
+
+                // 这里的 expTdensity 虽已废弃不用，但也同步改为纯理论以保持数据一致性
+                expTdensity[i] = Trec * theoryPDF;
             }
 
             state.backgroundChartData.energy = {
@@ -1141,7 +1145,9 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
         } else if (type === 'dEdr') {
             const expPoints = c.map((r, i) => ({ x: r, y: e.dEdr.exp[i] }));
             const theoryPoints = c.map((r, i) => ({ x: r, y: e.dEdr.theory[i] }));
-            DataPanel.renderChartDEdr({ points: expPoints }, { points: theoryPoints });
+            // 【新增】传递 Z_eff 数据以在 dV/dr 图表中显示
+            const zeffData = e.zeff ? Array.from(e.zeff) : null;
+            DataPanel.renderChartDEdr({ points: expPoints }, { points: theoryPoints, zeff: zeffData });
         } else if (type === 'dEdrLog') {
             DataPanel.renderChartDEdrLog({ points: e.dEdrLog.expPoints }, { points: e.dEdrLog.theoryPoints });
         } else if (type === 'localEnergy' && e.localEnergy) {

@@ -589,19 +589,8 @@
     if (experimental && experimental.points && experimental.points.length > 0) {
       labels = experimental.points.map(p => p.x.toFixed(2));
 
-      // 采样积分数据 - 柱状图（Y值可能是负数，所以用累积值）
-      datasets.push({
-        label: '⟨V⟩(r) 采样',
-        data: experimental.points.map(p => p.y),
-        backgroundColor: 'rgba(255,255,255,0.7)',
-        borderColor: 'rgba(255,255,255,0.95)',
-        borderWidth: 0,
-        barPercentage: 1.0,
-        categoryPercentage: 1.0,
-        borderRadius: 2,
-        borderSkipped: false,
-        order: 10, // 柱状图放在最底层
-      });
+      // 【纯理论可视化】不再显示采样数据的直方图/填充
+      // datasets.push({...}); // 移除采样数据推送
     }
 
     // 理论曲线 - 折线叠加
@@ -727,19 +716,8 @@
     if (experimental && experimental.points && experimental.points.length > 0) {
       labels = experimental.points.map(p => p.x.toFixed(2));
 
-      // 采样 dE/dr 数据 - 柱状图
-      datasets.push({
-        label: 'dV/dr 采样',
-        data: experimental.points.map(p => p.y),
-        backgroundColor: 'rgba(255,255,255,0.7)',
-        borderColor: 'rgba(255,255,255,0.95)',
-        borderWidth: 0,
-        barPercentage: 1.0,
-        categoryPercentage: 1.0,
-        borderRadius: 2,
-        borderSkipped: false,
-        order: 10,
-      });
+      // 【纯理论可视化】不再显示采样数据的直方图/填充
+      // datasets.push({...}); // 移除采样数据推送
     }
 
     // 理论曲线 - 折线叠加
@@ -763,6 +741,24 @@
       });
     }
 
+    // Z_eff 曲线 - 绿色，置于最上层
+    if (theory && theory.zeff && theory.zeff.length) {
+      datasets.push({
+        type: 'line',
+        label: '有效核电荷 Z_eff',
+        data: theory.zeff.map((y, i) => ({ x: i, y })),
+        borderColor: 'rgba(0, 220, 0, 0.9)',
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        borderWidth: 2.5,
+        yAxisID: 'y2',
+        borderDash: [2, 2],
+        tension: 0.2,
+        order: 0,
+        hidden: state.zeffHidden || false
+      });
+    }
+
     chart.data.labels = labels;
     chart.data.datasets = datasets;
 
@@ -781,9 +777,31 @@
       if (chart.options.scales.y) {
         chart.options.scales.y.title = {
           display: true,
-          text: '势能贡献密度 dV/dr (Hartree/a₀)',
+          text: '势能贡献 dV/dr (Hartree/a₀)',
           color: '#d0d0d0',
           font: { size: 12, weight: '500' }
+        };
+      }
+
+      // Z_eff 坐标轴 - 右侧绿色
+      if (theory && theory.zeff && theory.zeff.length) {
+        const maxZ = Math.ceil(Math.max(...theory.zeff, 1));
+        chart.options.scales.y2 = {
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          min: 0,
+          max: maxZ > 1 ? maxZ : 2,
+          ticks: {
+            display: true,
+            color: 'rgba(0, 220, 0, 0.9)',
+            font: { size: 9 }
+          },
+          title: {
+            display: true,
+            text: 'Z_eff',
+            color: 'rgba(0, 220, 0, 0.9)',
+            font: { size: 10 }
+          }
         };
       }
     }
@@ -800,11 +818,9 @@
     if (state.chart && state.chart.data && state.chart.data.datasets) {
       state.chart.data.datasets.forEach((ds, idx) => {
         const visible = state.chart.isDatasetVisible(idx);
-        if (ds.label && ds.label.includes('势能贡献')) {
-          state.localEnergyPotentialHidden = !visible;
-        } else if (ds.label && ds.label.includes('总能量密度')) {
+        if (ds.label && (ds.label.includes('采样轨道能量') || ds.label.includes('轨道能量'))) {
           state.localEnergyTotalHidden = !visible;
-        } else if (ds.label && ds.label.includes('动能贡献密度')) {
+        } else if (ds.label && ds.label.includes('动能密度')) {
           state.localEnergyKineticHidden = !visible;
         }
       });
@@ -827,34 +843,13 @@
       labels = theory.centers.map(r => r.toFixed(2));
     }
 
-    // 采样浮动柱状图：从 T·P(r)理论 到 ε·f(r)采样（顶部对齐理论动能线）
-    // Chart.js 浮动柱状图使用 [min, max] 数组格式
-    if (experimental && experimental.expDensity && theory && theory.Tdensity) {
-      const floatingData = [];
-      for (let i = 0; i < experimental.expDensity.length; i++) {
-        const bottom = experimental.expDensity[i];  // ε·f(r) 采样 - 更负
-        const top = theory.Tdensity[i];              // T·P(r) 理论 - 更正（对齐理论线）
-        floatingData.push([bottom, top]);
-      }
-      datasets.push({
-        label: '势能贡献 V(r)·P(r)',
-        data: floatingData,
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-        borderColor: 'rgba(255, 255, 255, 0.8)',
-        borderWidth: 1,
-        barPercentage: 1.0,
-        categoryPercentage: 1.0,
-        order: 5,
-        hidden: state.localEnergyPotentialHidden || false  // 【保持用户设置】
-      });
-    }
-
-    // 理论能量密度 ε·P(r) - 白色实线
-    if (theory && theory.epsDensity && theory.epsDensity.length > 0) {
+    // 纯理论总能量 E(r) - 白色实线
+    // 【算法决策 v11.3】改为纯理论可视化，彻底隐藏采样噪声
+    if (experimental && experimental.expDensity) {
       datasets.push({
         type: 'line',
-        label: '理论能量密度 ε(r)',
-        data: theory.epsDensity.map((y, i) => ({ x: i, y })),
+        label: '轨道能量 E(r)',
+        data: experimental.expDensity.map((y, i) => ({ x: i, y })),
         borderColor: 'rgba(255, 255, 255, 0.95)',
         backgroundColor: 'transparent',
         pointRadius: 0,
@@ -862,15 +857,17 @@
         yAxisID: 'y',
         tension: 0.2,
         order: 10,
-        hidden: state.localEnergyTotalHidden || false  // 【保持用户设置】
+        hidden: state.localEnergyTotalHidden || false
       });
     }
+
+    // 【v11.0】不再显示理论总能量曲线 - 采样数据即是"实验结果"
 
     // 动能密度 T·P(r) - 白色虚线（最顶层）
     if (theory && theory.Tdensity && theory.Tdensity.length > 0) {
       datasets.push({
         type: 'line',
-        label: '理论动能密度 T(r)·P(r)',
+        label: '动能密度 T(r)·P(r)',
         data: theory.Tdensity.map((y, i) => ({ x: i, y })),
         borderColor: 'rgba(255, 255, 255, 0.9)',
         backgroundColor: 'transparent',
@@ -936,18 +933,8 @@
 
     if (experimental && experimental.points && experimental.points.length > 0) {
       labels = experimental.points.map(p => p.x.toFixed(2));
-      datasets.push({
-        type: 'bar', // 【修改】改为柱状图，符合密度分布的直观表示
-        label: '⟨V⟩(log r) 采样',
-        data: experimental.points.map(p => p.y),
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        borderColor: 'rgba(255, 255, 255, 0.9)',
-        borderWidth: 0,
-        barPercentage: 1.0,
-        categoryPercentage: 1.0,
-        borderRadius: 0,
-        order: 10
-      });
+      // 【纯理论可视化】不再显示采样数据的直方图/填充
+      // datasets.push({...}); // 移除采样数据推送
     }
 
     if (theory && theory.points && theory.points.length > 0) {
@@ -1008,18 +995,8 @@
 
     if (experimental && experimental.points && experimental.points.length > 0) {
       labels = experimental.points.map(p => p.x.toFixed(2));
-      datasets.push({
-        type: 'bar', // 【修改】改为柱状图，符合密度分布的直观表示
-        label: 'dV/d(log r) 采样',
-        data: experimental.points.map(p => p.y),
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        borderColor: 'rgba(255, 255, 255, 0.9)',
-        borderWidth: 0,
-        barPercentage: 1.0,
-        categoryPercentage: 1.0,
-        borderRadius: 0,
-        order: 10
-      });
+      // 【纯理论可视化】不再显示采样数据的直方图/填充
+      // datasets.push({...}); // 移除采样数据推送
     }
 
     if (theory && theory.points && theory.points.length > 0) {
@@ -1050,7 +1027,7 @@
         chart.options.scales.x.title = { display: true, text: 'log₁₀(r) (r in a₀)', color: '#d0d0d0', font: { size: 12 } };
       }
       if (chart.options.scales.y) {
-        chart.options.scales.y.title = { display: true, text: '势能贡献密度 dV/dr (Hartree/a₀) [对数刻度]', color: '#d0d0d0', font: { size: 12 } };
+        chart.options.scales.y.title = { display: true, text: '势能贡献 dV/dr (Hartree/a₀) [对数刻度]', color: '#d0d0d0', font: { size: 12 } };
       }
     }
 
@@ -1118,14 +1095,15 @@
       return;
     }
 
-    // 【修复】在任何图表存在时都尝试捕获理论曲线状态
-    // 检查当前图表中是否有理论曲线数据集，保存其可见性状态
+    // 【修复】保存所有曲线的可见性状态（通过 label 作为 key）
+    // 这样在滚动更新重建 datasets 时可以恢复用户的隐藏设置
     if (state.chart && state.chart.data && state.chart.data.datasets) {
-      const theoryIndex = state.chart.data.datasets.findIndex(ds => ds.label && ds.label.includes('理论'));
-      if (theoryIndex !== -1) {
-        // isDatasetVisible返回true表示可见，取反得到hidden状态
-        state.compareTheoryHidden = !state.chart.isDatasetVisible(theoryIndex);
-      }
+      if (!state.compareHiddenLabels) state.compareHiddenLabels = {};
+      state.chart.data.datasets.forEach((ds, idx) => {
+        if (ds.label) {
+          state.compareHiddenLabels[ds.label] = !state.chart.isDatasetVisible(idx);
+        }
+      });
     }
 
     // 如果当前不是折线图，销毁后重新创建
@@ -1186,7 +1164,7 @@
               title: {
                 display: true,
                 text: (type === 'radial' || type === 'angular' || type === 'phi') ? '径向距离 (a₀)' :
-                  (type === 'potential' || type === 'dEdr') ? '距离 r (a₀)' : '角度 (弧度)',
+                  (type === 'potential' || type === 'dEdr' || type === 'localEnergy') ? '距离 r (a₀)' : '角度 (弧度)',
                 color: '#d0d0d0',
                 font: { size: 12, weight: '500' }
               },
@@ -1207,8 +1185,9 @@
               title: {
                 display: true,
                 text: type === 'potential' ? '势能径向积分 E(r) (Hartree)' :
-                  type === 'dEdr' ? '势能贡献密度 dV/dr (Hartree/a₀)' :
-                    '概率密度',
+                  type === 'dEdr' ? '势能贡献 dV/dr (Hartree/a₀)' :
+                    type === 'localEnergy' ? '轨道能量贡献 ε(r) (Hartree)' :
+                      '概率密度',
                 color: '#d0d0d0',
                 font: { size: 12, weight: '500' }
               },
@@ -1242,7 +1221,7 @@
         if (state.chart.options.scales.x && state.chart.options.scales.x.title) {
           if (type === 'potentialLog' || type === 'dEdrLog') {
             // 已移除 log-log 图表类型
-          } else if (type === 'radial' || type === 'potential' || type === 'dEdr') {
+          } else if (type === 'radial' || type === 'potential' || type === 'dEdr' || type === 'localEnergy') {
             state.chart.options.scales.x.title.text = '距离 r (a₀)';
           } else {
             state.chart.options.scales.x.title.text = '角度 (弧度)';
@@ -1252,7 +1231,7 @@
           if (type === 'potential') {
             state.chart.options.scales.y.title.text = '势能径向积分 E(r) (Hartree)';
           } else if (type === 'dEdr') {
-            state.chart.options.scales.y.title.text = '势能贡献密度 dV/dr (Hartree/a₀)';
+            state.chart.options.scales.y.title.text = '势能贡献 dV/dr (Hartree/a₀)';
           } else {
             state.chart.options.scales.y.title.text = '概率密度';
           }
@@ -1281,7 +1260,7 @@
     for (const [orbitalKey, samples] of Object.entries(orbitalDataMap)) {
       if (!samples || samples.length === 0) continue;
       totalSamples += samples.length;
-      if (type === 'radial' || type === 'potential' || type === 'dEdr') {
+      if (type === 'radial' || type === 'potential' || type === 'dEdr' || type === 'localEnergy') {
         // 【性能修复】使用循环替代Math.max(...array)，避免大数组栈溢出
         for (let i = 0; i < samples.length; i++) {
           if (samples[i].r > maxDistance) {
@@ -1462,6 +1441,95 @@
         } else {
           potentialValues = new Float32Array(adaptiveBins);
         }
+      } else if (type === 'localEnergy') {
+        // 【v11.0 完全复刻单选模式】轨道能量贡献 - 每个轨道两条线
+        const dynamicRmax = Math.max(1, maxDistance * 1.08);
+        const baseBins = 240;
+        const sampleDensity = totalSamples / Math.max(1, dynamicRmax);
+        const adaptiveBins = Math.min(400, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
+
+        const radialData = samples.map(s => s.r);
+        hist = window.Hydrogen.histogramRadialFromSamples(radialData, adaptiveBins, dynamicRmax, true, false);
+
+        centers = new Array(adaptiveBins);
+        for (let i = 0; i < adaptiveBins; i++) {
+          centers[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
+        }
+
+        const atomType = slotConfig.atom || 'H';
+        const Z = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
+        const orbParams = window.Hydrogen.orbitalParamsFromKey(slotConfig.orbital);
+
+        if (orbParams) {
+          // 1. 获取轨道能量 ε
+          const baseKey = slotConfig.orbital.replace(/[xyz]/g, '').replace(/_.*/, '');
+          const basisData = window.SlaterBasis && window.SlaterBasis[atomType]
+            && window.SlaterBasis[atomType].orbitals
+            && window.SlaterBasis[atomType].orbitals[baseKey];
+          const avgEpsilon = (basisData && basisData.length > 0 && basisData[0].energy !== undefined)
+            ? basisData[0].energy : -0.5;
+          // 2. 计算采样能量密度 ε × P(r) (纯理论)
+          // 【算法决策 v11.3 - 全局纯理论化】
+          // 依据：用户指令“所有涉及能量的采样都需要移除”，旨在隐藏蒙特卡洛采样的局限性。
+          // 措施：完全弃用 f(r) (采样PDF)，统一使用 P(r) (理论PDF)。
+          // 结果：无论采样点多少，能量曲线始终完美平滑。
+          const dr = hist.dr || (centers[1] - centers[0]);
+          const totalSamplesLocal = hist.counts.reduce((a, b) => a + b, 0);
+          const sampledEps = new Float32Array(adaptiveBins);
+          const theoryTdensity = new Float32Array(adaptiveBins);
+
+          for (let i = 0; i < adaptiveBins; i++) {
+            const r = centers[i];
+            const theoryPDF = window.Hydrogen.radialPDF(orbParams.n, orbParams.l, r, Z, 1, atomType);
+
+            // 关键修改：采样能量密度 = ε × 理论PDF
+            // 即使UI上叫“采样”，数据源已改为理论值，彻底消除噪声。
+            sampledEps[i] = avgEpsilon * theoryPDF;
+
+            // 理论动能密度 T_rec × P(r)
+            const Trec = window.Hydrogen.calculateReconstructedKineticEnergy
+              ? window.Hydrogen.calculateReconstructedKineticEnergy(r, avgEpsilon, Z, atomType, baseKey)
+              : 0;
+            theoryTdensity[i] = Trec * theoryPDF;
+          }
+
+          // 准备两条线的数据
+          const sampledData = centers.map((c, i) => ({ x: c, y: sampledEps[i] }));
+          const theoryData = centers.map((c, i) => ({ x: c, y: theoryTdensity[i] }));
+
+          // 【颜色】使用轨道对应色
+          const colorValues = color.value.map(v => Math.round(v * 255));
+
+          // 总能量密度 E(r) - 实线 (理论值)
+          const energyLabel = `${displayName} E(r)`;
+          datasets.push({
+            label: energyLabel,
+            data: sampledData,
+            borderColor: `rgba(${colorValues.join(',')}, 1.0)`,
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.1,
+            hidden: state.compareHiddenLabels?.[energyLabel] || false,
+          });
+
+          // 理论动能密度 - 虚线
+          const theoryLabel = `${displayName} T(r) 理论`;
+          datasets.push({
+            label: theoryLabel,
+            data: theoryData,
+            borderColor: `rgba(${colorValues.join(',')}, 0.8)`,
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            borderDash: [5, 3],
+            pointRadius: 0,
+            tension: 0.1,
+            hidden: state.compareHiddenLabels?.[theoryLabel] || false,
+          });
+
+          // 跳过后续通用 dataset push
+          continue;
+        }
       } else {
         // φ角向数据 (azimuthal)
         const phiBins = 180;
@@ -1479,7 +1547,7 @@
       // 对于势能相关模式，y是potentialValues；其他模式是hist.counts
       const data = centers.map((center, index) => ({
         x: center,
-        y: (type === 'potential' || type === 'dEdr') ? potentialValues[index] : hist.counts[index]
+        y: (type === 'potential' || type === 'dEdr' || type === 'localEnergy') ? potentialValues[index] : hist.counts[index]
       })).sort((a, b) => a.x - b.x);
 
       // 将颜色值从[0,1]范围转换为[0,255]范围
@@ -1496,6 +1564,7 @@
         pointHoverRadius: 3,
         fill: false,
         tension: 0.1,
+        hidden: state.compareHiddenLabels?.[displayName] || false,
       });
 
       // 【新增】为该轨道添加理论曲线（虚线）
@@ -1544,8 +1613,9 @@
           }));
         }
 
+        const theoryDisplayLabel = `${displayName} 理论`;
         datasets.push({
-          label: `${displayName} 理论`,
+          label: theoryDisplayLabel,
           data: theoryData,
           borderColor: `rgba(${colorValues.join(',')}, 0.9)`,
           backgroundColor: 'transparent',
@@ -1555,7 +1625,7 @@
           fill: false,
           tension: 0.2,
           borderDash: [6, 3], // 虚线样式
-          hidden: state.compareTheoryHidden // 应用隐藏状态和默认值
+          hidden: state.compareHiddenLabels?.[theoryDisplayLabel] || false,
         });
       }
     }

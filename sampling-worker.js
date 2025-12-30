@@ -13,8 +13,6 @@ const PI = Math.PI;
 const TWO_PI = 2 * PI;
 
 // 别名：保持与 Worker 内部旧代码兼容
-const optimizeThomsonWorker = core.optimizeThomson;
-const buildDirectionMatrixWorker = core.buildDirectionMatrix;
 const jacobiSVDWorker = core.jacobiSVD;
 const matMulWorker = core.matMul;
 const matTransposeWorker = core.matTranspose;

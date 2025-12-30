@@ -84,9 +84,8 @@
                 </div>
                 <!-- 权重模式 + 滚动生成：并排两个功能按钮 -->
                 <div class="feature-row">
-                    <div id="weight-feature-box" class="feature-box clickable">
-                        <span class="feature-name">权重模式</span>
-                        <input type="checkbox" id="weight-mode-toggle" style="display:none" />
+                    <div id="read-docs-box" class="feature-box clickable" title="阅读发现指南">
+                        <span class="feature-name">阅读文档</span>
                     </div>
                     <div id="rolling-feature-box" class="feature-box clickable">
                         <span class="feature-name">滚动生成</span>
@@ -511,6 +510,7 @@
                         <option value="phi">角向分布 (φ)</option>
                         <option value="energyDensity">能量期望密度 ε·P(r)</option>
                         <option value="energyCumulative">能量期望累计 E(R)</option>
+                        <option value="energyCumulativeLog">能量期望累计 (幂次矫正)</option>
                     </select>
                 </div>
                 <div class="control-group">
@@ -548,7 +548,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <script src="slater_basis.js?v=2"></script>
-    <script src="vee_cache.js?v=1"></script>
+
     <script src="physics-core.js?v=1"></script>
     <script src="physics.js?v=37"></script>
     <script src="marching_cubes.js"></script>

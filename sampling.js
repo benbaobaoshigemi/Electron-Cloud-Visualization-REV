@@ -792,7 +792,18 @@ window.ElectronCloud.Sampling.processImportanceSamplingPoint = function (
 
     // 记录轨道点映射（用于比照模式开关）
     if (isIndependentMode) {
-        const orbitalKey = state.currentOrbitals[orbitalIndex];
+        // 【关键修复】比照模式下构建完整键名，与 rolling update 和 data panel 保持一致
+        const isCompareMode = window.ElectronCloud.ui.compareToggle && window.ElectronCloud.ui.compareToggle.checked;
+        let orbitalKey;
+
+        if (isCompareMode && state.compareMode && state.compareMode.activeSlots) {
+            const slot = state.compareMode.activeSlots[orbitalIndex];
+            // 必需格式: atom_orbital_slotIndex
+            orbitalKey = slot ? `${slot.atom || 'H'}_${slot.orbital}_slot${slot.slotIndex}` : state.currentOrbitals[orbitalIndex];
+        } else {
+            orbitalKey = state.currentOrbitals[orbitalIndex];
+        }
+
         if (orbitalKey) {
             if (!state.orbitalPointsMap[orbitalKey]) {
                 state.orbitalPointsMap[orbitalKey] = [];
@@ -1393,7 +1404,8 @@ window.ElectronCloud.Sampling.performRollingUpdate = function () {
             // 【关键修复】比照模式下从 activeSlots 获取 orbitalKey，确保与 handleWorkerResult 完全一致
             if (isCompareMode && state.compareMode && state.compareMode.activeSlots) {
                 const slot = state.compareMode.activeSlots[orbitalIndex];
-                orbitalKey = slot ? slot.orbital : state.currentOrbitals[orbitalIndex];
+                // 必须构建完整键名：atom_orbital_slotIndex
+                orbitalKey = slot ? `${slot.atom || 'H'}_${slot.orbital}_slot${slot.slotIndex}` : state.currentOrbitals[orbitalIndex];
             } else {
                 orbitalKey = state.currentOrbitals[orbitalIndex];
             }
@@ -1445,14 +1457,50 @@ window.ElectronCloud.Sampling.performRollingUpdate = function () {
             if (!state.orbitalPointsMap[orbitalKey]) state.orbitalPointsMap[orbitalKey] = [];
             state.orbitalPointsMap[orbitalKey].push(targetIndex);
 
-            // 【v11.0 修复】滚动生成模式下不再累积 orbitalSamplesMap
-            // 原来的累积+截断模式会导致直方图闪烁
-            // 直方图应该直接使用 radialSamples（已在 Line 1425 通过替换模式正确更新）
+            // 【v11.0 修复】滚动生成模式下需要更新 orbitalSamplesMap 以驱动图表
+            // 采用 "One In, One Out" 策略防止数组无限增长
+            if (state.orbitalSamplesMap) {
+                // 1. 移除旧样本
+                const oldOrbitalIdx = state.pointOrbitalIndices ? state.pointOrbitalIndices[targetIndex] : -1;
+                let oldKey = null;
+
+                if (isCompareMode && state.compareMode && state.compareMode.activeSlots) {
+                    const oldSlot = state.compareMode.activeSlots[oldOrbitalIdx];
+                    if (oldSlot) {
+                        oldKey = `${oldSlot.atom || 'H'}_${oldSlot.orbital}_slot${oldSlot.slotIndex}`;
+                    }
+                } else if (oldOrbitalIdx >= 0 && state.currentOrbitals) {
+                    oldKey = state.currentOrbitals[oldOrbitalIdx];
+                }
+
+                if (oldKey && state.orbitalSamplesMap[oldKey]) {
+                    const oldSamples = state.orbitalSamplesMap[oldKey];
+                    if (oldSamples.length > 0) {
+                        // 随机移除一个旧点，保持统计分布大致不变
+                        const removeIdx = Math.floor(Math.random() * oldSamples.length);
+                        // Swap with last and pop (O(1))
+                        oldSamples[removeIdx] = oldSamples[oldSamples.length - 1];
+                        oldSamples.pop();
+                    }
+                }
+
+                // 2. 添加新样本
+                if (orbitalKey) {
+                    if (!state.orbitalSamplesMap[orbitalKey]) state.orbitalSamplesMap[orbitalKey] = [];
+                    state.orbitalSamplesMap[orbitalKey].push({
+                        r: r,
+                        theta: theta,
+                        phi: phi, // 确保 phi 也被记录
+                        probability: 0 // 滚动模式不存储准确概率值，图表主要用坐标
+                    });
+                }
+            }
         }
 
         if (isHybridMode && state.hybridOrbitalPointsMap) {
             if (!state.hybridOrbitalPointsMap[orbitalIndex]) state.hybridOrbitalPointsMap[orbitalIndex] = [];
             state.hybridOrbitalPointsMap[orbitalIndex].push(targetIndex);
+            // 杂化模式通常重绘整个分布，或者暂不支持细粒度滚动更新图表
         }
 
         // 4. 计算颜色

@@ -542,42 +542,13 @@ window.ElectronCloud.UI.init = function () {
         });
     }
 
-    // 权重模式开关 - 独立实验功能
-    const weightModeToggle = document.getElementById('weight-mode-toggle');
-    const weightFeatureBox = document.getElementById('weight-feature-box');
+    // 阅读文档按钮
+    const readDocsBox = document.getElementById('read-docs-box');
 
-    if (weightModeToggle) {
-        weightModeToggle.addEventListener('change', (e) => {
-            const state = window.ElectronCloud.state;
-            state.weightMode = e.target.checked;
-            // 兼容旧的heartbeat.weightMode
-            if (state.heartbeat) {
-                state.heartbeat.weightMode = e.target.checked;
-            }
-
-            // 更新框的激活状态
-            const box = document.getElementById('weight-feature-box');
-            if (box) {
-                box.classList.toggle('active', e.target.checked);
-            }
-
-            // 切换权重模式时，清除缓存的密度权重，以便重新计算
-            if (!e.target.checked) {
-                state.densityWeights = null;
-            }
-        });
-    } else {
-        console.error('weight-mode-toggle 元素未找到');
-    }
-
-    // 权重模式功能框点击切换
-    if (weightFeatureBox) {
-        weightFeatureBox.addEventListener('click', (e) => {
-            const toggle = document.getElementById('weight-mode-toggle');
-            if (toggle) {
-                toggle.checked = !toggle.checked;
-                toggle.dispatchEvent(new Event('change', { bubbles: true }));
-            }
+    if (readDocsBox) {
+        readDocsBox.addEventListener('click', () => {
+            // 打开本地文档 (后续可替换为 HTML)
+            window.open('DISCOVER_GUAID.md', '_blank');
         });
     } else {
         console.error('weight-feature-box 元素未找到');

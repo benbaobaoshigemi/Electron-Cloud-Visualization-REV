@@ -600,22 +600,11 @@ window.ElectronCloud.Orbital.initTheoryData = function () {
                 radialWave[i] = sumWave / paramsList.length;
             }
 
-            // 【新增】计算有效核电荷 Z_eff
-            let sumZeff = 0;
-            for (let j = 0; j < orbitals.length; j++) {
-                const orbitalKey = orbitals[j];
-                const pAtom = state.currentAtom || 'H';
-                const pZ = (window.SlaterBasis && window.SlaterBasis[pAtom]) ? window.SlaterBasis[pAtom].Z : 1;
-                // extractOrbitalKey: 从 '2px' 等提取基础 shell ('2p')
-                const baseKey = orbitalKey.replace(/[xyz]/g, '').replace(/_.*/, '');
-                sumZeff += Hydrogen.calculateZeff(radialCenters[i], pZ, pAtom, baseKey);
-            }
-            radialZeff[i] = sumZeff / orbitals.length;
         }
 
         state.backgroundChartData.radial = {
             hist: { edges: radialEdges, counts: radialCounts, dr: dr, rmax: estimatedRmax },
-            theory: { centers: radialCenters, values: radialTheoryValues, wave: radialWave, zeff: radialZeff }
+            theory: { centers: radialCenters, values: radialTheoryValues, wave: radialWave }
         };
 
         // 创建空的角向直方图（零值）
@@ -702,10 +691,7 @@ window.ElectronCloud.Orbital.initTheoryData = function () {
             state.backgroundChartData.energy = {
                 centers: radialCenters,
                 potential: theoryE,
-                dEdr: theoryDEdr,
-                localEnergy: {
-                    epsilon: avgEpsilon
-                }
+                dEdr: theoryDEdr
             };
         } catch (e) {
             console.error('初始化理论能量数据失败:', e);
@@ -749,13 +735,13 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
             }
             const dynamicRmax = Math.max(1, maxSampleDistance * 1.08);
 
-            // 动态调整箱数
-            const baseBins = 240;
+            // 动态调整箱数 - 【3x 超采样】基础 bin 数提升至 720
+            const baseBins = 720;
             const sampleDensity = state.radialSamples.length / Math.max(1, dynamicRmax);
-            const adaptiveBins = Math.min(400, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
+            const adaptiveBins = Math.min(1200, Math.max(baseBins, Math.floor(sampleDensity * 0.5)));
 
-            // 【参数调整】禁用平滑 (smooth=false)，以便在能量积分中保留采样噪声
-            const radialHist = Hydrogen.histogramRadialFromSamples(state.radialSamples, adaptiveBins, dynamicRmax, true, false);
+            // 【参数调整】禁用平滑 (smooth=false)，并在归一化时考虑全域总样本量 (totalN)
+            const radialHist = Hydrogen.histogramRadialFromSamples(state.radialSamples, adaptiveBins, dynamicRmax, true, false, state.radialSamples.length);
 
             // 横轴中心
             const centers = new Array(adaptiveBins);
@@ -792,21 +778,11 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
                     wave[i] = sumWave / paramsList.length;
                 }
 
-                // 【新增】计算有效核电荷 Z_eff
-                let sumZeff = 0;
-                for (let j = 0; j < orbitals.length; j++) {
-                    const orbitalKey = orbitals[j];
-                    const pAtom = state.currentAtom || 'H';
-                    const pZ = (window.SlaterBasis && window.SlaterBasis[pAtom]) ? window.SlaterBasis[pAtom].Z : 1;
-                    const baseKey = orbitalKey.replace(/[xyz]/g, '').replace(/_.*/, '');
-                    sumZeff += Hydrogen.calculateZeff(centers[i], pZ, pAtom, baseKey);
-                }
-                zeff[i] = sumZeff / orbitals.length;
             }
 
             state.backgroundChartData.radial = {
                 hist: radialHist,
-                theory: { centers, values, wave, zeff }
+                theory: { centers, values, wave }
             };
         }
 
@@ -863,8 +839,8 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
             }
 
             // 2. 计算理论能量曲线 (简化版：仅使用 ε·P(r))
-            const theoryE = new Float32Array(numBins);
-            const theoryDEdr = new Float32Array(numBins);
+            const theoryE = new Float64Array(numBins);
+            const theoryDEdr = new Float64Array(numBins);
             let avgEpsilon = -0.5;  // 默认本征值
 
             if (paramsWithAtom.length > 0 && window.Hydrogen.calculateCumulativeOrbitalEnergy) {
@@ -894,13 +870,13 @@ window.ElectronCloud.Orbital.updateBackgroundChartData = function () {
 
             // 3. 基于采样数据计算能量直方图（复用径向采样数据 × ε）
             // 能量密度直方图：radialHist.counts × avgEpsilon （采样直方图 × 本征值）
-            const samplingDensity = new Float32Array(numBins);
+            const samplingDensity = new Float64Array(numBins);
             for (let j = 0; j < numBins; j++) {
                 samplingDensity[j] = radialHist.counts[j] * avgEpsilon;
             }
 
             // 能量累计直方图：累加 samplingDensity
-            const samplingCumulative = new Float32Array(numBins);
+            const samplingCumulative = new Float64Array(numBins);
             let cumSum = 0;
             const dr = radialHist.dr || (radialCenters[1] - radialCenters[0]);
             for (let j = 0; j < numBins; j++) {
@@ -948,7 +924,7 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
     const type = ui.plotTypeSelect ? ui.plotTypeSelect.value : 'radial';
 
     // 确保能量图有可用的纯理论数据（不依赖采样）
-    if (['potential', 'dEdr', 'localEnergy'].includes(type) && (!state.backgroundChartData || !state.backgroundChartData.energy)) {
+    if (['energyDensity', 'energyCumulative', 'energyCumulativeLog'].includes(type) && (!state.backgroundChartData || !state.backgroundChartData.energy)) {
         if (window.ElectronCloud?.Orbital?.initTheoryData) {
             window.ElectronCloud.Orbital.initTheoryData();
         }
@@ -959,7 +935,7 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
 
     // 【关键修复】对比模式下图表必须优先走 compare 渲染路径；否则会落入“多选/平均”的后台数据渲染，表现成多选模式
     // 即使采样尚未开始（orbitalSamplesMap 为空），compare 渲染也应能显示纯理论曲线（由 DataPanel.renderChartCompare 兜底）
-    if (isCompareMode && ['radial', 'angular', 'phi', 'energyDensity', 'energyCumulative'].includes(type)) {
+    if (isCompareMode && ['radial', 'angular', 'phi', 'energyDensity', 'energyCumulative', 'energyCumulativeLog'].includes(type)) {
         let chartData = state.orbitalSamplesMap || {};
 
         // 【性能优化】如果是滚动生成过程中的动态更新（!final），只使用最近的数据切片
@@ -1007,10 +983,11 @@ window.ElectronCloud.Orbital.drawProbabilityChart = function (final = true) {
             { centers: Array.from(e.centers), values: Array.from(e.theoryDensity) }
         );
         return;
-    } else if (type === 'energyCumulative' && state.backgroundChartData.energy) {
+        return;
+    } else if ((type === 'energyCumulative' || type === 'energyCumulativeLog') && state.backgroundChartData.energy) {
         // 能量期望累计：累计采样数据作为直方图，理论曲线叠加
         const e = state.backgroundChartData.energy;
-        console.log('使用累计采样数据渲染能量累计图');
+        console.log('使用累计采样数据渲染能量累计图:', type);
         DataPanel.renderChartEnergyCumulative(
             { counts: Array.from(e.samplingCumulative), edges: Array.from(e.edges) },
             { centers: Array.from(e.centers), values: Array.from(e.theoryCumulative) }

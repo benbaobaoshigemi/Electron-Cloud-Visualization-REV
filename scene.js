@@ -907,59 +907,28 @@ window.ElectronCloud.Scene.animate = function () {
             const colorArray = colors.array;
             const processCount = Math.min(pointCount, state.baseColorsCount);
 
-            if (state.weightMode) {
-                // 权重模式开启：启用bloom，设置较高的辉光强度
-                state.bloomEnabled = true;
-                if (state.bloomPass) {
-                    state.bloomPass.strength = 1.5; // 权重模式辉光强度
-                }
 
-                // 初始化/更新密度权重
-                if (!state.densityWeights || state.densityWeights.length < maxPoints) {
-                    state.densityWeights = new Float32Array(maxPoints);
-                    for (let i = 0; i < pointCount; i++) {
-                        const i3 = i * 3;
-                        const x = positions.array[i3];
-                        const y = positions.array[i3 + 1];
-                        const z = positions.array[i3 + 2];
-                        const r = Math.sqrt(x * x + y * y + z * z);
-                        state.densityWeights[i] = Math.exp(-r / 10) * 0.7 + 0.3;
-                    }
-                }
 
-                // 根据权重调整颜色亮度
-                for (let i = 0; i < processCount; i++) {
-                    const weight = state.densityWeights[i] || 0.5;
-                    const brightness = 0.5 + weight * 1.0; // 0.5 - 1.5 范围
-                    const i3 = i * 3;
-                    colorArray[i3] = Math.min(1.0, state.baseColors[i3] * brightness);
-                    colorArray[i3 + 1] = Math.min(1.0, state.baseColors[i3 + 1] * brightness);
-                    colorArray[i3 + 2] = Math.min(1.0, state.baseColors[i3 + 2] * brightness);
-                }
-                colors.needsUpdate = true;
-            } else {
-                // 权重模式关闭：恢复原始颜色（权重系数 = 1）
-                // 【修复】使用亮度滑动条设置的值，而不是固定像素
-                if (state.bloomPass && state.bloomStrength !== undefined) {
-                    state.bloomPass.strength = state.bloomStrength;
-                }
-
-                // 只在颜色被修改过的情况下才恢复
-                if (state.weightModeWasEnabled) {
-                    for (let i = 0; i < processCount; i++) {
-                        const i3 = i * 3;
-                        colorArray[i3] = state.baseColors[i3];
-                        colorArray[i3 + 1] = state.baseColors[i3 + 1];
-                        colorArray[i3 + 2] = state.baseColors[i3 + 2];
-                    }
-                    colors.needsUpdate = true;
-                    state.weightModeWasEnabled = false;
-                }
+            // 权重模式已移除，直接使用标准辉光设置
+            if (state.bloomPass && state.bloomStrength !== undefined) {
+                state.bloomPass.strength = state.bloomStrength;
+            } else if (state.bloomPass) {
+                // 默认值
+                state.bloomPass.strength = 1.0;
             }
 
-            // 记录权重模式状态，用于下一帧检测关闭
-            if (state.weightMode) {
-                state.weightModeWasEnabled = true;
+            // 确保颜色使用 BaseColors (不进行权重修改)
+            // 注意：这里我们假设 BaseColors 已经是正确的颜色
+            // 如果之前有其他模式修改了颜色，这里可能需要恢复，但由于移除权重模式，
+            // 正常流程下颜色应该保持原样。为了保险，可以执行一次恢复。
+            if (state.baseColorsCount > 0) {
+                for (let i = 0; i < processCount; i++) {
+                    const i3 = i * 3;
+                    colorArray[i3] = state.baseColors[i3];
+                    colorArray[i3 + 1] = state.baseColors[i3 + 1];
+                    colorArray[i3 + 2] = state.baseColors[i3 + 2];
+                }
+                colors.needsUpdate = true;
             }
         }
     }

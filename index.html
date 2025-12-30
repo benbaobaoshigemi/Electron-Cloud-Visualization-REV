@@ -37,6 +37,18 @@
         <div class="mode-switcher-item" data-mode="hybrid">杂化</div>
     </div>
 
+    <!-- 底部原子选择器岛 -->
+    <div id="atom-selector-island">
+        <div class="atom-selector-trigger" id="atom-selector-trigger">
+            <span class="atom-label">原子：</span>
+            <span id="current-atom-display">H - 氢</span>
+            <span class="dropdown-arrow">▲</span>
+        </div>
+        <div class="atom-selector-dropdown" id="atom-selector-dropdown">
+            <!-- Options dynamically populated by JS -->
+        </div>
+    </div>
+
     <div id="gesture-status-popup" class="gesture-popup"
         style="display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);">
         <div class="status-indicator"></div>
@@ -46,7 +58,7 @@
 
     <!-- 更多功能面板 -->
     <div class="panel collapsed" id="experimental-panel">
-        <div class="panel-tab" id="experimental-panel-tab" title="点击展开更多功能">更多 ◂</div>
+        <div class="panel-tab" id="experimental-panel-tab" title="点击展开更多功能">◂ 更多</div>
         <div class="panel-content">
             <div class="panel-header">
                 <h3>更多功能</h3>
@@ -81,14 +93,7 @@
                         <input type="checkbox" id="rolling-mode-toggle" style="display:none" />
                     </div>
                 </div>
-                <!-- 原子选择：功能框 -->
-                <div class="feature-row">
-                    <button id="atom-settings-btn" class="feature-settings-btn" title="选择原子类型">⚙</button>
-                    <div id="atom-feature-box" class="feature-box">
-                        <span class="feature-name">原子类型</span>
-                        <span id="current-atom-label" class="feature-value">H</span>
-                    </div>
-                </div>
+                <!-- 原子选择已移至底部岛 -->
                 <div class="control-group action-buttons">
                     <button id="gesture-control-btn" title="手势控制 (渲染完成后可用)" disabled>
                         <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2"
@@ -144,56 +149,10 @@
         </div>
     </div>
 
-    <!-- 原子选择二级面板 -->
-    <div id="atom-submenu" class="submenu-panel right-side">
-        <div class="submenu-header">选择原子类型</div>
-        <div class="submenu-body">
-            <div class="control-group">
-                <label>原子</label>
-                <select id="atom-select">
-                    <option value="H" selected>H - 氢</option>
-                    <option value="He">He - 氦</option>
-                    <option value="Li">Li - 锂</option>
-                    <option value="Be">Be - 铍</option>
-                    <option value="B">B - 硼</option>
-                    <option value="C">C - 碳</option>
-                    <option value="N">N - 氮</option>
-                    <option value="O">O - 氧</option>
-                    <option value="F">F - 氟</option>
-                    <option value="Ne">Ne - 氖</option>
-                    <option value="Na">Na - 钠</option>
-                    <option value="Mg">Mg - 镁</option>
-                    <option value="Al">Al - 铝</option>
-                    <option value="Si">Si - 硅</option>
-                    <option value="P">P - 磷</option>
-                    <option value="S">S - 硫</option>
-                    <option value="Cl">Cl - 氯</option>
-                    <option value="Ar">Ar - 氩</option>
-                    <option value="K">K - 钾</option>
-                    <option value="Ca">Ca - 钙</option>
-                    <option value="Sc">Sc - 钪</option>
-                    <option value="Ti">Ti - 钛</option>
-                    <option value="V">V - 钒</option>
-                    <option value="Cr">Cr - 铬</option>
-                    <option value="Mn">Mn - 锰</option>
-                    <option value="Fe">Fe - 铁</option>
-                    <option value="Co">Co - 钴</option>
-                    <option value="Ni">Ni - 镍</option>
-                    <option value="Cu">Cu - 铜</option>
-                    <option value="Zn">Zn - 锌</option>
-                    <option value="Ga">Ga - 镓</option>
-                    <option value="Ge">Ge - 锗</option>
-                    <option value="As">As - 砷</option>
-                    <option value="Se">Se - 硒</option>
-                    <option value="Br">Br - 溴</option>
-                    <option value="Kr">Kr - 氪</option>
-                </select>
-            </div>
-            <div class="control-group">
-                <small id="atom-info" style="color: #888;">基态: 1s¹</small>
-            </div>
-        </div>
-    </div>
+    <!-- 原子选择已移至底部岛，保留隐藏的select供逻辑使用 -->
+    <select id="atom-select" style="display: none;">
+        <option value="H" selected>H - 氢</option>
+    </select>
 
     <!-- 视图面板 -->
     <div id="view-panel" class="panel collapsed">
@@ -533,13 +492,13 @@
     <div id="data-panel" class="panel">
         <!-- 内置resize手柄 - 在面板左上角 -->
         <div id="chart-resize-handle" title="拖动调整大小"></div>
-        <div class="panel-tab" id="data-panel-tab" title="点击展开数据面板">数据 ▸</div>
+        <div class="panel-tab" id="data-panel-tab" title="点击展开数据面板">◂ 数据</div>
         <div class="panel-content">
             <div class="panel-header">
                 <h3 id="data-panel-title">数据</h3>
                 <div>
                     <button id="chart-enlarge-btn" title="放大/还原图表">⤢</button>
-                    <button id="data-collapse-btn" class="collapse-btn" title="收起">◂</button>
+                    <button id="data-collapse-btn" class="collapse-btn" title="收起">▸</button>
                 </div>
             </div>
             <!-- 数据模式内容（非杂化模式显示） -->
@@ -549,10 +508,9 @@
                     <select id="plot-type-select">
                         <option value="radial">径向分布</option>
                         <option value="angular">角向分布 (θ)</option>
-                        <option value="azimuthal">角向分布 (φ)</option>
-                        <option value="potential">势能径向积分 E(r)</option>
-                        <option value="dEdr">势能贡献 dV/dr</option>
-                        <option value="localEnergy">轨道能量贡献 E(r)</option>
+                        <option value="phi">角向分布 (φ)</option>
+                        <option value="energyDensity">能量期望密度 ε·P(r)</option>
+                        <option value="energyCumulative">能量期望累计 E(R)</option>
                     </select>
                 </div>
                 <div class="control-group">

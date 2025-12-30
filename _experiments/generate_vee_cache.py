@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 """
+LEGACY / EXPERIMENTAL (retained for historical research)
+
 Static Potential Caching: Pre-calculate Vee(r) for all atoms.
 This generates a JS file with pre-computed potential curves that
 can be used by the frontend without any runtime Gamma calculations.
+
+NOTE:
+- This script is NOT the current production VeeCache generator.
+- The maintained production pipeline is: _experiments/generate_production_cache.py
 """
 import numpy as np
 from scipy.special import gamma, gammainc, gammaincc, factorial

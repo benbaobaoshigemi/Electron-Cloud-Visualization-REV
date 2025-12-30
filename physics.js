@@ -1778,11 +1778,16 @@
     slaterRadialR: core.slaterRadialR,
     estimateOrbitalRadius95: estimateOrbitalRadius95,
 
-    // === 势能积分曲线相关 ===
+
+    // === 能量期望曲线 (Eigenvalue-based) ===
 
     /**
-     * 计算解析累积轨道能量曲线 E(R) = T(R) + V_nuc(R)
-     * 使用不完全伽马函数进行解析积分，降低数值积分误差。
+     * 计算能量期望曲线 E(R) = ∫[0→R] ε·P(r) dr
+     * 
+     * 【简化方法】
+     * 使用 Koga 基组的本征值 ε 直接乘以径向概率密度 P(r)。
+     * - 能量期望密度 dE/dr = ε·P(r)
+     * - 能量期望累计 E(R) = ∫[0→R] ε·P(r) dr → ε (当 R→∞)
      * 
      * @param {number} n - 主量子数
      * @param {number} l - 角量子数
@@ -1790,91 +1795,27 @@
      * @param {string} atomType - 原子类型
      * @param {number|Array<number>|Float32Array|Float64Array} rMaxOrPoints - 最大半径或采样点数组
      * @param {number} steps - 采样步数 (当rMaxOrPoints为数字时有效)
-     * @returns {Object} { r: [], E: [], T: [], V: [] }
+     * @returns {Object} { r: [], E: [], dEdr: [], epsilon: number }
      */
     calculateCumulativeOrbitalEnergy: function (n, l, Z, atomType, rMaxOrPoints, steps = 500) {
-      // ==================== 氢原子解析解分支 ====================
-      // 对于氢原子(H)，使用精确的解析径向波函数，而不是 Slater 基组
+      // 1. 获取 Koga 本征值 ε
+      const orbitalKey = getOrbitalKey(n, l);
+      let epsilon;
       if (!atomType || atomType === 'H') {
-        let rValues;
-        if (Array.isArray(rMaxOrPoints) || (rMaxOrPoints instanceof Float32Array) || (rMaxOrPoints instanceof Float64Array)) {
-          rValues = rMaxOrPoints;
-          steps = rValues.length;
-        } else {
-          const rMax = rMaxOrPoints;
-          const dr = rMax / steps;
-          rValues = new Float32Array(steps);
-          for (let s = 0; s < steps; s++) {
-            rValues[s] = (s + 1) * dr;
-          }
-        }
-
-        const eValues = new Float32Array(steps);
-        const dEdrValues = new Float32Array(steps);
-        const dVnucDrValues = new Float32Array(steps); // 【新增】
-        const veeValues = new Float32Array(steps);     // 【新增】
-        const vValues = new Float32Array(steps);       // 【新增】
-
-        // 氢原子轨道能量的精确解析值: ε = -Z²/(2n²) Hartree
-        const epsilon = -Z * Z / (2 * n * n);
-
-        // 对于氢原子，使用 CDF 方法计算累积能量
-        // E(R) = ε × P(r ≤ R)，其中 P(r ≤ R) 是累积概率
-        // dE/dr = ε × P(r) = ε × |R_nl(r)|² × r²
-        let currentV = 0;
-        for (let s = 0; s < steps; s++) {
-          const R = rValues[s];
-          const prevR = s > 0 ? rValues[s - 1] : 0;
-          const dr = R - prevR;
-
-          // 计算累积概率 P(r ≤ R) 使用数值积分近似
-          const dr_fine = R / 100;
-          let cumulativeProb = 0;
-          for (let i = 0; i < 100; i++) {
-            const r = (i + 0.5) * dr_fine;
-            const Rnl = radialR(n, l, r, Z); // 解析径向波函数
-            const pdf = r * r * Rnl * Rnl;
-            cumulativeProb += pdf * dr_fine;
-          }
-
-          // E(R) = ε × CDF(R)
-          eValues[s] = epsilon * cumulativeProb;
-
-          // dE/dr = ε × PDF(r) = ε × r² |R_nl(r)|²
-          const Rnl_R = radialR(n, l, R, Z);
-          const pdf_R = R * R * Rnl_R * Rnl_R;
-          dEdrValues[s] = epsilon * pdf_R;
-
-          // 对于氢原子，Vee 为 0，dVnuc/dr 等于势能密度
-          // 势能密度 = P(r) * (-Z/r) = -Z * r * |R_nl(r)|²
-          const dVnuc_dr = -Z * R * Rnl_R * Rnl_R;
-          dVnucDrValues[s] = dVnuc_dr;
-          veeValues[s] = 0;
-
-          // 累积势能 V(R)
-          const prevDVnuc_dr = s > 0 ? dVnucDrValues[s - 1] : 0;
-          currentV += 0.5 * (dVnuc_dr + prevDVnuc_dr) * dr;
-          vValues[s] = currentV;
-        }
-
-        return { r: rValues, E: eValues, T: null, V: vValues, dEdr: dVnucDrValues, dVnucDr: dVnucDrValues, Vee: veeValues };
+        // 氢原子解析解: ε = -Z²/(2n²) Hartree
+        epsilon = -Z * Z / (2 * n * n);
+      } else {
+        const atomData = globalScope.SlaterBasis[atomType];
+        const energies = atomData?.energies;
+        epsilon = energies?.[orbitalKey] ?? -0.5;
       }
 
-      // ==================== 非氢原子：使用 Slater 基组 ====================
-      const atomData = globalScope.SlaterBasis[atomType];
-      if (!atomData) return { r: [], E: [] };
-      const orbitalKey = getOrbitalKey(n, l);
-      const basis = atomData.orbitals[orbitalKey];
-      if (!basis) return { r: [], E: [] };
-
+      // 2. 准备 r 网格
       let rValues;
-      // Handle rMaxOrPoints: if array, use it; if number, generate grid
       if (Array.isArray(rMaxOrPoints) || (rMaxOrPoints instanceof Float32Array) || (rMaxOrPoints instanceof Float64Array)) {
         rValues = rMaxOrPoints;
         steps = rValues.length;
       } else {
-        // Generate linear grid (Restored for backward compatibility with Histogram logic)
-        // Note: Unless caller specifically wants log, linear is safer for mapping to linear histograms
         const rMax = rMaxOrPoints;
         const dr = rMax / steps;
         rValues = new Float32Array(steps);
@@ -1883,125 +1824,35 @@
         }
       }
 
-      const eValues = new Float32Array(steps); // Total E(R)
-      const tValues = new Float32Array(steps); // Kinetic T(R)
-      const vValues = new Float32Array(steps); // Potential V(R) = V_nuc + V_ee
-      const dEdrValues = new Float32Array(steps); // dE/dr (Density)
-      const dVnucDrValues = new Float32Array(steps); // Nuclear-only derivative for stability
-      const veeValues = new Float32Array(steps); // 【新增】电子-电子排斥势能 Vee(r)
+      const eValues = new Float32Array(steps);      // 累积能量期望 E(R)
+      const dEdrValues = new Float32Array(steps);   // 能量期望密度 ε·P(r)
 
-      // Check if we have cached Vee data
-      let veeCache = null;
-      let veeCacheGrid = null;
-      if (globalScope.VeeCache && globalScope.VeeCache.atoms[atomType]) {
-        const atomVee = globalScope.VeeCache.atoms[atomType];
-        if (atomVee[orbitalKey]) {
-          veeCache = atomVee[orbitalKey];
-          veeCacheGrid = globalScope.VeeCache.r_grid;
-        }
-      }
-
-      // Precompute basis terms
-      const terms = basis.map(term => {
-        const ni = term.nStar;
-        const zi = term.zeta;
-        const ci = term.coeff;
-        const Ni = Math.pow(2 * zi, ni) * Math.sqrt(2 * zi / factorial(2 * ni));
-        return { ni, zi, ci, Ni };
-      });
-
-      // Internal Helper for Vee Interpolation
-      const _getVeeInternal = (r) => {
-        if (!veeCache || !veeCacheGrid) return 0;
-        const grid = veeCacheGrid;
-        const values = veeCache;
-        const n = grid.length;
-
-        // Clamp r to grid range
-        if (r <= grid[0]) return values[0];
-        if (r >= grid[n - 1]) {
-          // Physical asymptote: Vee(r) ~ A / r at large r.
-          // Use last cached point to estimate A and avoid constant-tail artifacts.
-          const rMax = grid[n - 1];
-          const vMax = values[n - 1];
-          return vMax * (rMax / r);
-        }
-
-        // Binary search for interval
-        let lo = 0, hi = n - 1;
-        while (hi - lo > 1) {
-          const mid = (lo + hi) >> 1;
-          if (grid[mid] <= r) lo = mid;
-          else hi = mid;
-        }
-
-        // Linear interpolation (fast, sufficient for dense grid)
-        const t = (r - grid[lo]) / (grid[hi] - grid[lo]);
-        return values[lo] * (1 - t) + values[hi] * t;
-      };
-
-      for (let s = 0; s < steps; s++) {
-        const R = rValues[s];
-        let V_nuc_R = 0;
-        let dEdr_val = 0;
-
-        for (let i = 0; i < terms.length; i++) {
-          const ti = terms[i];
-          for (let j = 0; j < terms.length; j++) {
-            const tj = terms[j];
-            const alpha = ti.zi + tj.zi;
-            const pref = ti.ci * tj.ci * ti.Ni * tj.Ni;
-
-            // Nuclear potential: V_nuc = -Z ∫ψ*(1/r)ψ r² dr
-            const v_integral = radialPowerExpIntegral(ti.ni + tj.ni - 1, alpha, R);
-            V_nuc_R += -Z * pref * v_integral;
-
-            // Integrand contribution to dV/dr
-            const dv_integrand = -Z * pref * Math.pow(R, ti.ni + tj.ni - 1) * Math.exp(-alpha * R);
-            dEdr_val += dv_integrand;
-            dVnucDrValues[s] += dv_integrand;
-
-            // NOTE: Kinetic energy T is intentionally omitted to avoid Cusp artifact
-          }
-        }
-
-        // Electron-electron repulsion from cache
-        const Vee_pot = _getVeeInternal(R);
-        veeValues[s] = Vee_pot;  // 【新增】保存Vee值
-
-        // Calculate radial PDF P(R) for Vee scaling
-        let sumPDF = 0;
-        for (let i = 0; i < terms.length; i++) {
-          const ti = terms[i];
-          for (let j = 0; j < terms.length; j++) {
-            const tj = terms[j];
-            const pref = ti.ci * tj.ci * ti.Ni * tj.Ni;
-            sumPDF += pref * Math.pow(R, ti.ni + tj.ni) * Math.exp(-(ti.zi + tj.zi) * R);
-          }
-        }
-
-        // Energy Density at R: dV/dr = dV_nuc/dr + P(R)*Vee_pot (no kinetic energy)
-        dEdr_val += sumPDF * Vee_pot;
-        dEdrValues[s] = dEdr_val;
-
-        vValues[s] = V_nuc_R;
-        eValues[s] = V_nuc_R; // Only potential energy, no kinetic
-      }
-
-      // Compute cumulative E using trapezoidal sum of dEdr for consistency
-      // This ensures E and dEdr match exactly
-      let currentE = 0;
+      // 3. 计算 ε·P(r) 和累积积分
+      let cumulative = 0;
       for (let s = 0; s < steps; s++) {
         const R = rValues[s];
         const prevR = s > 0 ? rValues[s - 1] : 0;
         const dr = R - prevR;
-        const currentDensity = dEdrValues[s];
+
+        // P(r) = r² |R_nl(r)|²
+        let pdf;
+        if (!atomType || atomType === 'H') {
+          const Rnl = radialR(n, l, R, Z);
+          pdf = R * R * Rnl * Rnl;
+        } else {
+          pdf = core.radialPDF(n, l, R, Z, A0, atomType);
+        }
+
+        // dE/dr = ε·P(r)
+        dEdrValues[s] = epsilon * pdf;
+
+        // 梯形积分: E(R) = ∫[0→R] ε·P(r) dr
         const prevDensity = s > 0 ? dEdrValues[s - 1] : 0;
-        currentE += 0.5 * (currentDensity + prevDensity) * dr;
-        eValues[s] = currentE;
+        cumulative += 0.5 * (dEdrValues[s] + prevDensity) * dr;
+        eValues[s] = cumulative;
       }
 
-      return { r: rValues, E: eValues, T: null, V: vValues, dEdr: dEdrValues, dVnucDr: dVnucDrValues, Vee: veeValues };
+      return { r: rValues, E: eValues, dEdr: dEdrValues, epsilon };
     },
 
     /**

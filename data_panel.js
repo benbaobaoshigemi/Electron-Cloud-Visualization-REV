@@ -850,8 +850,8 @@
     chart.update('none');
   }
 
-  // 渲染径向能量密度图：ε·P(r) 与 (ε - V_eff(r))·P(r)
-  function renderChartLocalEnergy(theory) {
+  // 渲染能量期望密度图 ε·P(r) - 样式照抄径向分布
+  function renderChartEnergyDensity(hist, theory) {
     const ctx = document.getElementById('probability-chart');
     if (!ctx || !window.Chart) return;
 
@@ -864,52 +864,54 @@
     const chart = ensureChart();
     if (!chart) return;
 
-    const datasets = [];
-    let labels = [];
+    // 直方图中心作为 x 轴
+    const centers = (theory && theory.centers) || (() => {
+      const n = hist.counts.length;
+      const a = new Array(n);
+      for (let i = 0; i < n; i++) a[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
+      return a;
+    })();
 
-    // 准备 X 轴标签
-    if (theory && theory.centers && theory.centers.length > 0) {
-      labels = theory.centers.map(r => r.toFixed(2));
-    }
+    // 动态调整显示精度
+    const maxValue = Math.max(...centers);
+    const decimalPlaces = maxValue > 100 ? 1 : (maxValue > 10 ? 2 : 3);
 
-    // 轨道能量密度 ε·P(r) - 白色实线（单位：Hartree/a₀）
-    if (theory && theory.epsDensity && theory.epsDensity.length > 0) {
+    chart.data.labels = centers.map(v => v.toFixed(decimalPlaces));
+    const datasets = [
+      {
+        label: '能量期望密度 ε·P(r) (采样)',
+        data: Array.from(hist.counts),
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        borderColor: 'rgba(255,255,255,0.95)',
+        borderWidth: 0,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+        borderRadius: 2,
+        borderSkipped: false,
+        order: 10,
+      },
+    ];
+
+    // 理论曲线
+    if (theory && theory.values && theory.values.length) {
       datasets.push({
         type: 'line',
-        label: '能量密度 ε·P(r)',
-        data: theory.epsDensity.map((y, i) => ({ x: i, y })),
+        label: '理论曲线 ε·P(r)',
+        data: theory.values.map((y, i) => ({ x: i, y })),
         borderColor: 'rgba(255, 255, 255, 0.95)',
         backgroundColor: 'transparent',
         pointRadius: 0,
         borderWidth: 2.5,
         yAxisID: 'y',
         tension: 0.2,
-        order: 10,
-      });
-    }
-
-    // 局域动能密度 (ε - V_eff)·P(r) - 白色虚线（单位：Hartree/a₀）
-    if (theory && theory.Tdensity && theory.Tdensity.length > 0) {
-      datasets.push({
-        type: 'line',
-        label: '动能密度 (ε - V_eff)·P(r)',
-        data: theory.Tdensity.map((y, i) => ({ x: i, y })),
-        borderColor: 'rgba(255, 255, 255, 0.9)',
-        backgroundColor: 'transparent',
-        pointRadius: 0,
-        borderWidth: 2,
-        yAxisID: 'y',
-        borderDash: [4, 4],
-        tension: 0.2,
-        order: 0,
+        order: 5,
       });
     }
 
     applyThinLineStyle(datasets);
-    chart.data.labels = labels;
     chart.data.datasets = datasets;
 
-    // 配置坐标轴 - 单一 Y 轴
+    // 坐标轴配置
     if (chart.options.scales) {
       if (chart.options.scales.x) {
         chart.options.scales.x.title = {
@@ -918,22 +920,111 @@
           color: '#d0d0d0',
           font: { size: 12, weight: '500' }
         };
-        chart.options.scales.x.ticks.autoSkip = true;
-        chart.options.scales.x.ticks.maxTicksLimit = 15;
       }
       if (chart.options.scales.y) {
         chart.options.scales.y.title = {
           display: true,
-          text: '径向能量密度 (Hartree/a₀)',
+          text: '能量密度 ε·P(r) (Hartree/a₀)',
           color: '#d0d0d0',
           font: { size: 12, weight: '500' }
         };
       }
-      // 移除 y2 轴，所有数据共用同一尺度
-      delete chart.options.scales.y2;
     }
 
     chart.update('none');
+  }
+
+  // 渲染能量期望累计图 E(R) = ∫ε·P(r)dr - 样式照抄径向分布
+  function renderChartEnergyCumulative(hist, theory) {
+    const ctx = document.getElementById('probability-chart');
+    if (!ctx || !window.Chart) return;
+
+    // 销毁非柱状图
+    if (state.chart && state.chart.config && state.chart.config.type !== 'bar') {
+      try { state.chart.destroy(); } catch (e) { }
+      state.chart = null;
+    }
+
+    const chart = ensureChart();
+    if (!chart) return;
+
+    // 直方图中心作为 x 轴
+    const centers = (theory && theory.centers) || (() => {
+      const n = hist.counts.length;
+      const a = new Array(n);
+      for (let i = 0; i < n; i++) a[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
+      return a;
+    })();
+
+    // 动态调整显示精度
+    const maxValue = Math.max(...centers);
+    const decimalPlaces = maxValue > 100 ? 1 : (maxValue > 10 ? 2 : 3);
+
+    chart.data.labels = centers.map(v => v.toFixed(decimalPlaces));
+    const datasets = [
+      {
+        label: '能量期望累计 E(R) (采样)',
+        data: Array.from(hist.counts),
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        borderColor: 'rgba(255,255,255,0.95)',
+        borderWidth: 0,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+        borderRadius: 2,
+        borderSkipped: false,
+        order: 10,
+      },
+    ];
+
+    // 理论曲线
+    if (theory && theory.values && theory.values.length) {
+      datasets.push({
+        type: 'line',
+        label: '理论曲线 E(R) → ε',
+        data: theory.values.map((y, i) => ({ x: i, y })),
+        borderColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        borderWidth: 2.5,
+        yAxisID: 'y',
+        tension: 0.2,
+        order: 5,
+      });
+    }
+
+    applyThinLineStyle(datasets);
+    chart.data.datasets = datasets;
+
+    // 坐标轴配置
+    if (chart.options.scales) {
+      if (chart.options.scales.x) {
+        chart.options.scales.x.title = {
+          display: true,
+          text: '径向距离 r (a₀)',
+          color: '#d0d0d0',
+          font: { size: 12, weight: '500' }
+        };
+      }
+      if (chart.options.scales.y) {
+        chart.options.scales.y.title = {
+          display: true,
+          text: '累计能量 E(R) (Hartree)',
+          color: '#d0d0d0',
+          font: { size: 12, weight: '500' }
+        };
+      }
+    }
+
+    chart.update('none');
+  }
+
+  // 保留旧函数名以兼容
+  function renderChartEnergy(theory) {
+    // 兼容旧调用：使用 energyDensity
+    renderChartEnergyDensity({ counts: theory.dEdr || [], edges: [] }, theory);
+  }
+  function renderChartLocalEnergy(theory) {
+    renderChartEnergy(theory);
   }
 
 
@@ -1045,7 +1136,8 @@
 
   // 对比模式专用：渲染散点图
   function renderChartCompare(orbitalDataMap, type) {
-    console.log('renderChartCompare 被调用，类型:', type); // 调试信息
+    if (typeof type === 'string') type = type.trim(); // 自动清理空格
+    console.log('renderChartCompare 被调用，类型:', type, 'orbitalDataMap:', orbitalDataMap ? Object.keys(orbitalDataMap).length : 0); // 调试信息
     const ctx = document.getElementById('probability-chart');
     if (!ctx || !window.Chart || !window.Hydrogen) {
       console.log('图表渲染失败：canvas、Chart.js或Hydrogen不可用'); // 调试信息
@@ -1119,8 +1211,9 @@
               type: 'linear',
               title: {
                 display: true,
-                text: (type === 'radial' || type === 'angular' || type === 'phi') ? '径向距离 (a₀)' :
-                  (type === 'potential' || type === 'dEdr' || type === 'localEnergy') ? '距离 r (a₀)' : '角度 (弧度)',
+                text: (type === 'radial' || type === 'energyDensity' || type === 'energyCumulative') ? '径向距离 r (a₀)' :
+                  (type === 'angular' || type === 'phi') ? '角度 (弧度)' :
+                    (type === 'potential' || type === 'dEdr' || type === 'localEnergy') ? '距离 r (a₀)' : '角度 (弧度)',
                 color: '#d0d0d0',
                 font: { size: 12, weight: '500' }
               },
@@ -1143,7 +1236,9 @@
                 text: type === 'potential' ? '累积势能 V(r) (Hartree)' :
                   type === 'dEdr' ? '势能密度 dV/dr (Hartree/a₀)' :
                     type === 'localEnergy' ? '径向能量密度 (Hartree/a₀)' :
-                      '概率密度',
+                      type === 'energyDensity' ? '能量密度 ε·P(r) (Hartree/a₀)' :
+                        type === 'energyCumulative' ? '累计能量 E(R) (Hartree)' :
+                          '概率密度',
                 color: '#d0d0d0',
                 font: { size: 12, weight: '500' }
               },
@@ -1218,7 +1313,7 @@
     for (const [orbitalKey, samples] of Object.entries(orbitalDataMap || {})) {
       if (!samples || samples.length === 0) continue;
       totalSamples += samples.length;
-      if (type === 'radial' || type === 'potential' || type === 'dEdr' || type === 'localEnergy') {
+      if (type === 'radial' || type === 'potential' || type === 'dEdr' || type === 'localEnergy' || type === 'energyDensity' || type === 'energyCumulative') {
         // 【性能修复】使用循环替代Math.max(...array)，避免大数组栈溢出
         for (let i = 0; i < samples.length; i++) {
           if (samples[i].r > maxDistance) {
@@ -1236,7 +1331,7 @@
 
     // 【关键修复】若尚未采样（maxDistance=0），仍要在比照模式显示理论曲线
     // 使用 estimateOrbitalRadius95 为每个 slot 估算一个可用的 r 范围
-    if ((type === 'radial' || type === 'potential' || type === 'dEdr' || type === 'localEnergy') && maxDistance <= 0) {
+    if ((type === 'radial' || type === 'potential' || type === 'dEdr' || type === 'localEnergy' || type === 'energyDensity' || type === 'energyCumulative') && maxDistance <= 0) {
       const estimateFn = window.Hydrogen?.estimateOrbitalRadius95;
       if (estimateFn && activeSlots && activeSlots.length > 0) {
         for (const slot of activeSlots) {
@@ -1256,6 +1351,7 @@
     // 按照选择顺序处理轨道数据
     for (let colorIndex = 0; colorIndex < activeSlots.length; colorIndex++) {
       const slotConfig = activeSlots[colorIndex];
+      const atomType = slotConfig.atom || 'H';
       // 构建与sampling.js中相同的键
       const sampleKey = `${slotConfig.atom}_${slotConfig.orbital}_slot${slotConfig.slotIndex}`;
       const samples = orbitalDataMap[sampleKey];
@@ -1310,8 +1406,8 @@
         for (let i = 0; i < angularBins; i++) {
           centers[i] = 0.5 * (hist.edges[i] + hist.edges[i + 1]);
         }
-      } else if (type === 'potential' || type === 'dEdr' || type === 'localEnergy') {
-        // 能量图仅显示理论曲线：仍复用采样决定的 r 网格范围，但不生成采样能量曲线
+      } else if (type === 'potential' || type === 'dEdr' || type === 'localEnergy' || type === 'energyDensity' || type === 'energyCumulative') {
+        // 能量图：复用采样决定的 r 网格范围
         const dynamicRmax = Math.max(1, maxDistance * 1.08);
         const baseBins = 240;
         const sampleDensity = totalSamples / Math.max(1, dynamicRmax);
@@ -1354,16 +1450,63 @@
       // 将颜色值从[0,1]范围转换为[0,255]范围
       const colorValues = color.value.map(v => Math.round(v * 255));
 
-      // 采样曲线：仅用于概率分布图；能量图（potential/dEdr/localEnergy）不显示采样曲线
+      // 采样曲线：用于概率分布图和能量密度/累计图
       if (hasSamples && type !== 'potential' && type !== 'dEdr' && type !== 'localEnergy') {
-        const data = centers.map((center, index) => ({
-          x: center,
-          y: hist.counts[index]
-        })).sort((a, b) => a.x - b.x);
+        let samplingData;
+
+        if (type === 'energyDensity' || type === 'energyCumulative') {
+          // 能量图：采样数据 × ε
+          const baseKey = (slotConfig.orbital || '').replace(/[xyz]/g, '').replace(/_.*/, '');
+          const energies = window.SlaterBasis && window.SlaterBasis[atomType]
+            ? window.SlaterBasis[atomType].energies
+            : null;
+          const epsilon = (energies && energies[baseKey] !== undefined) ? energies[baseKey] : -0.5;
+          const dr = (hist.edges[1] - hist.edges[0]) || 0.01;
+
+          if (type === 'energyDensity') {
+            samplingData = centers.map((center, index) => ({
+              x: center,
+              y: hist.counts[index] * epsilon
+            }));
+          } else if (type === 'energyCumulative') {
+            // energyCumulative: 累积求和
+            let cumSum = 0;
+            samplingData = centers.map((center, index) => {
+              cumSum += hist.counts[index] * epsilon * dr;
+              return { x: center, y: cumSum };
+            });
+          } else {
+            // 默认 radial 或 fallback
+            // 【严格修正】只有明确是 radial 时才按 radial 处理，避免 fallback 掩盖错误
+            if (type === 'radial') {
+              samplingData = centers.map((center, index) => ({
+                x: center,
+                y: hist.counts[index]
+              }));
+            } else {
+              console.error('renderChartCompare: 未知或未实现的图表类型用于采样曲线:', type);
+              samplingData = [];
+            }
+          }
+        } else {
+          // 普通概率分布图 (radial) - 这里的 else 应该只针对 radial
+          if (type === 'radial') {
+            samplingData = centers.map((center, index) => ({
+              x: center,
+              y: hist.counts[index]
+            }));
+          } else {
+            // 理论上 potential/dEdr/localEnergy 已经被 excluded，不应该进这里
+            // 但为了安全
+            samplingData = [];
+          }
+        }
+
+        samplingData.sort((a, b) => a.x - b.x);
 
         datasets.push({
           label: displayName,
-          data: data,
+          data: samplingData,
           borderColor: `rgba(${colorValues.join(',')}, 1.0)`,
           backgroundColor: `rgba(${colorValues.join(',')}, 0.1)`,
           borderWidth: 1.5,
@@ -1377,7 +1520,7 @@
       // 【新增】为该轨道添加理论曲线（虚线）
       const orbitalParams = window.Hydrogen?.orbitalParamsFromKey(slotConfig.orbital);
       if (orbitalParams) {
-        const atomType = slotConfig.atom || 'H';
+        // const atomType = slotConfig.atom || 'H'; // Moved to top
         const atomZ = window.SlaterBasis && window.SlaterBasis[atomType] ? window.SlaterBasis[atomType].Z : 1;
         let theoryData;
 
@@ -1404,9 +1547,23 @@
             x: r,
             y: (res && res.dEdr && res.dEdr.length > i) ? res.dEdr[i] : 0
           }));
+        } else if (type === 'energyDensity') {
+          // 能量密度理论曲线：使用 calculateCumulativeOrbitalEnergy 返回的 dEdr（即 ε·P(r)）
+          const res = window.Hydrogen.calculateCumulativeOrbitalEnergy(orbitalParams.n, orbitalParams.l, atomZ, atomType, centers);
+          theoryData = centers.map((r, i) => ({
+            x: r,
+            y: (res && res.dEdr && res.dEdr.length > i) ? res.dEdr[i] : 0
+          }));
+        } else if (type === 'energyCumulative') {
+          // 能量累计理论曲线：使用 calculateCumulativeOrbitalEnergy 返回的 E（即累积能量）
+          const res = window.Hydrogen.calculateCumulativeOrbitalEnergy(orbitalParams.n, orbitalParams.l, atomZ, atomType, centers);
+          theoryData = centers.map((r, i) => ({
+            x: r,
+            y: (res && res.E && res.E.length > i) ? res.E[i] : 0
+          }));
         }
         else if (type === 'localEnergy') {
-          // compare-localEnergy：全部为理论诊断量（无采样曲线）
+          // compare-localEnergy：全部为理论派生量（无采样曲线）
           const baseKey = (slotConfig.orbital || '').replace(/[xyz]/g, '').replace(/_.*/, '');
           const energies = window.SlaterBasis && window.SlaterBasis[atomType]
             ? window.SlaterBasis[atomType].energies
@@ -1503,19 +1660,31 @@
     }
   }
 
+  // 强制销毁并重建：用于“切换模式”时避免旧图表类型/样式残留
+  function destroyChart() {
+    if (state.chart) {
+      try { state.chart.destroy(); } catch (e) { console.warn('图表销毁失败:', e); }
+      state.chart = null;
+    }
+  }
+
   // 供外部调用的 API
   window.DataPanel = {
     init,
-    reset, // 暴露重置方法
+    reset,
+    destroyChart,
     renderChartRadial,
     renderChartAngular,
-    renderChartPhi, // 新增φ角向分布API
-    renderChartPotential, // 新增势能积分曲线API
-    renderChartDEdr, // 新增势能密度dE/dr API
-    renderChartDEdrLog, // dE/dr 双对数图 API
-    renderChartLocalEnergy, // 🆕 局域能量图 API
-    renderChartCompare, // 新增对比模式API
-    state, // 暴露状态对象
+    renderChartPhi,
+    renderChartEnergyDensity,
+    renderChartEnergyCumulative,
+    renderChartEnergy, // 兼容
+    renderChartPotential,
+    renderChartDEdr,
+    renderChartDEdrLog,
+    renderChartLocalEnergy,
+    renderChartCompare,
+    state,
   };
 
   // 自动初始化

@@ -2,7 +2,7 @@
 """
 FINAL validation script with RIGOROUSLY DERIVED COEFFICIENTS.
 Replaces heuristics with exact rational scaling factors derived from
-first-principles determinant averaging.
+theoretically grounded determinant averaging.
 """
 import numpy as np
 from scipy.integrate import cumulative_trapezoid

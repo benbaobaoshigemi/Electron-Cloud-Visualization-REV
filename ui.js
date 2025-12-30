@@ -139,7 +139,10 @@ window.ElectronCloud.UI.init = function () {
                 window.ElectronCloud.UI.updateCustomListVisuals();
             }
 
-            if (window.DataPanel && window.DataPanel.reset) {
+            // 【强制销毁重建】重置/切换场景下避免旧图表类型残留
+            if (window.DataPanel && window.DataPanel.destroyChart) {
+                window.DataPanel.destroyChart();
+            } else if (window.DataPanel && window.DataPanel.reset) {
                 window.DataPanel.reset();
             }
             // 更新模式切换栏状态
@@ -751,14 +754,23 @@ window.ElectronCloud.UI.init = function () {
         phaseToggle.addEventListener('change', window.ElectronCloud.UI.onPhaseToggle);
     }
 
-    // ==================== 原子选择器 ====================
-    const atomSettingsBtn = document.getElementById('atom-settings-btn');
-    const atomSubmenu = document.getElementById('atom-submenu');
-    const atomFeatureBox = document.getElementById('atom-feature-box');
+    // ==================== 底部原子选择器岛 ====================
+    initAtomSelectorIsland();
 
-    if (atomSettingsBtn && atomSubmenu) {
-        // 设置按钮点击：展开/收起子面板
-        atomSettingsBtn.addEventListener('click', (e) => {
+    // 初始化底部原子选择器岛
+    function initAtomSelectorIsland() {
+        const island = document.getElementById('atom-selector-island');
+        const trigger = document.getElementById('atom-selector-trigger');
+        const dropdown = document.getElementById('atom-selector-dropdown');
+        const display = document.getElementById('current-atom-display');
+
+        if (!island || !trigger || !dropdown) return;
+
+        // 填充原子选项
+        populateAtomSelectorIsland();
+
+        // 点击触发器切换下拉面板
+        trigger.addEventListener('click', (e) => {
             e.stopPropagation();
             const state = window.ElectronCloud.state;
 
@@ -767,70 +779,116 @@ window.ElectronCloud.UI.init = function () {
                 return;
             }
 
-            // 切换子面板显示
-            const isVisible = atomSubmenu.classList.contains('visible');
-            closeAllSubmenus();
-            if (!isVisible) {
-                // 获取实验面板的位置（与闪烁模式相同的定位逻辑）
-                const experimentalPanel = document.getElementById('experimental-panel');
-                const panelRect = experimentalPanel ? experimentalPanel.getBoundingClientRect() : null;
-                const btnRect = atomSettingsBtn.getBoundingClientRect();
+            island.classList.toggle('open');
+        });
 
-                // 二级菜单定位在面板左侧，完全不重叠
-                atomSubmenu.style.top = btnRect.top + 'px';
-                atomSubmenu.style.right = 'auto';
-                atomSubmenu.style.left = 'auto';
-                if (panelRect) {
-                    // 定位在面板左边缘的左侧，留出10px间距
-                    atomSubmenu.style.right = (window.innerWidth - panelRect.left + 10) + 'px';
-                } else {
-                    atomSubmenu.style.right = (window.innerWidth - btnRect.left + 10) + 'px';
-                }
-                atomSubmenu.classList.add('visible');
-                atomSettingsBtn.classList.add('active');
+        // 点击其他位置关闭下拉面板
+        document.addEventListener('click', (e) => {
+            if (!island.contains(e.target)) {
+                island.classList.remove('open');
             }
         });
     }
 
-    // 原子下拉选择框事件
-    const atomSelect = document.getElementById('atom-select');
-    if (atomSelect) {
-        atomSelect.addEventListener('change', function () {
-            const atomSymbol = this.value;
-            const state = window.ElectronCloud.state;
+    // 填充原子选择器岛的选项
+    function populateAtomSelectorIsland() {
+        const dropdown = document.getElementById('atom-selector-dropdown');
+        const hiddenSelect = document.getElementById('atom-select');
+        if (!dropdown || !window.SlaterBasis) return;
 
-            // 渲染中或已完成时禁用
-            if (state.isDrawing || state.pointCount > 0) {
-                this.value = state.currentAtom; // 恢复原值
-                return;
+        // 元素中文名称映射
+        const cnNames = {
+            'H': '氢', 'He': '氦', 'Li': '锂', 'Be': '铍', 'B': '硼',
+            'C': '碳', 'N': '氮', 'O': '氧', 'F': '氟', 'Ne': '氖',
+            'Na': '钠', 'Mg': '镁', 'Al': '铝', 'Si': '硅', 'P': '磷',
+            'S': '硫', 'Cl': '氯', 'Ar': '氩', 'K': '钾', 'Ca': '钙',
+            'Sc': '钪', 'Ti': '钛', 'V': '钒', 'Cr': '铬', 'Mn': '锰',
+            'Fe': '铁', 'Co': '钴', 'Ni': '镍', 'Cu': '铜', 'Zn': '锌',
+            'Ga': '镓', 'Ge': '锗', 'As': '砷', 'Se': '硒', 'Br': '溴',
+            'Kr': '氪', 'Rb': '铷', 'Sr': '锶', 'Y': '钇', 'Zr': '锆',
+            'Nb': '铌', 'Mo': '钼', 'Tc': '锝', 'Ru': '钌', 'Rh': '铑',
+            'Pd': '钯', 'Ag': '银', 'Cd': '镉', 'In': '铟', 'Sn': '锡',
+            'Sb': '锑', 'Te': '碲', 'I': '碘', 'Xe': '氙'
+        };
+
+        // 清空
+        dropdown.innerHTML = '';
+        if (hiddenSelect) hiddenSelect.innerHTML = '';
+
+        // 获取并排序原子列表
+        const atoms = Object.entries(window.SlaterBasis)
+            .filter(([key, val]) => val.Z)
+            .sort((a, b) => a[1].Z - b[1].Z);
+
+        atoms.forEach(([symbol, data]) => {
+            const cnName = cnNames[symbol] || data.name || '';
+
+            // 创建岛下拉选项
+            const option = document.createElement('div');
+            option.className = 'atom-selector-option' + (symbol === 'H' ? ' selected' : '');
+            option.dataset.value = symbol;
+            option.textContent = `${symbol} - ${cnName}`;
+            option.addEventListener('click', () => selectAtomFromIsland(symbol));
+            dropdown.appendChild(option);
+
+            // 同步到隐藏select
+            if (hiddenSelect) {
+                const opt = document.createElement('option');
+                opt.value = symbol;
+                opt.textContent = `${symbol} - ${cnName}`;
+                if (symbol === 'H') opt.selected = true;
+                hiddenSelect.appendChild(opt);
             }
-
-            // 更新显示
-            const currentLabel = document.getElementById('current-atom-label');
-            if (currentLabel) currentLabel.textContent = atomSymbol;
-
-            // 更新状态
-            state.currentAtom = atomSymbol;
-
-            // 更新原子信息显示
-            const atomInfo = document.getElementById('atom-info');
-            let groundState = '1s¹'; // 默认H
-
-            if (atomSymbol === 'H') {
-                groundState = '1s¹';
-            } else if (window.SlaterBasis && window.SlaterBasis[atomSymbol]) {
-                const atom = window.SlaterBasis[atomSymbol];
-                groundState = atom.groundState || '';
-            }
-            if (atomInfo) atomInfo.textContent = `基态: ${groundState}`;
-
-            // 更新轨道选择器为该原子可用的轨道
-            if (window.ElectronCloud.UI.updateOrbitalSelector) {
-                window.ElectronCloud.UI.updateOrbitalSelector(atomSymbol);
-            }
-            console.log('选择原子:', atomSymbol);
         });
     }
+
+    // 从岛选择原子
+    function selectAtomFromIsland(atomSymbol) {
+        const state = window.ElectronCloud.state;
+        const island = document.getElementById('atom-selector-island');
+        const dropdown = document.getElementById('atom-selector-dropdown');
+        const display = document.getElementById('current-atom-display');
+        const hiddenSelect = document.getElementById('atom-select');
+
+        // 渲染中或已完成时禁用
+        if (state.isDrawing || state.pointCount > 0) {
+            return;
+        }
+
+        // 更新状态
+        state.currentAtom = atomSymbol;
+
+        // 更新显示 - 显示完整的"原子符号 - 中文名"格式
+        if (display && dropdown) {
+            const selectedOption = dropdown.querySelector(`.atom-selector-option[data-value="${atomSymbol}"]`);
+            display.textContent = selectedOption ? selectedOption.textContent : atomSymbol;
+        }
+
+        // 更新选项样式
+        if (dropdown) {
+            dropdown.querySelectorAll('.atom-selector-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.value === atomSymbol);
+            });
+        }
+
+        // 同步到隐藏select
+        if (hiddenSelect) {
+            hiddenSelect.value = atomSymbol;
+        }
+
+        // 关闭下拉面板
+        if (island) island.classList.remove('open');
+
+        // 更新轨道选择器
+        if (window.ElectronCloud.UI.updateOrbitalSelector) {
+            window.ElectronCloud.UI.updateOrbitalSelector(atomSymbol);
+        }
+
+        console.log('选择原子:', atomSymbol);
+    }
+
+    // 暴露给外部调用
+    window.ElectronCloud.UI.selectAtomFromIsland = selectAtomFromIsland;
 
     // 动态填充原子选择列表
     function populateAtomList() {
@@ -876,17 +934,16 @@ window.ElectronCloud.UI.init = function () {
     // 更新原子选择器禁用状态的函数
     window.ElectronCloud.UI.updateAtomSelectorState = function () {
         const state = window.ElectronCloud.state;
-        const atomSettingsBtn = document.getElementById('atom-settings-btn');
-        const atomFeatureBox = document.getElementById('atom-feature-box');
+        const island = document.getElementById('atom-selector-island');
         const isDisabled = state.isDrawing || state.pointCount > 0;
 
-        if (atomSettingsBtn) {
-            atomSettingsBtn.disabled = isDisabled;
-            atomSettingsBtn.style.opacity = isDisabled ? '0.5' : '1';
-        }
-        if (atomFeatureBox) {
-            atomFeatureBox.style.opacity = isDisabled ? '0.5' : '1';
-            atomFeatureBox.style.pointerEvents = isDisabled ? 'none' : 'auto';
+        // 更新底部岛式选择器
+        if (island) {
+            island.classList.toggle('disabled', isDisabled);
+            // 如果禁用时打开着，要关闭
+            if (isDisabled) {
+                island.classList.remove('open');
+            }
         }
     };
 
@@ -936,8 +993,9 @@ window.ElectronCloud.UI.init = function () {
         const state = window.ElectronCloud.state;
         const ui = window.ElectronCloud.ui;
         const atomSelect = document.getElementById('atom-select');
+        const atomDropdown = document.getElementById('atom-selector-dropdown');
 
-        if (!atomSelect || !window.SlaterBasis) return;
+        if (!window.SlaterBasis) return;
 
         // 获取当前选中的轨道列表
         const selectedOrbitals = state.currentOrbitals && state.currentOrbitals.length > 0
@@ -948,38 +1006,58 @@ window.ElectronCloud.UI.init = function () {
         const isCompareMode = ui.compareToggle && ui.compareToggle.checked;
         if (isCompareMode) {
             // 比照模式下恢复所有原子可选
-            Array.from(atomSelect.options).forEach(option => {
-                option.disabled = false;
-                option.style.opacity = '';
-                option.style.color = '';
-            });
+            if (atomSelect) {
+                Array.from(atomSelect.options).forEach(option => {
+                    option.disabled = false;
+                    option.style.opacity = '';
+                    option.style.color = '';
+                });
+            }
+            if (atomDropdown) {
+                atomDropdown.querySelectorAll('.atom-selector-option').forEach(opt => {
+                    opt.classList.remove('disabled');
+                });
+            }
             return;
         }
 
-        // 遍历所有原子选项
-        Array.from(atomSelect.options).forEach(option => {
-            const atomSymbol = option.value;
-
-            // 检查该原子是否支持所有选中的轨道
-            let supportsAll = true;
-            for (const orbitalKey of selectedOrbitals) {
-                if (!window.ElectronCloud.UI.atomHasOrbital(atomSymbol, orbitalKey)) {
-                    supportsAll = false;
-                    break;
+        // 更新隐藏select
+        if (atomSelect) {
+            Array.from(atomSelect.options).forEach(option => {
+                const atomSymbol = option.value;
+                let supportsAll = true;
+                for (const orbitalKey of selectedOrbitals) {
+                    if (!window.ElectronCloud.UI.atomHasOrbital(atomSymbol, orbitalKey)) {
+                        supportsAll = false;
+                        break;
+                    }
                 }
-            }
+                if (supportsAll) {
+                    option.disabled = false;
+                    option.style.opacity = '';
+                    option.style.color = '';
+                } else {
+                    option.disabled = true;
+                    option.style.opacity = '0.4';
+                    option.style.color = '#666';
+                }
+            });
+        }
 
-            // 更新禁用状态
-            if (supportsAll) {
-                option.disabled = false;
-                option.style.opacity = '';
-                option.style.color = '';
-            } else {
-                option.disabled = true;
-                option.style.opacity = '0.4';
-                option.style.color = '#666';
-            }
-        });
+        // 同步更新岛式选择器
+        if (atomDropdown) {
+            atomDropdown.querySelectorAll('.atom-selector-option').forEach(opt => {
+                const atomSymbol = opt.dataset.value;
+                let supportsAll = true;
+                for (const orbitalKey of selectedOrbitals) {
+                    if (!window.ElectronCloud.UI.atomHasOrbital(atomSymbol, orbitalKey)) {
+                        supportsAll = false;
+                        break;
+                    }
+                }
+                opt.classList.toggle('disabled', !supportsAll);
+            });
+        }
 
         // 【移除】不再自动切换原子
         // 用户可能故意选择一个原子不支持的轨道（使用氢原子的解析波函数）
@@ -2096,12 +2174,25 @@ window.ElectronCloud.UI.onMultiselectToggle = function () {
     // 【强制清除】切换模式时，无论如何都先清除所有选择
     window.ElectronCloud.UI.resetOrbitalSelections();
 
+    // 【强制销毁重建】切换到/退出多选模式时，图表必须销毁重建
+    if (window.DataPanel && window.DataPanel.destroyChart) {
+        window.DataPanel.destroyChart();
+    }
+
     // 互斥：取消比照模式
     if (ui.compareToggle && ui.compareToggle.checked) {
         ui.compareToggle.checked = false;
         // 不递归调用onCompareToggle，避免重复清除
         const compareBox = document.getElementById('compare-box');
         if (compareBox) compareBox.classList.remove('active');
+
+        // 【修复】清除比照模式状态，确保图表渲染使用正确路径
+        state.isCompareMode = false;
+
+        // 【强制销毁重建】切换模式时清理旧图表类型/样式
+        if (window.DataPanel && window.DataPanel.destroyChart) {
+            window.DataPanel.destroyChart();
+        }
 
         // 【修复】从比照模式切换过来时，恢复相位开关的可用状态
         const phaseToggle = document.getElementById('phase-toggle');
@@ -2231,6 +2322,9 @@ window.ElectronCloud.UI.onCompareToggle = function () {
         if (multiselectBox) multiselectBox.classList.remove('active');
         const controlPanel = document.getElementById('control-panel');
         if (controlPanel) controlPanel.classList.remove('multiselect-active');
+
+        // 【修复】从多选模式切换过来时，解除图表类型限制
+        window.ElectronCloud.UI.setPlotTypeRestrictionsForMultiselect(false);
     }
 
     const isCompare = ui.compareToggle && ui.compareToggle.checked;
@@ -2243,6 +2337,14 @@ window.ElectronCloud.UI.onCompareToggle = function () {
     // 更新比照框激活样式
     if (compareBox) {
         compareBox.classList.toggle('active', isCompare);
+    }
+
+    // 【修复】明确设置比照模式状态，确保与其他模块同步
+    state.isCompareMode = isCompare;
+
+    // 【强制销毁重建】切换模式时清理旧图表类型/样式
+    if (window.DataPanel && window.DataPanel.destroyChart) {
+        window.DataPanel.destroyChart();
     }
 
     if (isCompare) {
@@ -2288,6 +2390,8 @@ window.ElectronCloud.UI.onCompareToggle = function () {
             controlPanel.classList.add('multiselect-active');
             controlPanel.classList.add('compare-active');
         }
+        // 给 body 添加 class 以便 CSS 隐藏底部原子选择器岛
+        document.body.classList.add('compare-active');
         // 隐藏多选标签，显示新的比照选择器
         if (multiselectControls) multiselectControls.classList.remove('visible');
         if (label) label.style.display = 'none';
@@ -2347,6 +2451,8 @@ window.ElectronCloud.UI.onCompareToggle = function () {
             controlPanel.classList.remove('multiselect-active');
             controlPanel.classList.remove('compare-active');
         }
+        // 移除 body 的 class
+        document.body.classList.remove('compare-active');
         if (multiselectControls) multiselectControls.classList.remove('visible');
 
         // 【新增】隐藏比照模式专用选择器，恢复原有列表
@@ -3437,6 +3543,10 @@ window.ElectronCloud.UI.initModeSwitcher = function () {
                     multiselectToggle?.dispatchEvent(new Event('change'));
                     break;
                 case 'compare':
+                    // 【修复】从多选模式切换时，先解除图表限制
+                    if (multiselectToggle && multiselectToggle.checked) {
+                        window.ElectronCloud.UI.setPlotTypeRestrictionsForMultiselect(false);
+                    }
                     if (multiselectToggle) multiselectToggle.checked = false;
                     if (compareToggle) compareToggle.checked = true;
                     // 移除杂化模式的类和状态
@@ -3643,14 +3753,21 @@ window.ElectronCloud.UI.setHybridPanelMode = function (isHybridMode) {
         hybridModeContent.style.display = 'block';
         dataPanel.classList.add('hybrid-mode');
         if (panelTitle) panelTitle.textContent = '杂化';
-        if (panelTab) panelTab.textContent = '杂化 ▸';
+        if (panelTab) {
+            // 右侧面板收起后的标签应提示“向左展开”
+            panelTab.textContent = '◂ 杂化';
+            panelTab.title = '点击展开杂化面板';
+        }
     } else {
         // 切换到数据模式
         dataModeContent.style.display = 'block';
         hybridModeContent.style.display = 'none';
         dataPanel.classList.remove('hybrid-mode');
         if (panelTitle) panelTitle.textContent = '数据';
-        if (panelTab) panelTab.textContent = '数据 ▸';
+        if (panelTab) {
+            panelTab.textContent = '◂ 数据';
+            panelTab.title = '点击展开数据面板';
+        }
     }
 };
 

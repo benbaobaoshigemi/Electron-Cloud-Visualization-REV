@@ -6,11 +6,11 @@ This paper introduces the "Electron Cloud Visualization" tool, a virtual laborat
 
 1.  **Lack of Focus: The "Vibe Coding" Narrative is a Distraction.** Section 6, which details the AI-assisted development process ("Vibe Coding"), is a major departure from the paper's core topic. While the methodology is interesting, it is not appropriate for the main body of a JCE article focused on a new educational tool. This meta-narrative distracts from the pedagogical and technical innovations of the software itself. I strongly recommend that this entire section be moved to a supplementary appendix or reserved for a different manuscript targeting a software engineering or HCI audience. The paper's focus should remain squarely on the tool's features, its pedagogical value, and the underlying physical models.
 
-2.  **Clarification of Hybridization and "First-Principles" Claims.** The manuscript's claim of "physically correct" hybridization and its strong "first-principles" stance require more precision.
+2.  **Clarification of Hybridization and "Theoretically Grounded" Claims.** The manuscript's claim of "physically correct" hybridization and its strong "theoretically grounded" stance require more precision.
     *   **Hybridization:** The paper claims to include "cross-terms" in hybridization. My analysis of `physics.js` and `sampling-worker.js` confirms that the radial probability density function (`hybridRadialPDF`) correctly handles this. However, the 3D visualization appears to operate in different modes (e.g., `singleHybridDensity3D`, `allHybridOrbitalsDensity3D`). The paper is not explicit about what the user is seeing. Is it a single hybrid orbital? Or the summed density of all of them? For sp³, the total density is spherically symmetric, which would be a key pedagogical point. The manuscript must clarify what is being visualized in "Hybrid" mode to avoid misinterpretation.
-    *   **"First-Principles":** The use of Koga & Thakkar STO basis sets is a commendable and significant improvement over typical educational tools. However, in the context of quantum chemistry, "first-principles" often implies post-Hartree-Fock methods. Since STOs are approximations to the Hartree-Fock limit, describing the tool as "based on near-Hartree-Fock atomic calculations" would be more precise. For a JCE audience, the current language may be acceptable, but the authors should consider this nuance.
+    *   **"Theoretically Grounded":** The use of Koga & Thakkar STO basis sets is a commendable and significant improvement over typical educational tools. However, in the context of quantum chemistry, very strong foundational wording is often interpreted as implying post-Hartree-Fock methods. Since STOs are approximations to the Hartree-Fock limit, describing the tool as "based on near-Hartree-Fock atomic calculations" would be more precise. For a JCE audience, the current language may be acceptable, but the authors should consider this nuance.
 
-3.  **Insufficient Competitive Analysis.** The paper provides a good comparison against research software (Gaussian) and basic online applets (Falstad). However, it completely omits a discussion of widely used molecular visualization tools like Jmol and WebMO. These tools are ubiquitous in chemical education and are often used to display atomic and molecular orbitals from quantum calculation outputs (e.g., cube files). The authors must include a brief discussion that clearly situates their tool's unique contribution—namely, its focus on real-time, first-principles *sampling* of isolated, multi-electron atoms as a "virtual experiment," which is a distinct pedagogical niche not filled by Jmol or WebMO.
+3.  **Insufficient Competitive Analysis.** The paper provides a good comparison against research software (Gaussian) and basic online applets (Falstad). However, it completely omits a discussion of widely used molecular visualization tools like Jmol and WebMO. These tools are ubiquitous in chemical education and are often used to display atomic and molecular orbitals from quantum calculation outputs (e.g., cube files). The authors must include a brief discussion that clearly situates their tool's unique contribution—namely, its focus on real-time, wavefunction-based *sampling* of isolated, multi-electron atoms as a "virtual experiment," which is a distinct pedagogical niche not filled by Jmol or WebMO.
 
 ### Minor Comments & Suggestions
 
@@ -36,7 +36,7 @@ The Reviewer's tone is professional, constructive, and demanding but not malicio
 **2. Depth & Technical Accuracy:**
 *   **Vibe Coding (Point 1):** The Reviewer is correct. Section 6 is a significant deviation from the standard structure of a JCE tool paper. It reads more like a "making of" blog post than a scientific method. Removing it will indeed strengthen the paper's focus.
 *   **Hybridization (Point 2):** The Reviewer's code analysis is accurate. `physics.js` calculates `hybridRadialPDF` correctly with cross-terms. The Reviewer's question about *what* is being visualized (single vs. sum) is a critical ambiguity in the paper that needs clarification. The sp³ spherical symmetry point is physically sound.
-*   **First-Principles (Point 2):** The distinction between "First-Principles" (ab initio) and STO (semi-empirical/approximate) is technically valid in computational chemistry. The Reviewer's suggestion to be more precise is appropriate for a high-quality journal.
+*   **Terminology Precision (Point 2):** The distinction between strong foundational claims and STO (approximate, near-HF limit) is technically valid in computational chemistry. The Reviewer's suggestion to be more precise is appropriate for a high-quality journal.
 *   **Competitive Analysis (Point 3):** This is a crucial omission. Jmol and WebMO are the standard. Failing to mention them weakens the paper's argument for novelty. The Reviewer correctly identifies the "sampling vs. static iso-surface" distinction as the key differentiator.
 
 **3. Conclusion:**
@@ -63,7 +63,7 @@ The Reviewer characterizes this section as a "distraction." We argue it is a **c
 1.  **Section 6 (Vibe Coding):** **KEEP and REFINE.** Strengthen the argument that this is a reproducible methodology for JCE readers.
 2.  **Hybridization Clarification:** **ACCEPT.** We will explicitly state that "Hybrid Mode" visualizes a *single* hybrid orbital component (e.g., $sp^3_1$) to demonstrate directional bonding capacity, which is pedagogically distinct from the spherical total electron density.
 3.  **Competitive Analysis:** **ACCEPT.** We will add the comparison with Jmol/WebMO to the Discussion, highlighting the "Process (Sampling) vs. Result (Iso-surface)" distinction.
-4.  **First-Principles:** **ACCEPT.** We will adjust terminology to "STO-based" or "Near-HF limit" for precision.
+4.  **Theoretically Grounded Terminology:** **ACCEPT.** We will adjust terminology to "STO-based" or "Near-HF limit" for precision.
 
 I will proceed with revisions based on this **defensive** plan.
 
@@ -73,7 +73,7 @@ I will proceed with revisions based on this **defensive** plan.
 
 **Status:** Completed
 **Changes Implemented:**
-1.  **Updated Abstract/Intro:** Clarified "First-Principles" as "STO-based First-Principles Sampling".
+1.  **Updated Abstract/Intro:** Clarified the terminology as "STO-based, theoretically grounded sampling".
 2.  **Updated Section 4 (Hybrid Mode):** Added explicit note clarification that the visualization shows a *single* hybrid orbital component to demonstrate directionality, contrasting with spherical total density.
 3.  **Updated Section 6 (Vibe Coding):** Rewrote introduction to frame the method as "Empowering Educators" and a solution to AI hallucination in science tools, directly addressing the "distraction" critique.
 4.  **Added Section 7.6 (Jmol/WebMO Comparison):** Added a comparative table and discussion highlighting the "Generator vs Viewer" and "Sampling vs Iso-surface" distinctions.

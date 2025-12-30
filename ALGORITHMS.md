@@ -18,7 +18,7 @@ $$ \hbar = m_e = e = \frac{1}{4\pi\epsilon_0} = 1 $$
 
 ### 0.2 一个重要“强调”（避免误读）
 
-UI 中出现的 $V_{ee}(r)$、$Z_{eff}(r)$、$dE/dR$、$t_{loc}(r)$ 等曲线，均应理解为在如下实现框架下的**模型内自洽诊断量**：
+UI 中出现的 $V_{ee}(r)$、$Z_{eff}(r)$、$dE/dR$、$t_{loc}(r)$ 等曲线，均应理解为在如下实现框架下的**模型内自洽派生量（模型曲线）**：
 
 - 中心场/构型平均（球平均的径向口径）
 - 轨道径向来自 STO 数据表（Koga 系列）
@@ -30,7 +30,7 @@ UI 中出现的 $V_{ee}(r)$、$Z_{eff}(r)$、$dE/dR$、$t_{loc}(r)$ 等曲线，
 
 ## 1. 物理模型边界与局限性（先讲清楚再看图）
 
-本项目不是全功能量化计算软件（例如 Gaussian、ORCA、VASP 等），而是面向**实时可视化与交互诊断**的物理引擎。这里把“能做到什么/不能做到什么”放在开头，是为了让后面的公式与曲线更不容易被误解。
+本项目不是全功能量化计算软件（例如 Gaussian、ORCA、VASP 等），而是面向**实时可视化与交互解释**的物理引擎。这里把“能做到什么/不能做到什么”放在开头，是为了让后面的公式与曲线更不容易被误解。
 
 ### 1.1 哈密顿量与近似层级
 
@@ -121,7 +121,15 @@ $$ Z_{eff}(r) = Z - r\,V_{ee}(r) $$
 
 $V_{ee}^{(i)}(r)$ 是用于可视化的一种“中心场有效势”（直接库仑项 + 交换项的球平均/径向表达），以查表形式存储在 `VeeCache`（见 [vee_cache.js](vee_cache.js)）。
 
-关于交换项角系数：生成脚本 [ _experiments/generate_production_cache.py ](_experiments/generate_production_cache.py) 中的 `EXCHANGE_COEFFS` 作用相当于原子结构理论中 Slater–Condon/Racah 角动量代数（可由 Gaunt 系数/Wigner $3j$ 等推导）的“角部分系数表”。本项目只是在工程上复用标准角动量结果来生成缓存数据，不宣称提出新的交换近似或新系数。
+当前版本中，该查表势由生成脚本 [ _experiments/generate_production_cache.py ](_experiments/generate_production_cache.py) 按 **Hartree–Fock–Slater (HFS) / Slater $X\alpha$** 的“非自洽（Non‑SCF）势构造”路线生成：
+
+- 从 Koga STO 径向轨道 $R_{nl}(r)$ 与占据数构造球平均自旋密度 $\rho_{\uparrow}(r),\rho_{\downarrow}(r)$（开壳层按洪特规则做高自旋分配）。
+- 由球对称泊松方程的积分解得到 Hartree 势 $V_H(r)$。
+- 用 Slater $X\alpha$ 局域交换势近似交换：
+    $$ V_x^{\sigma}(r) = -\frac{3}{2}\,\alpha\,\Bigl(\frac{3}{\pi}\,\rho_{\sigma}(r)\Bigr)^{1/3},\quad \sigma\in\{\uparrow,\downarrow\}. $$
+- 通过 **Latter tail correction** 强制远场渐近满足中性原子应有的 $V_{ee}(r)\to (N-1)/r$（等价于 $V_{eff}(r)\to -1/r$）。
+
+这条路线的目标是“理论有据（Theoretically Grounded）的可视化”（标准方程 + 标准近似 + 明确边界），并避免使用缺乏可追溯理论依据的全局经验缩放。
 
 ### 3.3 缓存插值
 
@@ -145,7 +153,7 @@ $$ V_{ee}^{(i)}(r) \to \frac{N-1}{r},\qquad Z_{eff}(r)=Z-rV_{ee}(r)\to 1 $$
 本节的目标不是“争论物理对不对”，而是把项目里图表的**数学定义**写清楚，从而让读者能判断：
 
 - 某条曲线是严格定义的量（在模型内）；
-- 还是一个工程上方便的诊断量；
+- 还是一个工程上方便的模型派生量；
 - 以及哪些解释是超出了该模型的。
 
 ### 4.1 径向概率密度
@@ -174,7 +182,7 @@ $$ t_{loc,i}(r) \equiv \frac{-\frac12\nabla^2\phi_i}{\phi_i}=\epsilon_i-V_{eff}(
 
 项目使用 $V_{eff}(r)=V_{nuc}(r)+V_{ee}^{(i)}(r)$ 构造 $t_{loc}$，并绘制 $t_{loc}(r)P(r)$ 等径向密度曲线。
 
-强调：在 HF 中交换算符严格非局域；把交换项表成一个可乘的 $V_{ee}^{(i)}(r)$ 属于中心场/构型平均框架下的表达与近似。因此这些能量密度曲线属于“模型内部自洽的诊断量”，不应被当作严格可观测量。
+强调：在 HF 中交换算符严格非局域；把交换项表成一个可乘的 $V_{ee}^{(i)}(r)$ 属于中心场/构型平均框架下的表达与近似。因此这些能量密度曲线属于“模型内部自洽的派生量”，不应被当作严格可观测量。
 
 ---
 
@@ -303,7 +311,7 @@ $$ \chi_j(r)=N_j r^{n_j^*-1}e^{-\zeta_j r},\quad N_j=\frac{(2\zeta_j)^{n_j^*+1/2
 
 - Koga 系列 STO 数据表：见 [slater_basis.js](slater_basis.js) 文件头注释（Koga 1999/2000 数据集，以及 `Au_R` 相关数据）。
 - 电子-电子有效势查表（H–Kr）：见 [vee_cache.js](vee_cache.js) 与生成脚本 [ _experiments/generate_production_cache.py ](_experiments/generate_production_cache.py)。
-- 交换项角系数表：见 [ _experiments/generate_production_cache.py ](_experiments/generate_production_cache.py) 中 `EXCHANGE_COEFFS`（角动量代数系数的工程化预制表）。
+- 交换势近似与远场修正：生成脚本使用 Slater $X\alpha$（可通过环境变量 `XALPHA` 调整 $\alpha$）与 Latter tail correction（见脚本与 [vee_cache.js](vee_cache.js) 文件头 `XALPHA=...` 注释）。
 
 ### 9.2 公式来源（标准教材/经典算法）
 
@@ -311,7 +319,10 @@ $$ \chi_j(r)=N_j r^{n_j^*-1}e^{-\zeta_j r},\quad N_j=\frac{(2\zeta_j)^{n_j^*+1/2
 
 - 原子单位制、氢原子解析解、球谐函数与关联勒让德函数：常见量子力学教材（例如 Griffiths《量子力学导论》、Bransden & Joachain《Physics of Atoms and Molecules》等）。
 - Slater 型轨道（STO）与归一化常数：量子化学教材（例如 Szabo & Ostlund《Modern Quantum Chemistry》）及 STO 基组文献常用定义。
-- Slater–Condon/Racah 角动量代数、Gaunt 系数/Wigner $3j$ 与交换项角部分：原子结构理论与角动量代数参考书（例如 Edmonds《Angular Momentum in Quantum Mechanics》）。
+- Slater $X\alpha$ 交换势（局域交换近似）：Slater, J. C. (1951). *A Simplification of the Hartree-Fock Method*. *Physical Review*, 81(3), 385–390.
+- Latter 远场修正（强制 $-1/r$ 渐近）：Latter, R. (1955). *Atomic Energy Levels for the Thomas-Fermi and Thomas-Fermi-Dirac Potential*. *Physical Review*, 99(2), 510–519.
+- HFS/原子势场数值计算综述（背景参考）：Herman, F., & Skillman, S. (1963). *Atomic Structure Calculations*. Prentice‑Hall.
+- （可选）$\alpha$ 参数优化：Schwarz, K. (1972). *Optimization of the Statistical Exchange Parameter $\alpha$ for the Free Atoms H through Nb*. *Physical Review B*, 5(7), 2466–2468.
 - Marching Cubes：Lorensen & Cline (1987) 的经典等值面算法。
 
 ---
@@ -329,8 +340,8 @@ $$ \chi_j(r)=N_j r^{n_j^*-1}e^{-\zeta_j r},\quad N_j=\frac{(2\zeta_j)^{n_j^*+1/2
 *   长度单位为玻尔半径 ($a_0$)，能量单位为 Hartree ($E_h$)。
 
 **重要定位（产品与物理边界）**：
-*   本项目的目标是**可视化与交互式诊断**，不是提出新的理论近似、更不是替代量化计算软件。
-*   文档中出现的 $V_{ee}(r)$、$Z_{eff}(r)$、$dE/dR$、$t_{loc}(r)$ 等曲线，均应理解为在“中心场/构型平均 + STO 轨道 +（局域化/表格化的）有效势”这一实现框架下的**模型内自洽诊断量**；它们不等同于严格可观测量，也不等同于多体能量密度的唯一分解。
+*   本项目的目标是**可视化与交互式解释**，不是提出新的理论近似、更不是替代量化计算软件。
+*   文档中出现的 $V_{ee}(r)$、$Z_{eff}(r)$、$dE/dR$、$t_{loc}(r)$ 等曲线，均应理解为在“中心场/构型平均 + STO 轨道 +（局域化/表格化的）有效势”这一实现框架下的**模型内自洽派生量（模型曲线）**；它们不等同于严格可观测量，也不等同于多体能量密度的唯一分解。
 
 ---
 
@@ -383,11 +394,11 @@ $$ Y_l^m \propto (-1)^m \sqrt{\frac{(2l+1)}{4\pi} \frac{(l-m)!}{(l+m)!}} P_l^m(\
 
 ---
 
-## 3. 多电子原子：Koga-STO 轨道数据与中心场诊断量（VeeCache 仅 H–Kr）
+## 3. 多电子原子：Koga-STO 轨道数据与中心场派生量（VeeCache 仅 H–Kr）
 
 文件: `slater_basis.js`, `physics.js`
 
-对于多电子原子，解析解不存在。本项目不在浏览器端求解 Roothaan-HF 迭代，而是使用预置的高精度 STO 展开来近似表示 HF 轨道径向形状与轨道能量，并在此基础上构造用于可视化的“中心场有效势”诊断量。
+对于多电子原子，解析解不存在。本项目不在浏览器端求解 Roothaan-HF 迭代，而是使用预置的高精度 STO 展开来近似表示 HF 轨道径向形状与轨道能量，并在此基础上构造用于可视化的“中心场有效势”派生量。
 
 ### 3.1 基组选择：Koga (1999)
 代码库内置了 [slater_basis.js](slater_basis.js) 中的 STO 展开数据（文件头标注为 Koga (1999)/(2000) 系列）。本项目在文档层面不试图“重新推导/提出”这些基组或系数，仅将其作为既有数据源用于可视化。
@@ -417,29 +428,30 @@ $$ V(r) = -\frac{Z_{eff}(r)}{r} $$
 $$ -\frac{Z_{eff}(r)}{r} = -\frac{Z}{r} + V_{ee}(r) \implies Z_{eff}(r) = Z - r \cdot V_{ee}(r) $$
 
 ### 4.2 电子-电子排斥势 $V_{ee}(r)$
-这是用于可视化的、与轨道相关的“中心场有效势” $V_{ee}^{(i)}(r)$：它在生成端以 STO 解析积分形式构造，包含直接库仑项（Hartree）以及按角动量代数预制系数加权的交换项（Fock 的局域化/球平均表达）。
+这是用于可视化的、与轨道相关的“中心场有效势” $V_{ee}^{(i)}(r)$：它以查表形式存储在 `VeeCache` 中（见 [vee_cache.js](vee_cache.js)），由生成脚本 [_experiments/generate_production_cache.py](_experiments/generate_production_cache.py) 离线构造。
+
+当前版本采用 **Hartree–Fock–Slater (HFS) / Slater $X\alpha$** 的“非自洽（Non‑SCF）势构造”路线：
+
+- 由球平均电子密度得到直接库仑（Hartree）项 $V_H(r)$。
+- 由自旋密度得到 Slater $X\alpha$ 局域交换势 $V_x^{\sigma}(r)$。
+- 为了让 $V_{eff}(r)=-Z/r+V_{ee}(r)$ 在远场满足中性原子的正确渐近 $V_{eff}(r)\to -1/r$，在缓存尾部应用 **Latter tail correction**。
+
+另外，为减少“自相互作用（self‑interaction）”导致的非物理早期夹断，生成 $V_{ee}^{(i)}(r)$ 时会从密度中**剔除目标轨道对应的 1 个电子贡献**（把它看成“其余 $N-1$ 个电子对该电子的有效势”）。
 *   **预计算 (Pre-computation)**：由于计算 $V_{ee}$ 需要对所有被占轨道进行双重积分，极为耗时。我们采用了 Look-up Table (LUT) 策略，存储在 `VeeCache` 中。
 *   **插值**：运行时通过二分查找 + 线性插值获取 $V_{ee}$。
 *   **物理意义**：当 $r \to 0$，电子穿透到核附近，$r V_{ee} \to 0$，故 $Z_{eff} \to Z$（裸核）；当 $r \to \infty$，电子在该壳层之外，$Z_{eff} \to Z - (N-1)$（完全屏蔽）。
 
-**关于“系数从哪来”**：生成脚本 [_experiments/generate_production_cache.py](_experiments/generate_production_cache.py) 内的 `EXCHANGE_COEFFS` 是一个 $(l_{target}, l_{source}) \mapsto \{(k,\mathrm{coeff})\}$ 的预制表，用于将交换项写成有限个径向核 $Y_k(r)$ 的线性组合。其角色等价于原子结构理论中 Slater–Condon/Racah 角动量代数（Gaunt/Wigner $3j$ 等）给出的“角部分系数”。本项目只是在工程上复用这类标准结果来生成查表数据，并不宣称提出新的交换近似或新系数。
-
 **实现范围提醒**：当前 [vee_cache.js](vee_cache.js) 文件头明确标注仅包含 **H–Kr** 的预计算数据；当所选原子/轨道不存在对应缓存时，[physics.js](physics.js) 会回退为 $V_{ee}=0$ 或 $Z_{eff}=Z$ 的退化行为，因此此时相关曲线不应被作物理解释。
 
-### 4.3 自旋统计缩放因子（构型平均）
+### 4.3 （旧版反例，已移除）自旋统计缩放因子 $\chi$
 
-在生成 [vee_cache.js](vee_cache.js) 的过程中（见 [_experiments/generate_production_cache.py](_experiments/generate_production_cache.py)），为了避免把闭壳层错误当作“全平行自旋”从而导致交换项过大，我们对交换项引入一个基于洪特规则的**自旋统计缩放因子 $\chi$**。
+本节内容属于**历史实现反例**：旧版曾对交换项引入全局自旋统计缩放因子
+$$ \chi = \frac{N_{\uparrow}^2 + N_{\downarrow}^2}{N^2} $$
+并用 $V_{exch}^{corrected}=\chi\,V_{exch}^{geo}$ 进行强度插值。
 
-这不是新理论：它是“构型平均/自旋统计权重”的一种工程化实现。其有效性依赖于“采用高自旋基态占据分配”的假设；当用户关注具体 $LS$ 项、激发态或离子态时，该近似不一定成立。
+该做法已从代码与缓存生成链路中**彻底移除**，当前版本改为使用 **HFS / Slater $X\alpha$（密度泛函式局域交换势）+ Latter tail correction** 生成 [vee_cache.js](vee_cache.js)（见 [_experiments/generate_production_cache.py](_experiments/generate_production_cache.py)）。
 
-*   **物理背景**：交换作用仅发生在自旋平行的电子之间。对于一个占据数为 $N$、容量为 $C$ 的亚层，自旋平行的统计概率取决于自旋组态 $N_{\uparrow}, N_{\downarrow}$。
-*   **修正公式**：
-    $$ V_{exch}^{corrected} = \chi \cdot V_{exch}^{geo} $$
-    其中几何交换势 $V_{exch}^{geo}$ 对应“全自旋平行”的情况。自旋因子 $\chi$ 定义为：
-    $$ \chi = \frac{N_{\uparrow}^2 + N_{\downarrow}^2}{N^2} $$
-*   **典型案例验证**：
-    *   **He ($1s^2$)**: $N=2, N_{\uparrow}=1, N_{\downarrow}=1 \implies \chi = 0.5$。用于避免闭壳层被错误当作“全平行自旋”而导致交换项过大。
-    *   **O ($2p^4$)**: $N=4, N_{\uparrow}=3, N_{\downarrow}=1 \implies \chi = 0.625$。较“开壳层因子=1.0”的粗略近似更细致。
+保留此段仅用于说明“曾经的错误做法是什么”，避免未来重复引入。
 
 
 
@@ -487,7 +499,7 @@ $$ \frac{d}{dR}\langle U \rangle_i(<R) = P_i(R)\,U(R) $$
 
 本项目在两处显式保证该条件：
 
-*   **生成端**：`_experiments/generate_production_cache.py` 在缓存尾部强制 $V_{ee}(r)=(N-1)/r$（最后一段采样点），防止开壳层 $p/d$ 的交换“构型平均系数”在数值尾部留下非物理残余。
+*   **生成端**：`_experiments/generate_production_cache.py` 会在需要处对 Latter 上界进行平滑过渡，并在缓存尾部强制 $V_{ee}(r)=(N-1)/r$（最后一段采样点），避免数值尾部残余导致的长程非物理行为。
 *   **运行端**：`physics.js` 对 $r > r_{max}$ 使用 $1/r$ 外推（由最后一个缓存点估计系数），避免“常数夹断”产生非物理长程尾巴。
 
 这不是“拍脑袋创新”，而是对已知物理边界条件的实现约束。
@@ -513,7 +525,7 @@ $$ t_{loc,i}(r) \equiv \frac{-\frac12\nabla^2\phi_i}{\phi_i} = \epsilon_i - V_{e
 ### 5.4 严格性边界（哪些是模型假设，不要误读）
 
 *   Hartree-Fock 的交换算符严格来说是**非局域**的；把它表示成一个对每个轨道都可乘的 $V_{ee}^{(i)}(r)$ 属于中心场/构型平均框架下的表达与近似。
-*   因此 $t_{loc}(r)$ 与这些能量密度曲线属于“**该模型内部自洽的诊断量**”，不能直接等同于实验可观测量或严格的多体能量密度分解。
+*   因此 $t_{loc}(r)$ 与这些能量密度曲线属于“**该模型内部自洽的派生量**”，不能直接等同于实验可观测量或严格的多体能量密度分解。
 *   你要拿它做“物理结论”，应当把它限定为：在 Koga STO + 构型平均 +（局域化的）交换处理这套近似内的解释。
 
 ---

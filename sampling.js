@@ -8,11 +8,9 @@ window.ElectronCloud.Sampling = {};
 const WORKER_POOL_SIZE = navigator.hardwareConcurrency || 4; // 使用 CPU 核心数
 const workerPool = [];
 let workerReady = 0;
-let pendingTasks = [];
 let taskIdCounter = 0;
 let useWorkers = true; // 是否使用 Worker（可降级）
 let workersInitialized = false; // 防止重复初始化
-let activeTasks = 0; // 当前正在执行的任务数
 let lastSubmitTime = 0; // 上次提交时间（节流）
 let samplingSessionId = 0; // 采样会话 ID，用于防止旧 Worker 结果污染新会话
 
@@ -45,17 +43,12 @@ window.ElectronCloud.Sampling.initWorkers = function () {
                     // 处理采样结果
                     window.ElectronCloud.Sampling.handleWorkerResult(result, taskId, sessionId);
                     worker.busy = false;
-                    activeTasks--;
-
-                    // 处理队列中的下一个任务
-                    window.ElectronCloud.Sampling.processNextTask();
                 }
             };
 
             worker.onerror = function (err) {
                 console.error('Worker 错误:', err);
                 worker.busy = false;
-                activeTasks--;
             };
 
             worker.busy = false;
@@ -186,20 +179,6 @@ window.ElectronCloud.Sampling.handleWorkerResult = function (result, taskId, ses
     }
 };
 
-// 处理任务队列中的下一个任务
-window.ElectronCloud.Sampling.processNextTask = function () {
-    if (pendingTasks.length === 0) return;
-
-    // 找到空闲的 Worker
-    const availableWorker = workerPool.find(w => !w.busy);
-    if (!availableWorker) return;
-
-    const task = pendingTasks.shift();
-    availableWorker.busy = true;
-    activeTasks++;
-    availableWorker.postMessage(task);
-};
-
 // 提交采样任务到 Worker 池
 window.ElectronCloud.Sampling.submitSamplingTask = function () {
     const state = window.ElectronCloud.state;
@@ -268,25 +247,13 @@ window.ElectronCloud.Sampling.submitSamplingTask = function () {
         };
 
         worker.busy = true;
-        activeTasks++;
         worker.postMessage(task);
     }
-};
-
-// 终止所有 Worker
-window.ElectronCloud.Sampling.terminateWorkers = function () {
-    workerPool.forEach(w => w.terminate());
-    workerPool.length = 0;
-    workerReady = 0;
-    pendingTasks = [];
-    workersInitialized = false;
-    activeTasks = 0;
 };
 
 // 重置采样会话（使旧的 Worker 结果无效）
 window.ElectronCloud.Sampling.resetSamplingSession = function () {
     samplingSessionId++;
-    pendingTasks = []; // 清空待处理队列
     console.log(`采样会话重置为 ${samplingSessionId}`);
 };
 
@@ -306,12 +273,6 @@ window.ElectronCloud.Sampling.isUsingWorkers = function () {
 
 // 是否启用重要性采样（性能优化模式）
 let useImportanceSampling = true;
-
-// 检查并设置采样模式
-window.ElectronCloud.Sampling.setImportanceSamplingMode = function (enabled) {
-    useImportanceSampling = enabled;
-    console.log(`采样模式: ${enabled ? '重要性采样' : '传统拒绝采样'}`);
-};
 
 // 更新点的位置（主要采样逻辑 - 支持重要性采样）
 window.ElectronCloud.Sampling.updatePoints = function () {

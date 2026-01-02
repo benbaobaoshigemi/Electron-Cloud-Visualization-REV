@@ -5,7 +5,7 @@ class MaterialLoader {
         this.cssVariables = {};
     }
 
-    // 加载材质配置文件
+    // 加载材质配置（materials.json）
     async loadMaterials() {
         try {
             const response = await fetch('./materials.json');
@@ -18,12 +18,12 @@ class MaterialLoader {
             console.log('Materials loaded successfully');
         } catch (error) {
             console.error('Error loading materials:', error);
-            // 使用默认材质
+            // 回退到默认材质
             this.loadDefaultMaterials();
         }
     }
 
-    // 生成CSS变量
+    // 生成 CSS 变量
     generateCSSVariables() {
         if (!this.materials) return;
 
@@ -45,11 +45,11 @@ class MaterialLoader {
         this.cssVariables['--dropdown-border'] = this.materials.materials.dropdown.border;
         this.cssVariables['--dropdown-shadow'] = this.materials.materials.dropdown.shadow;
 
-        // UI行为变量
+        // UI 行为变量
         this.cssVariables['--mode-switcher-auto-hide-delay'] = this.materials.ui_behavior.mode_switcher.auto_hide_delay + 'ms';
     }
 
-    // 应用CSS变量到根元素
+    // 将 CSS 变量应用到根元素
     applyCSSVariables() {
         const root = document.documentElement;
         Object.entries(this.cssVariables).forEach(([property, value]) => {
@@ -57,7 +57,7 @@ class MaterialLoader {
         });
     }
 
-    // 默认材质配置（如果JSON加载失败）
+    // 默认材质配置（materials.json 加载失败时使用）
     loadDefaultMaterials() {
         console.log('Using default materials');
         this.materials = {
@@ -97,7 +97,7 @@ class MaterialLoader {
         return this.materials?.materials[materialType] || null;
     }
 
-    // 获取UI行为配置
+    // 获取 UI 行为配置
     getUIBehaviorConfig() {
         return this.materials?.ui_behavior || null;
     }
@@ -106,11 +106,11 @@ class MaterialLoader {
 // 创建全局材质加载器实例
 const materialLoader = new MaterialLoader();
 
-// 页面加载时自动加载材质
+// 页面加载后自动加载材质
 document.addEventListener('DOMContentLoaded', () => {
     materialLoader.loadMaterials();
 });
 
-// 导出材质加载器供其他模块使用
+// 导出供其他模块使用
 window.MaterialLoader = MaterialLoader;
 window.materialLoader = materialLoader;

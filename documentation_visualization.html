@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELECTRON CLOUD // TECH MANUAL</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@300;500;700&family=Noto+Serif+SC:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <!-- Mermaid with cache-busting -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+    </script>
+    <!-- MathJax -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-main: #e0e0e0;
+            --text-dim: #888;
+            --accent-green: #00ff41;
+            --accent-dark: #003300;
+            --border-color: #1a1a1a;
+            --glass-bg: rgba(10, 10, 10, 0.85);
+            --font-head: 'Rajdhani', sans-serif;
+            --font-body: 'Noto Serif SC', serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-dark) var(--bg-color);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* --- CRT EFFECT LAYER --- */
+        .scanline-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.3;
+        }
+
+        /* --- MAIN LAYOUT --- */
+        .layout-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            max-width: 1600px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        /* --- SIDEBAR NAV --- */
+        #sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            background: var(--bg-color);
+            border-right: 1px solid var(--border-color);
+            padding: 2rem;
+            font-family: var(--font-mono);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .nav-header {
+            color: var(--accent-green);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        }
+
+        .nav-item {
+            color: var(--text-dim);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-left: 2px solid transparent;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            color: var(--accent-green);
+            border-left-color: var(--accent-green);
+            background: rgba(0, 255, 65, 0.05);
+            text-shadow: 0 0 8px rgba(0, 255, 65, 0.4);
+        }
+
+        /* --- CONTENT AREA --- */
+        #content {
+            padding: 4rem 6rem;
+        }
+
+        .hud-section {
+            margin-bottom: 8rem;
+            /* Increased spacing */
+            position: relative;
+            padding: 4rem;
+            /* More breathing room */
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.02);
+            opacity: 0;
+            /* For scroll animation */
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .hud-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* HUD Corner Markers */
+        .hud-section::before,
+        .hud-section::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent-green);
+            transition: all 0.3s;
+        }
+
+        .hud-section::before {
+            top: -1px;
+            left: -1px;
+            border-right: 0;
+            border-bottom: 0;
+        }
+
+        .hud-section::after {
+            bottom: -1px;
+            right: -1px;
+            border-left: 0;
+            border-top: 0;
+        }
+
+        .section-header {
+            font-family: var(--font-head);
+            font-size: 2.5rem;
+            color: var(--text-main);
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .section-num {
+            color: var(--accent-green);
+            font-size: 1.5rem;
+            font-family: var(--font-mono);
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h3 {
+            font-family: var(--font-head);
+            color: var(--text-main);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        p {
+            margin-bottom: 2rem;
+            color: #d0d0d0;
+            text-align: justify;
+            font-size: 1.15rem;
+            /* Larger text */
+            line-height: 2.0;
+            /* Much looser leading */
+            font-weight: 300;
+        }
+
+        strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Overview Box Style */
+        .overview-box {
+            background: rgba(0, 20, 0, 0.4);
+            border-left: 3px solid var(--accent-green);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            position: relative;
+            backdrop-filter: blur(5px);
+        }
+
+        .overview-box h3 {
+            margin-top: 0;
+            color: var(--accent-green);
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .overview-box h3::before {
+            content: 'INFO';
+            font-size: 0.6rem;
+            font-family: var(--font-mono);
+            border: 1px solid var(--accent-green);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .overview-box p {
+            margin-bottom: 0;
+            font-size: 1.1rem;
+            color: #e0e0e0;
+        }
+
+        /* --- CONTENT ENRICHMENT --- */
+
+        /* 1. Custom Lists */
+        ul {
+            list-style: none;
+            padding-left: 1.5rem;
+        }
+
+        ul li {
+            position: relative;
+            margin-bottom: 0.8rem;
+            padding-left: 1.5rem;
+            color: #ccc;
+        }
+
+        ul li::before {
+            content: '›';
+            position: absolute;
+            left: 0;
+            color: var(--accent-green);
+            font-weight: bold;
+            font-family: var(--font-mono);
+        }
+
+        /* 2. Enhanced Headers */
+        h3 {
+            margin-top: 3rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            color: #fff;
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Skip decoration for overview-box h3 */
+        section>h3 {
+            border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+            padding-bottom: 0.5rem;
+        }
+
+        section>h3::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 30px;
+            height: 1px;
+            background: var(--accent-green);
+        }
+
+
+
+        /* 4. Math & Code */
+        mjx-container[jax="CHTML"][display="true"] {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            margin: 2rem 0 !important;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.9em;
+            color: #fff;
+        }
+
+        /* 5. Section Dividers */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+            margin: 4rem 0;
+            position: relative;
+        }
+
+        .section-divider::before {
+            content: '///';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #000;
+            color: #333;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            padding: 0 1rem;
+        }
+
+        /* --- UI COMPONENTS --- */
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .tech-card {
+            border: 1px solid var(--border-color);
+            background: #0a0a0a;
+            padding: 1.5rem;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .tech-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-green);
+            box-shadow: 0 5px 20px rgba(0, 255, 65, 0.1);
+        }
+
+        .card-title {
+            color: var(--accent-green);
+            font-family: var(--font-mono);
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+
+        .mermaid-box {
+            background: #080808;
+            border: 1px dashed var(--border-color);
+            padding: 2rem;
+            margin: 2rem 0;
+            display: flex;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        /* --- MODAL (Code Popup) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 20000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: var(--glass-bg);
+            border: 1px solid var(--accent-green);
+            padding: 2rem;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 255, 65, 0.2);
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: transparent;
+            border: 1px solid var(--text-dim);
+            color: var(--text-dim);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .code-title {
+            color: var(--accent-green);
+            font-family: var(--font-head);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .code-block {
+            font-family: var(--font-mono);
+            background: #000;
+            padding: 1rem;
+            border-radius: 4px;
+            color: #ccc;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            border: 1px solid #222;
+        }
+
+        /* Syntax Highlighting Sim */
+        .kwd {
+            color: #ff7b72;
+        }
+
+        .func {
+            color: #d2a8ff;
+        }
+
+        .str {
+            color: #a5d6ff;
+        }
+
+        .num {
+            color: #79c0ff;
+        }
+
+        .com {
+            color: #8b949e;
+        }
+
+        /* --- SPLASH SCREEN (DESIGN OVERHAUL) --- */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            overflow: hidden;
+            transition: opacity 0.1s ease;
+            /* Blazing fast */
+        }
+
+        #splash-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        /* Vignette & Grid Texture */
+        #splash-screen::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.8) 100%),
+                linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* --- HUD ELEMENTS --- */
+        #splash-ui-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            /* Let clicks pass to button */
+            padding: 40px;
+        }
+
+        .hud-corner {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(0, 255, 65, 0.5);
+            transition: all 0.5s ease;
+        }
+
+        .hud-corner.top-left {
+            top: 30px;
+            left: 30px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .hud-corner.top-right {
+            top: 30px;
+            right: 30px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .hud-corner.bottom-left {
+            bottom: 30px;
+            left: 30px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .hud-corner.bottom-right {
+            bottom: 30px;
+            right: 30px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .system-text {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(0, 255, 65, 0.7);
+            letter-spacing: 0.1rem;
+        }
+
+        .sys-tl {
+            top: 40px;
+            left: 80px;
+        }
+
+        .sys-tr {
+            top: 40px;
+            right: 80px;
+            text-align: right;
+        }
+
+        .sys-bl {
+            bottom: 40px;
+            left: 80px;
+        }
+
+        .sys-br {
+            bottom: 40px;
+            right: 80px;
+            text-align: right;
+        }
+
+        /* Central Content */
+        #splash-content {
+            position: absolute;
+            top: 45%;
+            width: 100%;
+            text-align: center;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #splash-subtitle {
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            font-size: 1rem;
+            letter-spacing: 0.4rem;
+            color: #ccc;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            text-transform: uppercase;
+        }
+
+        .deco-line {
+            width: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+            transition: width 1.5s ease;
+            opacity: 0.5;
+        }
+
+        /* Cyberpunk Button */
+        #enter-btn {
+            pointer-events: auto;
+            /* Re-enable clicks */
+            background: rgba(0, 20, 0, 0.6);
+            color: var(--accent-green);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 1.2rem;
+            letter-spacing: 0.3rem;
+            padding: 1rem 4rem;
+            border: 1px solid var(--accent-green);
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
+            position: relative;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            margin-top: 5rem;
+            /* Space from subtitle */
+        }
+
+        #enter-btn:hover {
+            background: rgba(0, 255, 65, 0.1);
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.4);
+            text-shadow: 0 0 5px rgba(0, 255, 65, 0.8);
+            transform: scale(1.05);
+        }
+
+        #splash-screen.active #splash-subtitle {
+            opacity: 1;
+        }
+
+        #splash-screen.active .deco-line {
+            width: 300px;
+        }
+
+        #splash-screen.active #enter-btn {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="scanline-overlay"></div>
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen">
+        <canvas id="splash-canvas"></canvas>
+
+        <!-- HUD Layer -->
+        <div id="splash-ui-layer">
+            <div class="hud-corner top-left"></div>
+            <div class="hud-corner top-right"></div>
+            <div class="hud-corner bottom-left"></div>
+            <div class="hud-corner bottom-right"></div>
+
+            <div class="system-text sys-tl">SYSTEM: INITIALIZING...</div>
+            <div class="system-text sys-tr">CORE: ONLINE</div>
+            <div class="system-text sys-bl">VER: 3.5.0-ALPHA</div>
+            <div class="system-text sys-br">SECURE CONNECTION</div>
+
+            <div id="splash-content">
+                <div id="splash-subtitle">QUANTUM MECHANICS & ALGORITHM VISUALIZATION</div>
+                <div class="deco-line"></div>
+                <button id="enter-btn">进 入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN SYSTEM -->
+    <div class="layout-container" id="main-system" style="opacity: 0; transition: opacity 1s ease;">
+
+        <!-- SIDEBAR -->
+        <nav id="sidebar">
+            <div class="nav-header">/// NAVIGATION</div>
+            <a href="#chap1" class="nav-item">01. 氢原子模型</a>
+            <a href="#chap2" class="nav-item">02. 多电子体系</a>
+            <a href="#chap3" class="nav-item">03. 蒙特卡洛采样</a>
+            <a href="#chap4" class="nav-item">04. 杂化轨道计算</a>
+            <a href="#chap5" class="nav-item">05. 轨道能量</a>
+            <a href="#chap6" class="nav-item">06. 相位与等值面</a>
+            <a href="#chap7" class="nav-item">07. 数据统计面板</a>
+        </nav>
+
+        <!-- CONTENT -->
+        <main id="content">
+
+            <!-- CHAPTER 1 -->
+            <section id="chap1" class="hud-section">
+                <div class="section-header">
+                    <span class="section-num">01</span>
+                    第一章 氢原子模型
+                </div>
+                <div class="overview-box">
+                    <h3>0. 核心概述</h3>
+                    <p>氢原子是最简单的原子——只有一个质子和一个电子。正因如此，它是唯一一种我们能够用数学公式精确描述其电子行为的原子，不需要任何近似或猜测。本项目正是利用这些精确公式（技术上称为"拉盖尔多项式"）来绘制氢原子的电子云。您在屏幕上看到的每一个点、每一条曲线，都直接来源于量子力学的解析解，而非模拟或估算。当前系统支持从最内层（1s）到第五层（5g）的所有轨道类型。
+                    </p>
+                </div>
+
+                <h3>1. 数学原理</h3>
+                <p>氢原子的定态薛定谔方程在球坐标系下可通过分离变量法求解，波函数被分解为径向部分 $R_{nl}(r)$ 和角向部分 $Y_{lm}(\theta, \phi)$。径向部分的解析解形式为
+                    $R_{nl}(r) \propto e^{-\rho/2} \rho^l L_{n-l-1}^{2l+1}(\rho)$，其中 $L$ 是广义拉盖尔多项式，$\rho$
+                    是无量纲化的径向坐标。角向部分则由球谐函数描述。程序中，我们通过递归关系计算拉盖尔多项式的系数，并对极大/极小值进行了数值稳定性处理，最终将波函数严格归一化。</p>
+            </section>
+
+            <!-- CHAPTER 2 -->
+            <section id="chap2" class="hud-section">
+                <div class="section-header">
+                    <span class="section-num">02</span>
+                    第二章 多电子体系
+                </div>
+
+                <div class="overview-box">
+                    <h3>0. 核心概述</h3>
+                    <p>当原子中有两个或更多电子时，情况变得复杂：电子之间会相互排斥，这使得精确求解变得不可能。科学家们发展了一套名为"Hartree-Fock"的计算方法来处理这个问题——它通过反复迭代计算，找到一个近似但高精度的解。本项目采用了由
+                        Koga 等学者计算并发布的高精度数据，覆盖了从氦 (He) 到氪 (Kr) 共 35
+                        种元素的基态电子云。虽然这套数据非常精确，但它仍有一些理论上的局限——例如，它没有考虑一些更微妙的物理效应（如电子之间的动态回避行为，以及重原子中电子速度接近光速带来的相对论修正）。对于氪以下的元素，这些省略带来的误差通常很小，不影响可视化的定性正确性。
+                    </p>
+                </div>
+
+                <h3>1. Hartree-Fock 方法简介</h3>
+                <p>Hartree-Fock 方法是多电子体系量子化学计算的基石。其核心思想是平均场近似 (Mean-Field
+                    Approximation)：将每个电子所受的其它电子的瞬时库仑排斥简化为一个静态的等效势场。通过自洽迭代求解 Fock 方程，可以得到满足变分原理的最优单 Slater
+                    行列式波函数。需要特别澄清的是，HF 方法是完全基于量子力学的方法，而非经典力学方法；其局限性在于忽略了电子间的动态关联，而非量子效应本身。</p>
+
+                <h3>2. STO 基组的选择与权衡</h3>
+                <p>Slater Type Orbital (STO) 的函数形式为 $e^{-\zeta r}$，它具有正确的核附近尖峰 (Cusp Condition)
+                    和远程指数衰减行为，能够真实反映原子轨道的物理图景。相比之下，Gaussian Type Orbital (GTO) 的形式为 $e^{-\alpha
+                    r^2}$，虽然在多中心积分时计算更为便捷，但其在核附近过于平滑且远程衰减过快，物理保真度较差。为了追求可视化的物理真实性，我们牺牲了积分效率，坚持使用 STO 基组。</p>
+
+                <h3>3. Koga 基组的物理边界与局限</h3>
+                <p>尽管 Koga 数据精度极高（能量误差 $<10^{-4}$ Hartree），用户仍需了解以下物理模型的内禀限制：</p>
+                        <div class="grid-cards">
+                            <div class="tech-card">
+                                <span class="card-title">电子关联 (Electron Correlation)</span>
+                                由于平均场假设，忽略了电子之间"你来我躲"的动态规避行为，导致计算总能量略高于真实基态能量（通常在 1 eV 量级）。
+                            </div>
+                            <div class="tech-card">
+                                <span class="card-title">相对论效应 (Relativistic Effects)</span>
+                                模型基于非相对论薛定谔方程。对于重原子（Z > 50），内层电子的相对论收缩效应显著，但在 Kr (Z=36) 以下，此效应尚可忽略。
+                            </div>
+                            <div class="tech-card">
+                                <span class="card-title">基组截断误差</span>
+                                有限项 STO 展开在离核极远的区域可能出现轻微的衰减行为偏差。
+                            </div>
+                        </div>
+
+                        <div class="section-divider"></div>
+
+                        <h3>4. 参考文献</h3>
+                        <ul>
+                            <li>Koga, T. et al. "Hartree-Fock limits for atoms."</li>
+                            <li>Thakkar, A. J. et al. "Momentum space properties of atoms."</li>
+                        </ul>
+            </section>
+
+            <!-- CHAPTER 3 -->
+            <section id="chap3" class="hud-section">
+                <div class="section-header">
+                    <span class="section-num">03</span>
+                    第三章 蒙特卡洛采样
+                </div>
+
+                <div class="overview-box">
+                    <h3>0. 核心概述</h3>
+                    <p>电子云的可视化面临一个核心问题：如何将抽象的"概率密度"转化为屏幕上具体的点阵？我们的方案是使用蒙特卡洛方法——一种基于大量随机采样来逼近真实分布的统计技术。简单来说，程序会不断生成随机坐标，然后判断这个位置是否"足够可能"出现电子。经过成千上万次重复，那些电子出现概率高的区域自然会聚集更多的点，而概率低的区域则点迹稀疏。最终，点的疏密分布就直观呈现了电子云的形态。
+                    </p>
+                </div>
+
+                <h3>1. 蒙特卡洛采样原理</h3>
+                <p>蒙特卡洛方法 (Monte Carlo Method)
+                    是一类利用随机数进行数值计算的算法。其核心思想是：如果一个量难以直接计算，可以通过大量随机采样来统计估计。在概率可视化场景下，我们反向运用该思想——已知概率密度函数
+                    $|\Psi|^2$，利用随机采样生成符合该分布的点阵，使得点云的疏密程度直接反映概率密度的高低。根据波恩诠释，波函数的模方代表了电子在空间中的概率密度，因此点云可视化的核心目标是在三维空间中生成密度与概率密度成正比的离散点阵。直接对整个原子空间进行均匀随机投点（全空间拒绝采样）效率极低，通常接受率不足
+                    1%。为此，我们采用"分而治之"策略，将各向同性的径向分布与各向异性的角向分布分开处理。</p>
+
+                <h3>2. 逆 CDF 方法 (径向采样)</h3>
+                <p>电子云在径向上的分布由径向分布函数 $D(r) = r^2 R(r)^2$ 描述，这是光滑的一维函数。我们预先计算其累积分布函数 (CDF)，并建立反函数查找表。采样时，只需生成一个均匀随机数 $u
+                    \sim U(0,1)$，然后通过二分查找即可得到对应的半径 $r = CDF^{-1}(u)$。这种方法保证每次计算必定产生一个有效的半径值，效率为 100%，且无统计偏差。</p>
+
+                <h3>3. 拒绝采样 (角向采样)</h3>
+                <p>p, d, f 轨道的角向分布形状复杂（如哑铃形、花瓣形），难以用简单的逆变换处理。因此，我们对角向部分采用拒绝采样：首先在单位球面上均匀投点生成随机方向 $(\theta,
+                    \phi)$，然后计算该方向上的角向概率密度 $|Y_{lm}|^2$，再以此作为接受概率进行测试。虽然会浪费约 50% 的计算量，但相比处理复杂的三维边界条件，这是数学上最稳健的方案。</p>
+
+                <h3>4. 程序实现流程</h3>
+                <div class="mermaid-box">
+                    <div class="mermaid">
+                        flowchart TD
+                        classDef clickNode fill:#0a0a0a,stroke:#00ff41,stroke-width:1px,color:#fff,cursor:pointer;
+                        classDef decision fill:#0a0a0a,stroke:#ffbf00,stroke-width:1px,color:#fff,cursor:pointer;
+                        classDef defaultNode fill:#0a0a0a,stroke:#333,stroke-width:1px,color:#888;
+
+                        Start(("开始")) --> Radial["径向采样<br />(逆CDF法)"]
+                        Radial --> Angular["角向采样<br />(随机投点)"]
+                        Angular --> Check{"接受?"}
+                        Check -- "是" --> Combine["组合坐标<br />(r, θ, φ -> x, y, z)"]
+                        Check -- "否" --> Angular
+                        Combine --> Output(("输出点"))
+
+                        class Radial,Angular,Combine clickNode
+                        class Check decision
+                        class Start,Output defaultNode
+
+                        click Radial call showCode("RadialSample")
+                        click Angular call showCode("AngularSample")
+                        click Combine call showCode("SphericalToCartesian")
+                    </div>
+                </div>
+            </section>
+
+            <!-- CHAPTER 4 -->
+            <section id="chap4" class="hud-section">
+                <div class="section-header">
+                    <span class="section-num">04</span>
+                    第四章 杂化轨道计算
+                </div>
+                <div class="overview-box">
+                    <h3>0. 核心概述</h3>
+                    <p>在化学中，"杂化"是一个重要概念——它描述了原子轨道如何"混合"形成新的轨道，以便更好地与其他原子成键。例如，碳原子的四个 $sp^3$
+                        杂化轨道指向四面体的四个顶点，这解释了甲烷分子的形状。本项目实现了杂化轨道的可视化计算：您可以选择一组原子轨道和目标几何构型，程序会自动计算出最佳的混合方式，并展示杂化后的轨道形态。为了鼓励探索，系统甚至允许一些"非常规"的组合（如不同能层的轨道混搭），让您直观观察结果——虽然这在现实分子中可能不会发生，但它能帮助理解杂化的数学本质。
+                    </p>
+                </div>
+
+                <h3>1. 杂化模型的开放性与局限性</h3>
+                <p>传统化学教学对杂化轨道的能级组合有严格限制（如 $sp^3$
+                    必须来自同一主层）。然而，在数学上，波函数的线性组合是普适的，不存在"禁阻"。我们开放异能级混搭的目的在于提供教育探索空间，让用户直观观察当组合"不合理"时波瓣的畸变表现。同时，由于 SVD
+                    算法的内禀性质，即使物理意义存疑的组合，其数学结果（系数矩阵）也始终满足正交归一条件，具备完全的鲁棒性。</p>
+
+                <h3>2. 为什么只开放特定组合</h3>
+                <p>尽管数学上允许任意线性组合，但并非所有组合都具有化学意义或可视化价值。我们限制可选组合的原因如下：</p>
+                <div class="grid-cards">
+                    <div class="tech-card">
+                        <span class="card-title">1. 几何指向性</span>
+                        组合必须能够产生明确的几何指向性（如四面体、八面体），否则 SVD 算法虽能给出正交系数，但结果波瓣形状杂乱无章，缺乏教学意义。
+                    </div>
+                    <div class="tech-card">
+                        <span class="card-title">2. 对称性保护</span>
+                        某些纯轨道（如单独的 s 或多个 p）本身已具备完整对称性，强行"杂化"反而破坏物理图景。
+                    </div>
+                    <div class="tech-card">
+                        <span class="card-title">3. 交互约束</span>
+                        UI 层面的约束简化了用户交互，避免因无效组合导致的困惑。程序内部通过 `isValidHybridization` 函数对用户选择进行预校验，只有满足几何匹配条件的组合才会进入计算流程。
+                    </div>
+                </div>
+
+                <h3>3. 杂化系数计算的数学本质</h3>
+                <p>杂化问题本质上是一个正交 Procrustes 问题：给定一组原子轨道（如一个 s 和三个 p）和一组目标几何方向（如四面体的四个顶点方向），寻找一个正交变换矩阵
+                    $C$，使得变换后的杂化轨道主瓣方向与目标方向的偏差最小。我们首先计算原子轨道与目标方向的投影矩阵 $M$，然后对其进行奇异值分解 $M = U \Sigma V^T$，最优的系数矩阵即为 $C =
+                    U V^T$。该方法保证了杂化轨道之间严格正交，且每个轨道严格归一。</p>
+
+                <h3>4. 程序实现流程</h3>
+                <div class="mermaid-box">
+                    <div class="mermaid">
+                        flowchart TD
+                        classDef clickNode fill:#0a0a0a,stroke:#00ff41,stroke-width:1px,color:#fff,cursor:pointer;
+                        classDef defaultNode fill:#0a0a0a,stroke:#333,stroke-width:1px,color:#888;
+
+                        Input["输入: 原子轨道"] --> Target["定义目标几何<br />(sp3 -> 四面体)"]
+                        Target --> Proj["计算投影矩阵 M"]
+                        Proj --> SVD["奇异值分解<br />M = UΣV^T"]
+                        SVD --> Coeff["构建系数矩阵<br />C = UV^T"]
+                        Coeff --> Hybrid["生成杂化波函数"]
+                        Hybrid --> Output(("可视化"))
+
+                        class Proj,SVD,Coeff,Hybrid clickNode
+                        class Input,Target,Output defaultNode
+
+                        click Proj call showCode("ProjectionMatrix")
+                        click SVD call showCode("JacobiSVD")
+                        click Coeff call showCode("CoeffBuild")
+                        click Hybrid call showCode("HybridWavefunc")
+                    </div>
+                </div>
+            </section>
+
+            <!-- CHAPTER 5 -->
+            <section id="chap5" class="hud-section">
+                <div class="section-header">
+                    <span class="section-num">05</span>
+                    第五章 轨道能量
+                </div>
+                <div class="overview-box">
+                    <h3>0. 核心概述</h3>
+                    <p>在量子力学中，给定轨道的能量（本征值）是一个全局常数——这意味着电子在轨道的任何位置，其总能量都是严格相等的。本项目并非要展示那种随空间位置变化的“局域能量”（如动能与势能的简单加和），而是希望展示这个恒定的总能量如何在空间分布中被“承载”。我们通过观察能量随概率分布的累积过程，可以直观地看到：虽然能量本征值在空间中是均匀的，但不同区域对这一能量结果的“权重”贡献却截然不同。这有助于理解为什么某些经常“钻入”核附近的轨道（如
+                        4s）会比平均距离更近的轨道（如 3d）拥有更低的能量。</p>
+                </div>
+
+                <h3>1. 轨道本征值的物理来源</h3>
+                <p>在 Hartree-Fock 理论框架下，每个分子轨道对应一个定态能量本征值 $\varepsilon_i$。根据 Koopmans
+                    定理，在冻结轨道近似下，这一本征值反映了电子在原子中的束缚强度。本项目采用 Koga 高精度基组计算得到的本征值作为基准，这些数值在数学上是全局唯一的常量，不随空间坐标 $r$ 改变。</p>
+
+                <h3>2. 累积能量函数的物理本质</h3>
+                <p>我们构造的累积能量函数 $E(R) = \int_0^R \varepsilon |\psi|^2 \cdot 4\pi r^2 dr$
+                    本质上是将“全局恒定的能量”按照“局域出现的概率”进行空间加权。需要明确的是，这并不同于物理学中某些变分法讨论的“局域动能+局域势能”之和，因为对于定态波函数，二者的局部涨落总是精确抵消。我们的公式旨在通过概率密度的加权积分，可视化地展示哪些空间区域在物理上“支撑”了该轨道的能量特征。这种处理方式在保持数学严谨性的同时，为理解原子能级顺序提供了一个独特的教学视角。
+                </p>
+            </section>
+
+            <!-- CHAPTER 6 -->
+            <section id="chap6" class="hud-section">
+                <div class="section-header">
+                    <span class="section-num">06</span>
+                    第六章 相位与等值面
+                </div>
+                <div class="overview-box">
+                    <h3>0. 核心概述</h3>
+                    <p>波函数不仅有"大小"，还有"符号"（正或负），这在化学中称为"相位"。相位信息对于理解化学键的形成至关重要——当两个轨道的相位相同时，它们会建设性叠加形成成键轨道；相位相反时则会相消形成反键轨道。本项目不仅绘制电子云的形状（等值面），还明确标示出不同相位的区域（通常以红色和蓝色区分）。例如，p
+                        轨道的两个"哑铃瓣"就具有相反的相位。此外，系统实现了智能的"分波瓣"渲染，能够自动识别并分别为每个独立的波瓣着色。</p>
+                </div>
+
+                <h3>1. 相位矫正算法</h3>
+                <p>实数球谐函数的计算涉及 Condon-Shortley 相位因子。不同领域（物理学 vs
+                    化学）对该相位的约定可能不同，导致轨道的正负区域翻转。我们通过在代码中对特定轨道引入符号修正因子，确保最终可视化结果与化学界的通用约定一致。</p>
+
+                <h3>2. 等值面生成算法 (Marching Cubes)</h3>
+                <p>Marching Cubes 是一种经典的标量场体素化重构算法，用于将三维波函数场转化为多边形网格曲面。算法遍历空间中的每个立方体体素，根据其八个顶点处波函数值与阈值的比较结果（共 256
+                    种拓扑情况），查表生成相应的三角形面片，最终拼接成平滑的等值面网格。</p>
+
+                <h3>3. 分波瓣着色算法</h3>
+                <p>对于存在节面的轨道（如 p, d, f），等值面由多个互不连通的波瓣构成。我们首先使用 Union-Find
+                    并查集算法对生成的网格三角形进行连通域标记，识别出各个独立的波瓣。然后，检测每个波瓣中心点处的原始波函数符号，将正值波瓣着色为红色，负值波瓣着色为蓝色。</p>
+
+                <h3>4. 程序实现流程</h3>
+                <div class="mermaid-box">
+                    <div class="mermaid">
+                        flowchart TD
+                        classDef clickNode fill:#0a0a0a,stroke:#00ff41,stroke-width:1px,color:#fff,cursor:pointer;
+                        classDef decision fill:#0a0a0a,stroke:#ffbf00,stroke-width:1px,color:#fff,cursor:pointer;
+                        classDef defaultNode fill:#0a0a0a,stroke:#333,stroke-width:1px,color:#888;
+
+                        Values["计算场值"] --> MC["Marching Cubes<br />(查表法)"]
+                        MC --> Tris["生成三角面片"]
+                        Tris --> Union["连通域分离<br />(Union-Find)"]
+                        Union --> Phase{"相位符号?"}
+                        Phase -- "(+)" --> Red["红色波瓣"]
+                        Phase -- "(-)" --> Blue["蓝色波瓣"]
+
+                        class MC,Union decision;
+                        class Values,Phase clickNode;
+                        class Tris,Red,Blue defaultNode;
+
+                        click Values call showCode("CalcPsi")
+                        click MC call showCode("MarchingCubes")
+                        click Union call showCode("UnionFind")
+                        click Phase call showCode("PhaseCheck")
+                    </div>
+                </div>
+            </section>
+
+            <!-- CHAPTER 7 -->
+            <section id="chap7" class="hud-section">
+                <div class="section-header">
+                    <span class="section-num">07</span>
+                    第七章 数据统计面板
+                </div>
+                <div class="overview-box">
+                    <h3>0. 核心概述</h3>
+                    <p>为了让您能够验证可视化的准确性，项目提供了一个实时统计面板。这个面板同时显示两条曲线：一条是根据理论公式直接计算出的"标准答案"，另一条是从当前采样点统计出来的实际分布。随着采样的持续进行，您会看到统计曲线逐渐逼近理论曲线——这个"从混沌到有序"的收敛过程，本身就是对蒙特卡洛方法有效性的直观证明。
+                    </p>
+                </div>
+
+                <h3>1. 理论曲线的来源</h3>
+                <p>径向分布曲线的理论基准由解析公式直接计算得到：$D(r) = r^2
+                    |R_{nl}(r)|^2$。角向分布的理论基准同样由球谐函数的解析形式直接给出。这些曲线代表了"标准答案"，是采样直方图应该逼近的目标。</p>
+
+                <h3>2. 径向分布的采样与计算</h3>
+                <p>对于每个被接受的采样点 $(x, y, z)$，首先计算其半径 $r = \sqrt{x^2+y^2+z^2}$，然后根据预设的径向分箱边界将其归入相应的 Bin
+                    中。随着采样点数增加，归一化后的直方图逐渐逼近理论的径向分布曲线。能量相关曲线/直方图同理，采用累积能量的径向分布进行展示。</p>
+
+                <h3>3. 角向分布的采样与计算</h3>
+                <p>角向分布的统计依赖于将采样点的方向向量 $(\theta, \phi)$ 投影到预定义的角度 Bin 中。由于角向分布通常呈现高对称性，可以利用对称性合并统计结果，提高收敛速度。</p>
+
+                <h3>4. 数据更新与截断处理</h3>
+                <p>统计面板采用动态更新机制：随着采样的持续进行，直方图实时刷新，逐步逼近理论曲线，形成"从混沌到有序"的视觉收敛效果。为了保证性能和视觉清晰度，对极远处（远超玻尔半径数倍）的低概率采样点进行截断处理，不纳入主直方图统计。
+                </p>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- CODE MODAL -->
+    <div id="code-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">CLOSE</button>
+            <div id="modal-title" class="code-title">ALGORITHM VIEW</div>
+            <div id="modal-code" class="code-block"></div>
+        </div>
+    </div>
+
+    <script>
+        const CODE_DB = {
+            "RadialSample": `
+    <span class="com">// 文件: sampling-worker.js</span>
+    <span class="kwd">function</span> <span class="func">sampleRadialExact</span>(n, l):
+    <span class="com">// 1. 预计算CDF (如果未缓存)</span>
+    <span class="kwd">if</span> not cached:
+    P(r) = r^2 * R_nl(r)^2
+    CDF[i] = CDF[i-1] + P(r_i) * dr
+    Normalize(CDF)
+
+    <span class="com">// 2. 生成均匀随机数</span>
+    u = <span class="func">Math.random</span>()
+
+    <span class="com">// 3. 逆变换采样 (二分查找)</span>
+    r = <span class="func">BinarySearch</span>(CDF, u)
+    <span class="kwd">return</span> r
+    `,
+            "AngularSample": `
+    <span class="com">// 文件: sampling-worker.js</span>
+    <span class="kwd">function</span> <span class="func">sampleAngular</span>(l, m):
+    <span class="kwd">while</span> true:
+    <span class="com">// 1. 在单位球面上均匀投点</span>
+    phi = 2 * PI * random()
+    cosTheta = 2 * random() - 1
+
+    <span class="com">// 2. 计算接受概率 (波函数模方)</span>
+    probability = |Y_lm(theta, phi)|^2
+    maxVal = ApproximateMax(l, m)
+
+    <span class="com">// 3. 拒绝采样判定</span>
+    <span class="kwd">if</span> random() * maxVal < probability: <span class="kwd">return</span> { theta, phi }
+        `,
+            "SphericalToCartesian": `
+        <span class="com">// 文件: sampling-worker.js</span>
+        <span class="kwd">function</span> <span class="func">toCartesian</span>(r, theta, phi):
+        x = r * sin(theta) * cos(phi)
+        y = r * sin(theta) * sin(phi)
+        z = r * cos(theta)
+
+        <span class="com">// 摩尔纹抑制 (Dithering)</span>
+        x += (random() - 0.5) * 0.01
+        y += (random() - 0.5) * 0.01
+        z += (random() - 0.5) * 0.01
+        <span class="kwd">return</span> {x, y, z}
+        `,
+            "ProjectionMatrix": `
+        <span class="com">// 文件: physics-core.js</span>
+        <span class="kwd">function</span> <span class="func">buildProjectionMatrix</span>(targetDirections, orbitals):
+        M = []
+        <span class="kwd">for</span> dir <span class="kwd">in</span> targetDirections:
+        row = []
+        <span class="kwd">for</span> orb <span class="kwd">in</span> orbitals:
+        <span class="com">// 计算每个轨道在目标方向上的投影值</span>
+        val = <span class="func">RealSphericalHarmonic</span>(orb.l, orb.m, dir)
+        row.push(val)
+        M.push(row)
+        <span class="kwd">return</span> M
+        `,
+            "JacobiSVD": `
+        <span class="com">// 文件: physics-core.js</span>
+        <span class="kwd">function</span> <span class="func">jacobiSVD</span>(Matrix M):
+        <span class="com">//用于解决正交Procrustes问题的核心</span>
+        U = M; V = Identity()
+
+        <span class="com">// 迭代旋转清除非对角元素</span>
+        <span class="kwd">repeat</span> until convergence:
+        <span class="kwd">for</span> each pair (i, j):
+        <span class="com">// 计算Jacobi旋转角</span>
+        theta = calculateRotation(U, i, j)
+        <span class="com">// 应用旋转</span>
+        U = U * Rotation(theta)
+        V = V * Rotation(theta)
+
+        <span class="kwd">return</span> { U, V }
+        `,
+            "CoeffBuild": `
+        <span class="com">// 文件: physics-core.js</span>
+        <span class="kwd">function</span> <span class="func">buildCoefficients</span>(U, V):
+        <span class="com">// 最佳正交变换矩阵 C</span>
+        <span class="com">// C 使得杂化轨道与目标方向对齐度最大</span>
+        C = U * Transpose(V)
+
+        <span class="com">// 确保每一行是归一化的</span>
+        <span class="kwd">return</span> C
+        `,
+            "HybridWavefunc": `
+        <span class="com">// 文件: physics-core.js</span>
+        <span class="kwd">function</span> <span class="func">hybridPsi</span>(r, theta, phi):
+        val = 0
+        <span class="kwd">for</span> i <span class="kwd">in</span> orbitals:
+        <span class="com">// 线性叠加</span>
+        coeff = C[currentHybridIndex][i]
+        psi_i = R(r) * Y(theta, phi)
+        val += coeff * psi_i
+        <span class="kwd">return</span> val
+        `,
+            "CalcPsi": `
+        <span class="com">// 文件: isosurface-worker.js</span>
+        <span class="kwd">function</span> <span class="func">calcField</span>(x, y, z):
+        r, theta, phi = toSpherical(x, y, z)
+        psi = 0
+        <span class="kwd">for</span> orb <span class="kwd">in</span> activeOrbitals:
+        psi += orb.coeff * R(r) * Y(theta, phi)
+        <span class="kwd">return</span> psi
+        `,
+            "MarchingCubes": `
+        <span class="com">// 文件: marching_cubes.js</span>
+        <span class="kwd">function</span> <span class="func">marchingCubes</span>(voxel):
+        <span class="com">// 1. 计算8个顶点的状态 (高于/低于阈值)</span>
+        cubeIndex = 0
+        <span class="kwd">for</span> v <span class="kwd">in</span> 0..7:
+        <span class="kwd">if</span> voxel[v] > threshold:
+        cubeIndex |= (1 << v) <span class="com">// 2. 查表获取三角面片拓扑</span>
+            edges = <span class="func">TRI_TABLE</span>[cubeIndex]
+
+            <span class="com">// 3. 线性插值计算顶点位置</span>
+            triangles = []
+            <span class="kwd">for</span> e <span class="kwd">in</span> edges:
+            p = Interp(v1, v2, threshold)
+            triangles.push(p)
+            <span class="kwd">return</span> triangles
+            `,
+            "UnionFind": `
+            <span class="com">// 文件: isosurface-worker.js</span>
+            <span class="kwd">function</span> <span class="func">separateComponents</span>(triangles):
+            ds = <span class="func">DisjointSet</span>(triangles.count)
+
+            <span class="com">// 合并共享顶点的三角形</span>
+            <span class="kwd">for</span> t1, t2 <span class="kwd">in</span> neighbors:
+            ds.union(t1, t2)
+
+            <span class="com">// 按连通域分组</span>
+            groups = ds.getGroups()
+            <span class="kwd">return</span> groups <span class="com">// 返回独立的波瓣</span>
+            `,
+            "PhaseCheck": `
+            <span class="com">// 文件: isosurface-worker.js</span>
+            <span class="kwd">function</span> <span class="func">detectPhase</span>(lobeMesh):
+            <span class="com">// 取波瓣几何中心</span>
+            center = getCenter(lobeMesh)
+
+            <span class="com">// 采样该点的原始波函数值</span>
+            val = calcField(center.x, center.y, center.z)
+
+            <span class="kwd">if</span> val > 0:
+            Color = <span class="str">"Red"</span> <span class="com">// 正相位</span>
+            <span class="kwd">else</span>:
+            Color = <span class="str">"Blue"</span> <span class="com">// 负相位</span>
+            `
+        };
+
+        // --- INTERACTION ---
+        function showCode(key) {
+            const modal = document.getElementById('code-modal');
+            const content = document.getElementById('modal-code');
+            const title = document.getElementById('modal-title');
+
+            if (CODE_DB[key]) {
+                title.innerText = "ALGORITHM: " + key;
+                content.innerHTML = CODE_DB[key];
+                modal.classList.add('active');
+            } else {
+                console.warn("No code found for:", key);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('code-modal').classList.remove('active');
+        }
+
+        // Expose to window for Mermaid onclick
+        window.showCode = showCode;
+        window.closeModal = closeModal;
+
+        // --- MERMAID ---
+        document.addEventListener('DOMContentLoaded', () => {
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: 'dark',
+                securityLevel: 'loose',
+                flowchart: { curve: 'basis' }
+            });
+            mermaid.run();
+        });
+
+        // --- INTERSECTION OBSERVER ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Highlight Nav
+                    const id = entry.target.id;
+                    document.querySelectorAll('.nav-item').forEach(nav => {
+                        nav.classList.toggle('active', nav.getAttribute('href') === '#' + id);
+                    });
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.hud-section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // --- SPLASH SCREEN PARTICLE SYSTEM ---
+        (function () {
+            const canvas = document.getElementById('splash-canvas');
+            const ctx = canvas.getContext('2d');
+            const enterBtn = document.getElementById('enter-btn');
+            const subtitle = document.getElementById('splash-subtitle');
+            const splashScreen = document.getElementById('splash-screen');
+            const mainSystem = document.getElementById('main-system');
+
+            let width, height;
+            let particles = [];
+            let targetPoints = [];
+            let animationFrameId;
+            let state = 'converging'; // converging, hovering, exploding
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            // 1. Generate text targets
+            function createTargets() {
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = width;
+                offCanvas.height = height;
+                const offCtx = offCanvas.getContext('2d');
+
+                offCtx.font = '300 160px "Rajdhani", sans-serif';
+                offCtx.fillStyle = '#fff';
+                offCtx.textAlign = 'center';
+                offCtx.textBaseline = 'middle';
+
+                offCtx.textBaseline = 'middle';
+
+                // Draw Main Title at top 1/3
+                offCtx.fillText('ELECTRON CLOUD', width / 2, height / 3);
+
+                // Subtitle is now HTML, removed from canvas
+
+                const imageData = offCtx.getImageData(0, 0, width, height).data;
+                const step = 4; // Scan every 4th pixel for performance and style
+
+                targetPoints = [];
+                for (let y = 0; y < height; y += step) {
+                    for (let x = 0; x < width; x += step) {
+                        const alpha = imageData[(y * width + x) * 4 + 3];
+                        if (alpha > 128) {
+                            // Add some randomness directly to the target to make it "cloudy"
+                            targetPoints.push({
+                                x: x + (Math.random() - 0.5) * 10,
+                                y: y + (Math.random() - 0.5) * 10
+                            });
+                        }
+                    }
+                }
+            }
+
+            // 2. Particle Class
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+
+                reset(isBackground = false) {
+                    // Start definitely OFF SCREEN
+                    const edge = Math.floor(Math.random() * 4); // 0:top, 1:right, 2:bottom, 3:left
+                    const buffer = 50; // Extra distance from edge
+
+                    if (edge === 0) { this.x = Math.random() * width; this.y = -buffer; }
+                    else if (edge === 1) { this.x = width + buffer; this.y = Math.random() * height; }
+                    else if (edge === 2) { this.x = Math.random() * width; this.y = height + buffer; }
+                    else { this.x = -buffer; this.y = Math.random() * height; }
+
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+
+                    this.isBackground = isBackground;
+
+                    if (this.isBackground) {
+                        // Random float target within screen
+                        this.target = {
+                            x: Math.random() * width,
+                            y: Math.random() * height
+                        };
+                        this.speed = 0.01 + Math.random() * 0.02; // Slower background
+                        this.size = Math.random() * 0.3 + 0.1;
+                        this.alpha = 0;
+                    } else {
+                        // Assign a random target from the text
+                        if (targetPoints.length > 0) {
+                            this.target = targetPoints[Math.floor(Math.random() * targetPoints.length)];
+                        } else {
+                            this.target = { x: width / 2, y: height / 2 };
+                        }
+                        this.speed = 0.05 + Math.random() * 0.05;
+                        this.size = Math.random() * 0.3 + 0.1; // 0.1 - 0.4
+                        this.alpha = 0;
+                    }
+
+                    // Random offset for "cloud" effect
+                    this.offset = {
+                        x: (Math.random() - 0.5) * 30,
+                        y: (Math.random() - 0.5) * 30
+                    };
+                }
+
+                update() {
+                    if (state === 'converging' || state === 'hovering') {
+                        // Move towards target + offset
+                        const tx = this.target.x + this.offset.x;
+                        const ty = this.target.y + this.offset.y;
+
+                        this.x += (tx - this.x) * this.speed;
+                        this.y += (ty - this.y) * this.speed;
+
+                        // Drift noise
+                        this.x += (Math.random() - 0.5) * 0.5;
+                        this.y += (Math.random() - 0.5) * 0.5;
+
+                        // Background particles wander more
+                        if (this.isBackground) {
+                            if (Math.random() < 0.01) {
+                                this.target = { x: Math.random() * width, y: Math.random() * height };
+                            }
+                        }
+
+                        // Fade in
+                        if (this.alpha < (this.isBackground ? 0.3 : 0.8)) this.alpha += 0.01;
+
+                    } else if (state === 'exploding') {
+                        // Explode outwards from TEXT CENTER
+                        const centerX = width / 2;
+                        const centerY = height / 3;
+
+                        const dx = this.x - centerX;
+                        const dy = this.y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        // CONSTANT SPEED AWAY
+                        const nx = dx / (dist + 0.1);
+                        const ny = dy / (dist + 0.1);
+
+                        // Force particles off-screen 
+                        this.vx += nx * 30; // 30x Speed - INSTANT CLEAR
+                        this.vy += ny * 30;
+
+                        this.x += this.vx;
+                        this.y += this.vy;
+
+                        // NO FADE!
+                    }
+                }
+
+                draw() {
+                    if (this.alpha <= 0) return;
+                    ctx.fillStyle = `rgba(0, 255, 65, ${this.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // 3. Init
+            function init() {
+                createTargets();
+                // Create particles based on text density (or fixed number)
+                // Use a fixed high count for the "cloud" feel, but clamp it reasonable
+                const count = Math.min(targetPoints.length * 3, 10000);
+                particles = [];
+                for (let i = 0; i < count; i++) {
+                    const p = new Particle();
+                    p.reset(false); // Text particle
+                    particles.push(p);
+                }
+
+                // Add Background Particles (2000)
+                for (let i = 0; i < 2000; i++) {
+                    const p = new Particle();
+                    p.reset(true); // Background particle
+                    particles.push(p);
+                }
+
+                animate();
+
+                // Show button and subtitle after delay
+                setTimeout(() => {
+                    splashScreen.classList.add('active'); // Trigger CSS transitions
+                    state = 'hovering';
+                }, 2500);
+            }
+
+            // 4. Animation Loop
+            function animate() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Trails
+                ctx.fillRect(0, 0, width, height);
+
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+
+                if (state !== 'finished') {
+                    animationFrameId = requestAnimationFrame(animate);
+                }
+            }
+
+            // 5. Interaction
+            enterBtn.addEventListener('click', () => {
+                state = 'exploding';
+                splashScreen.classList.remove('active'); // Fade out UI elements
+
+                // SHOW CONTENT ZERO LATENCY
+                mainSystem.style.opacity = '1';
+                splashScreen.style.opacity = '0';
+
+                // Kill DOM immediately after visual pulse
+                setTimeout(() => {
+                    splashScreen.style.display = 'none';
+                    state = 'finished';
+                    cancelAnimationFrame(animationFrameId);
+                }, 200); // Only keep alive briefly to show the "streak"
+            });
+
+            // Start
+            // Wait for fonts to load for text measurement
+            document.fonts.ready.then(() => {
+                init();
+            });
+
+        })();
+    </script>
+</body>
+
+</html>

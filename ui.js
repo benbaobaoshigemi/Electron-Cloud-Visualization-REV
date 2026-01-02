@@ -2,19 +2,6 @@
 window.ElectronCloud = window.ElectronCloud || {};
 window.ElectronCloud.UI = {};
 
-// 防抖函数，避免频繁触发
-window.ElectronCloud.UI.debounce = function (func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-};
-
 // 初始化UI事件监听
 window.ElectronCloud.UI.init = function () {
     const ui = window.ElectronCloud.ui;
@@ -547,11 +534,11 @@ window.ElectronCloud.UI.init = function () {
 
     if (readDocsBox) {
         readDocsBox.addEventListener('click', () => {
-            // 打开本地文档 (后续可替换为 HTML)
-            window.open('DISCOVER_GUAID.md', '_blank');
+            // 打开可视化文档
+            window.open('documentation_visualization.html', '_blank');
         });
     } else {
-        console.error('weight-feature-box 元素未找到');
+        console.error('read-docs-box 元素未找到');
     }
 
     // 滚动生成模式开关

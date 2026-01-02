@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>氢原子电子云可视化</title>
+    <title>原子电子云可视化</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -58,7 +58,7 @@
 
     <!-- 更多功能面板 -->
     <div class="panel collapsed" id="experimental-panel">
-        <div class="panel-tab" id="experimental-panel-tab" title="点击展开更多功能">◂ 更多</div>
+        <div class="panel-tab" id="experimental-panel-tab" title="点击展开更多功能">更多 ◂</div>
         <div class="panel-content">
             <div class="panel-header">
                 <h3>更多功能</h3>
@@ -82,9 +82,9 @@
                         <span class="feature-name">导出图片</span>
                     </div>
                 </div>
-                <!-- 权重模式 + 滚动生成：并排两个功能按钮 -->
+                <!-- 阅读文档 + 滚动生成：并排两个功能按钮 -->
                 <div class="feature-row">
-                    <div id="read-docs-box" class="feature-box clickable" title="阅读发现指南">
+                    <div id="read-docs-box" class="feature-box clickable">
                         <span class="feature-name">阅读文档</span>
                     </div>
                     <div id="rolling-feature-box" class="feature-box clickable">
@@ -491,7 +491,7 @@
     <div id="data-panel" class="panel">
         <!-- 内置resize手柄 - 在面板左上角 -->
         <div id="chart-resize-handle" title="拖动调整大小"></div>
-        <div class="panel-tab" id="data-panel-tab" title="点击展开数据面板">◂ 数据</div>
+        <div class="panel-tab" id="data-panel-tab" title="点击展开数据面板">数据 ▸</div>
         <div class="panel-content">
             <div class="panel-header">
                 <h3 id="data-panel-title">数据</h3>
@@ -507,10 +507,10 @@
                     <select id="plot-type-select">
                         <option value="radial">径向分布</option>
                         <option value="angular">角向分布 (θ)</option>
-                        <option value="phi">角向分布 (φ)</option>
-                        <option value="energyDensity">能量期望密度 ε·P(r)</option>
-                        <option value="energyCumulative">能量期望累计 E(R)</option>
-                        <option value="energyCumulativeLog">能量期望累计 (幂次矫正)</option>
+                        <option value="azimuthal">角向分布 (φ)</option>
+                        <option value="potential">势能径向积分 E(r)</option>
+                        <option value="dEdr">势能贡献 dV/dr</option>
+                        <option value="localEnergy">轨道能量贡献 E(r)</option>
                     </select>
                 </div>
                 <div class="control-group">
@@ -548,7 +548,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <script src="slater_basis.js?v=2"></script>
-
+    <script src="vee_cache.js?v=1"></script>
     <script src="physics-core.js?v=1"></script>
     <script src="physics.js?v=37"></script>
     <script src="marching_cubes.js"></script>

@@ -81,7 +81,7 @@ window.ElectronCloud.Scene.init = function () {
     });
     state.scene.add(state.customAxes);
 
-    // 权重模式状态（独立于闪烁模式）
+    // 阅读文档相关状态（权重模式已弃用）
     state.weightMode = false;
 
     // 闪烁模式状态
@@ -93,7 +93,7 @@ window.ElectronCloud.Scene.init = function () {
         mode: 'starry', // 'starry'(默认), 'breath', 'wave'(波浪)
         frequency: 50,     // 0-100，默认50%（中间值）
         starryPhases: null, // 星空模式的随机相位数组
-        weightMode: false   // 兼容旧属性
+        weightMode: false   // 已弃用，硬编码为默认值 false
     };
 
     // 监听窗口大小变化
@@ -460,7 +460,8 @@ window.ElectronCloud.Scene.animate = function () {
 
                     // 【权重模式】确保有概率密度权重数组
                     const positions = state.points.geometry.attributes.position;
-                    if (state.heartbeat.weightMode && positions) {
+                    // 已弃用权重模式逻辑，使用默认状态
+                    if (false && positions) {
                         if (!state.densityWeights || state.densityWeights.length < maxPoints) {
                             state.densityWeights = new Float32Array(maxPoints);
                             for (let i = 0; i < pointCount; i++) {
@@ -489,9 +490,9 @@ window.ElectronCloud.Scene.animate = function () {
                         // 添加一些随机闪烁（偶尔变亮）
                         const sparkle = Math.random() < 0.002 ? 1.3 : 1.0;
 
-                        // 【权重模式】密集区域峰值亮度更高
+                        // 已弃用权重模式逻辑，使用默认亮度
                         let brightnessMultiplier = maxBrightnessMultiplier;
-                        if (state.heartbeat.weightMode && state.densityWeights) {
+                        if (false && state.densityWeights) {
                             const weight = state.densityWeights[i] || 0.5;
                             brightnessMultiplier = maxBrightnessMultiplier * weight * 1.5;
                         }

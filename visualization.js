@@ -1,8 +1,8 @@
-// 3D 可视化效果模块
+// 3D 可视化模块
 window.ElectronCloud = window.ElectronCloud || {};
 window.ElectronCloud.Visualization = {};
 
-// =============== 等值面计算 Worker 管理 ===============
+// =============== 等值面 Worker 管理 ===============
 
 let isosurfaceWorker = null;
 let isosurfaceTaskId = 0;
@@ -54,7 +54,7 @@ function initIsosurfaceWorker() {
     }
 }
 
-// 异步计算等值面
+// 异步计算等值面（Worker）
 window.ElectronCloud.Visualization.computeIsosurfaceAsync = function (params, onProgress, onComplete, onError) {
     const taskId = ++isosurfaceTaskId;
 
@@ -63,7 +63,7 @@ window.ElectronCloud.Visualization.computeIsosurfaceAsync = function (params, on
     }
 
     if (!isosurfaceWorker) {
-        // Worker 不可用，同步计算
+        // Worker 不可用
         if (onError) onError('Worker not available');
         return;
     }
@@ -79,23 +79,22 @@ window.ElectronCloud.Visualization.computeIsosurfaceAsync = function (params, on
     return taskId;
 };
 
-// 检查 Worker 是否可用
+// 检查等值面 Worker 是否可用
 window.ElectronCloud.Visualization.isIsosurfaceWorkerAvailable = function () {
     if (!isosurfaceWorker) initIsosurfaceWorker();
     return isosurfaceWorker !== null;
 };
 
-// 创建角向分布3D可视化
+// 创建角向分布 3D 叠加层
 window.ElectronCloud.Visualization.createAngularOverlay = function () {
     const state = window.ElectronCloud.state;
 
     const overlayGroup = new THREE.Group();
 
-    // 检查是否有选中的轨道
+    // 必须有选中的轨道
     if (!state.currentOrbitals || state.currentOrbitals.length === 0) return overlayGroup;
 
-    // 【优化】角向显示大小设置为轨道轮廓（95%分位半径）的91%（原130%的70%）
-    // 先计算95%分位半径
+    // 角向叠加层尺寸：优先使用 95% 分位半径（如可用）
     let contourRadius = Math.max(15, state.farthestDistance * 0.6);
     if (window.ElectronCloud.Visualization.calculate95PercentileRadius) {
         const r95 = window.ElectronCloud.Visualization.calculate95PercentileRadius();
@@ -112,8 +111,8 @@ window.ElectronCloud.Visualization.createAngularOverlay = function () {
 
 /**
  * 创建轨道网格表面
- * 
- * 【关键】网格极点对准轨道的最高次旋转对称轴
+ *
+ * 网格极点对齐到轨道的最高次旋转对称轴
  */
 window.ElectronCloud.Visualization.createOrbitalMesh = function (group, params, baseRadius) {
     const state = window.ElectronCloud.state;
@@ -121,43 +120,43 @@ window.ElectronCloud.Visualization.createOrbitalMesh = function (group, params, 
     const isSingleHybridMode = isHybridMode && state.hybridRenderMode === 'single';
     const hybridIndex = state.hybridSingleIndex || 0;
 
-    // 获取所有轨道参数
+    // 获取轨道参数
     let orbitalParams = state.currentOrbitals.map(key => Hydrogen.orbitalParamsFromKey(key)).filter(Boolean);
-    // 【关键修复】对轨道进行排序，确保与 getHybridCoefficients 假设的顺序一致
+    // 对轨道排序：与杂化系数计算的预期顺序保持一致
     if (isHybridMode && Hydrogen.sortOrbitalsForHybridization) {
         orbitalParams = Hydrogen.sortOrbitalsForHybridization(orbitalParams);
     }
     const numOrbitals = orbitalParams.length;
 
-    // 获取杂化系数矩阵（如果是杂化模式）
+    // 杂化系数矩阵（杂化模式）
     let coeffMatrix = null;
     if (isHybridMode && numOrbitals > 1 && Hydrogen.getHybridCoefficients) {
         coeffMatrix = Hydrogen.getHybridCoefficients(orbitalParams);
     }
 
-    // 【关键】确定网格极点的目标方向（最高次对称轴）
+    // 确定网格极点目标方向（最高次对称轴）
     let symmetryAxis = { x: 0, y: 0, z: 1 };
 
     if (isSingleHybridMode) {
-        // 单个杂化轨道模式：使用解析算法计算当前 Lobe 的指向
+        // 单个杂化轨道：计算当前 lobe 的指向
         if (Hydrogen.getHybridLobeAxis) {
             symmetryAxis = Hydrogen.getHybridLobeAxis(orbitalParams, hybridIndex);
         } else if (Hydrogen.findHybridPrincipalAxis) {
             symmetryAxis = Hydrogen.findHybridPrincipalAxis(orbitalParams, hybridIndex);
         }
     } else if (isHybridMode && numOrbitals > 1) {
-        // 全部杂化轨道模式：使用群论/成分分析计算对称轴
+        // 全部杂化轨道：推断集合层面的对称轴
         if (Hydrogen.getSetSymmetryAxis) {
             symmetryAxis = Hydrogen.getSetSymmetryAxis(orbitalParams);
         } else if (Hydrogen.findHybridPrincipalAxis) {
             symmetryAxis = Hydrogen.findHybridPrincipalAxis(orbitalParams, 0);
         }
     } else if (!isHybridMode && numOrbitals === 1 && Hydrogen.getOrbitalSymmetryAxis) {
-        // 单个原子轨道模式
+        // 单个原子轨道
         symmetryAxis = Hydrogen.getOrbitalSymmetryAxis(orbitalParams[0].angKey);
     }
 
-    // 【关键】THREE.js SphereGeometry 极点在 Y 轴，需要旋转到对称轴方向
+    // THREE.js 球体极点在 Y 轴：旋转到对称轴方向
     let quaternion = null;
     const threeJsPoleAxis = new THREE.Vector3(0, 1, 0);
     const targetAxis = new THREE.Vector3(symmetryAxis.x, symmetryAxis.y, symmetryAxis.z).normalize();
@@ -168,7 +167,7 @@ window.ElectronCloud.Visualization.createOrbitalMesh = function (group, params, 
         quaternion.setFromUnitVectors(threeJsPoleAxis, targetAxis);
     }
 
-    // 角向强度计算函数（在物理坐标系中计算）
+    // 角向强度计算（在物理坐标系中）
     function calcAngularIntensity(theta, phi) {
         if (isSingleHybridMode && coeffMatrix) {
             const coeffs = coeffMatrix[hybridIndex % numOrbitals];
@@ -202,8 +201,8 @@ window.ElectronCloud.Visualization.createOrbitalMesh = function (group, params, 
         }
     }
 
-    // 提高网格密度 - 使用 IcosahedronGeometry (Icosphere) 替代 SphereGeometry
-    // detail=5 (约 20,480 面) - 足够精细且性能良好
+    // 使用 IcosahedronGeometry（近似球面）构建叠加层网格
+    // 注意：detail 越大网格越密，开销越高
     const geometry = new THREE.IcosahedronGeometry(baseRadius, 50);
     const vertices = geometry.attributes.position.array;
     const colors = new Float32Array(vertices.length);
@@ -255,7 +254,7 @@ window.ElectronCloud.Visualization.createOrbitalMesh = function (group, params, 
     });
 
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.layers.set(0);  // layer 0 以参与 Bloom 后处理
+    mesh.layers.set(0);  // layer 0：参与 Bloom 后处理
     group.add(mesh);
 };
 

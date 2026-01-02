@@ -1,7 +1,7 @@
-// 核心变量和常量定义
+// 核心变量与常量
 window.ElectronCloud = window.ElectronCloud || {};
 
-// 全局变量
+// 全局状态
 window.ElectronCloud.state = {
     // Three.js 核心对象
     scene: null,
@@ -14,10 +14,10 @@ window.ElectronCloud.state = {
     customAxes: null,
     angularOverlay: null,
 
-    // 轨道状态
+    // 轨道选择/状态
     currentOrbital: '',
     currentOrbitals: [],
-    currentAtom: 'H', // 当前选择的原子类型（默认氢）
+    currentAtom: 'H', // 当前选择的原子类型（默认 H）
 
     // 采样状态
     animationFrameId: null,
@@ -28,8 +28,8 @@ window.ElectronCloud.state = {
     farthestDistance: 0,
     samplingBoundary: 40,
     samplingCompleted: false,
-    roundRobinIndex: 0, // 【新增】多选模式轮流采样索引
-    isHybridMode: false, // 【杂化模式】是否启用杂化轨道模式
+    roundRobinIndex: 0, // 多选模式轮流采样索引
+    isHybridMode: false, // 是否启用杂化轨道模式
 
     // 采样数据
     radialSamples: [],
@@ -59,14 +59,14 @@ window.ElectronCloud.state = {
     // 滚动生成模式
     rollingMode: {
         enabled: false,        // 是否启用
-        pendingEnabled: false, // 渲染前预设的状态
+        pendingEnabled: false, // 渲染前预设状态
         lastUpdateTime: 0,     // 上次更新时间（节流用）
         highlightedPoints: []  // 需要高亮的点：{ index, startTime }
     },
 
     // 比照模式配置（支持不同原子的轨道比较）
     compareMode: {
-        // 每个槽位的轨道配置：{ orbital: '1s', atom: 'H' }
+        // 每个槽位配置：{ orbital: '1s', atom: 'H' }
         slots: [
             { orbital: '', atom: 'H' },
             { orbital: '', atom: 'H' },
@@ -100,7 +100,7 @@ window.ElectronCloud.constants = {
         contourDefault: { r: 0.2, g: 1.0, b: 0.5 }     // 绿色
     },
 
-    // 轨道键值到显示名称的映射（统一定义，避免重复）
+    // 轨道键值到显示名称的映射（统一定义）
     orbitalDisplayNames: {
         '1s': '1s',
         '2s': '2s', '2px': '2px', '2py': '2py', '2pz': '2pz',
@@ -148,9 +148,9 @@ window.ElectronCloud.ui = {
     clearAllSelectionsBtn: document.getElementById('clear-all-selections')
 };
 
-// 初始化函数
+// 初始化
 window.ElectronCloud.init = function () {
-    // 初始化 Web Worker 池（用于并行采样加速）
+    // 初始化 Web Worker 池（并行采样加速）
     if (window.ElectronCloud.Sampling.initWorkers) {
         window.ElectronCloud.Sampling.initWorkers();
     }
@@ -158,7 +158,7 @@ window.ElectronCloud.init = function () {
     // 初始化场景
     window.ElectronCloud.Scene.init();
 
-    // 初始化UI
+    // 初始化 UI
     window.ElectronCloud.UI.init();
 
     // 初始化轨道管理
@@ -167,15 +167,15 @@ window.ElectronCloud.init = function () {
     // 启动动画循环
     window.ElectronCloud.Scene.animate();
 
-    // 初始化角向分布3D开关状态
+    // 初始化角向分布 3D 开关状态
     window.ElectronCloud.UI.updateAngular3DToggleState();
 
-    // 【修改】启动时所有模式均无默认轨道选择，与多选/比照模式保持一致
+    // 启动时不预选默认轨道，以与多选/比照模式一致
 
     console.log('ElectronCloud 核心模块初始化完成');
 };
 
-// 全局状态管理
+// 全局状态读写
 window.ElectronCloud.setState = function (key, value) {
     window.ElectronCloud.state[key] = value;
 };
@@ -184,11 +184,11 @@ window.ElectronCloud.getState = function (key) {
     return window.ElectronCloud.state[key];
 };
 
-// 重置所有状态（完全重置，用于"重置"按钮）
+// 重置所有状态（完全重置，用于“重置”按钮）
 window.ElectronCloud.resetState = function () {
     const state = window.ElectronCloud.state;
 
-    // 重置 Worker 采样会话，使旧的 Worker 结果无效
+    // 重置 Worker 采样会话，使旧结果无效
     if (window.ElectronCloud.Sampling && window.ElectronCloud.Sampling.resetSamplingSession) {
         window.ElectronCloud.Sampling.resetSamplingSession();
     }
@@ -222,12 +222,12 @@ window.ElectronCloud.resetState = function () {
     state.samplingStartTime = null; // 重置采样开始时间
     state.lastChartUpdateTime = 0; // 重置图表更新时间
 
-    // 清空数据数组
+    // 清空采样数据
     state.radialSamples = [];
     state.angularSamples = [];
     state.phiSamples = [];
 
-    // 重置轨道状态
+    // 重置轨道相关状态
     state.orbitalVisibility = {};
     state.renderingCompleted = false;
     state.orbitalPointsMap = {};
@@ -235,17 +235,17 @@ window.ElectronCloud.resetState = function () {
     state.orbitalSamplesMap = {};
     state.pointOrbitalIndices = null;
 
-    // 重置星空闪烁的基础颜色
+    // 重置星空闪烁基础颜色
     state.baseColors = null;
     state.baseColorsCount = 0;
 
-    // 重置闪烁模式缓存（扩散模式和波浪模式）
+    // 重置闪烁模式缓存（扩散模式与波浪模式）
     state.diffuseDensitiesComputed = false;
     state.waveRanksComputed = false;
     state.waveRanksPointCount = 0;
     state.waveRanks = null;
 
-    // 重置自动旋转状态
+    // 重置自动旋转
     if (state.autoRotate) {
         state.autoRotate.enabled = false;
         state.autoRotate.totalAngle = 0;
@@ -263,31 +263,29 @@ window.ElectronCloud.resetState = function () {
     state.backgroundChartData = {
         radial: null,
         angular: null,
-        energy: null  // 【关键修复】添加energy字段的清理
+        energy: null  // 同步清理能量数据
     };
 
-    // 更新UI显示
+    // 更新 UI 显示
     if (window.ElectronCloud.ui.pointCountSpan) {
         window.ElectronCloud.ui.pointCountSpan.textContent = '0';
     }
     if (window.ElectronCloud.ui.axesSizeRange) {
         window.ElectronCloud.ui.axesSizeRange.value = '0';
-        // 实际重置坐标轴显示
-        // 实际重置坐标轴显示
+        // 重置坐标轴显示
         window.ElectronCloud.UI.onAxesSizeChange({ target: window.ElectronCloud.ui.axesSizeRange });
     }
 
-    // 重置滚动生成按钮UI状态
+    // 重置滚动生成按钮的 UI 状态
     const rollingToggle = document.getElementById('rolling-mode-toggle');
     if (rollingToggle) {
         rollingToggle.checked = false;
-        // 触发change事件以确保相关样式更新（如果有监听器）
-        // 或者直接移除样式
+        // 同步移除激活样式（如有）
         const rollingBox = document.getElementById('rolling-feature-box');
         if (rollingBox) rollingBox.classList.remove('active');
     }
 
-    // 确保坐标系在重置后隐藏
+    // 重置后确保坐标系隐藏
     if (state.customAxes) {
         state.customAxes.visible = false;
     }
@@ -300,11 +298,11 @@ window.ElectronCloud.resetState = function () {
     console.log('ElectronCloud 状态已完全重置');
 };
 
-// 重置采样状态（保留用户设置，用于"启动"按钮）
+// 重置采样状态（保留用户设置，用于“启动”按钮）
 window.ElectronCloud.resetSamplingState = function () {
     const state = window.ElectronCloud.state;
 
-    // 重置 Worker 采样会话，使旧的 Worker 结果无效
+    // 重置 Worker 采样会话，使旧结果无效
     if (window.ElectronCloud.Sampling && window.ElectronCloud.Sampling.resetSamplingSession) {
         window.ElectronCloud.Sampling.resetSamplingSession();
     }
@@ -315,12 +313,12 @@ window.ElectronCloud.resetSamplingState = function () {
         state.animationFrameId = null;
     }
 
-    // 重置采样相关状态，但保留用户设置（如axesScaleFactor）
+    // 重置采样相关状态，但保留用户设置（如 axesScaleFactor）
     state.pointCount = 0;
-    // 重置滚动生成模式（但保留pendingEnabled，因为这是用户在启动前设置的意图）
+    // 重置滚动生成模式（保留 pendingEnabled 作为用户预设意图）
     if (state.rollingMode) {
         state.rollingMode.enabled = false;
-        // 注意：不重置 pendingEnabled，保留用户的预设
+        // 注意：不重置 pendingEnabled
         state.rollingMode.highlightedPoints = [];
     }
     state.isDrawing = false;
@@ -331,18 +329,18 @@ window.ElectronCloud.resetSamplingState = function () {
     state.roundRobinIndex = 0; // 重置轮流采样索引
     state.samplingStartTime = null; // 重置采样开始时间
     state.lastChartUpdateTime = 0; // 重置图表更新时间
-    // 从滑动条同步axesScaleFactor，保留用户设置
+    // 从滑动条同步 axesScaleFactor
     if (window.ElectronCloud.ui.axesSizeRange) {
         const sliderValue = parseInt(window.ElectronCloud.ui.axesSizeRange.value, 10);
         state.axesScaleFactor = sliderValue / 100;
     }
 
-    // 清空数据数组
+    // 清空采样数据
     state.radialSamples = [];
     state.angularSamples = [];
     state.phiSamples = [];
 
-    // 重置轨道状态
+    // 重置轨道相关状态
     state.orbitalVisibility = {};
     state.renderingCompleted = false;
     state.orbitalPointsMap = {};
@@ -350,11 +348,11 @@ window.ElectronCloud.resetSamplingState = function () {
     state.orbitalSamplesMap = {};
     state.pointOrbitalIndices = null;
 
-    // 重置星空闪烁的基础颜色
+    // 重置星空闪烁基础颜色
     state.baseColors = null;
     state.baseColorsCount = 0;
 
-    // 重置闪烁模式缓存（扩散模式和波浪模式）
+    // 重置闪烁模式缓存（扩散模式与波浪模式）
     state.diffuseDensitiesComputed = false;
     state.waveRanksComputed = false;
     state.waveRanksPointCount = 0;
@@ -364,16 +362,16 @@ window.ElectronCloud.resetSamplingState = function () {
     state.backgroundChartData = {
         radial: null,
         angular: null,
-        energy: null  // 【关键修复】添加energy字段的清理
+        energy: null  // 同步清理能量数据
     };
 
-    // 更新UI显示
+    // 更新 UI 显示
     if (window.ElectronCloud.ui.pointCountSpan) {
         window.ElectronCloud.ui.pointCountSpan.textContent = '0';
     }
-    // 不重置坐标轴滑动条值，保留用户设置
+    // 不重置坐标轴滑动条值（保留用户设置）
 
-    // 由于farthestDistance重置为0，需要隐藏坐标系直到有新的采样点
+    // farthestDistance 重置为 0：在新点产生前隐藏坐标系
     if (state.customAxes) {
         state.customAxes.visible = false;
     }

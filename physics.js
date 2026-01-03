@@ -146,7 +146,9 @@
    * 顺序：s, p (x, y, z), d (z2, x2-y2, ...)
    */
   const sortOrbitalsForHybridization = core.sortOrbitalsForHybridization;
+  const optimizeThomson = core.optimizeThomson;
   const generateConstrainedDirections = core.generateConstrainedDirections;
+  const buildDirectionMatrix = core.buildDirectionMatrix;
   const jacobiSVD = core.jacobiSVD;
   const matMul = core.matMul;
   const matTranspose = core.matTranspose;
@@ -269,7 +271,7 @@
     return { r: rs, Pr: ps };
   }
 
-  function histogramRadialFromSamples(rArray, bins = 160, rmax = null, normalize = true, smooth = true, totalN = null) {
+  function histogramRadialFromSamples(rArray, bins = 160, rmax = null, normalize = true, smooth = true) {
     const N = rArray.length; if (N === 0) return { edges: [], counts: [] };
     // 【性能修复】使用循环替代Math.max(...array)，避免大数组栈溢出
     let maxr;
@@ -286,9 +288,8 @@
     const effectiveMaxr = Math.max(maxr, 0.1);
     const effectiveBins = Math.max(bins, 10);
 
-    // 【精度升级】使用 Float64Array 确保高精度计算
-    const edges = new Float64Array(effectiveBins + 1);
-    let counts = new Float64Array(effectiveBins);
+    const edges = new Float32Array(effectiveBins + 1);
+    let counts = new Float32Array(effectiveBins);
     const dr = effectiveMaxr / effectiveBins;
 
     for (let i = 0; i <= effectiveBins; i++) edges[i] = i * dr;
@@ -302,7 +303,7 @@
     // 【物理优化】添加高斯平滑以减少采样毛刺
     // 使用自适应窗口大小：根据样本量和bin数量动态调整
     if (smooth && N > 100) {
-      const smoothedCounts = new Float64Array(effectiveBins);
+      const smoothedCounts = new Float32Array(effectiveBins);
 
       // 计算每个bin的平均样本数
       const samplesPerBin = N / effectiveBins;
@@ -341,30 +342,24 @@
     }
 
     if (normalize) {
-      if (totalN !== null && totalN > 0) {
-        // 【关键修复】全局归一化：基于总采样数（包含视野外的点）
-        // 概率密度 P(r) = (dn/N_total) / dr
-        for (let i = 0; i < effectiveBins; i++) {
-          counts[i] /= (totalN * dr);
-        }
-      } else {
-        // 局部归一化：基于视野内的总点数（当前默认行为，维持向后兼容）
-        let area = 0;
-        for (let i = 0; i < effectiveBins; i++) area += counts[i] * dr;
-        if (area > 0) {
-          for (let i = 0; i < effectiveBins; i++) counts[i] /= area;
-        }
+      let area = 0;
+      for (let i = 0; i < effectiveBins; i++) area += counts[i] * dr;
+      if (area > 0) {
+        for (let i = 0; i < effectiveBins; i++) counts[i] /= area;
       }
     }
     return { edges, counts, dr, rmax: effectiveMaxr };
   }
 
   function histogramThetaFromSamples(thetaArray, bins = 180, normalize = true) {
-    const N = thetaArray.length; if (N === 0) return { edges: [], counts: [] };
+    const dth = Math.PI / bins;
     const edges = new Float32Array(bins + 1);
     const counts = new Float32Array(bins);
-    const dth = Math.PI / bins;
     for (let i = 0; i <= bins; i++) edges[i] = i * dth;
+
+    const N = thetaArray.length;
+    if (N === 0) return { edges, counts, dθ: dth };
+
     for (let i = 0; i < N; i++) {
       const t = thetaArray[i]; if (t < 0 || t > Math.PI) continue;
       const b = Math.min(bins - 1, Math.floor(t / dth)); counts[b] += 1;
@@ -382,33 +377,27 @@
    * @returns {Object} { edges, counts, dφ }
    */
   function histogramPhiFromSamples(phiArray, bins = 180, normalize = true) {
-    const N = phiArray.length;
-    if (N === 0) return { edges: [], counts: [] };
-
+    const dphi = TWO_PI / bins;
     const edges = new Float32Array(bins + 1);
     const counts = new Float32Array(bins);
-    const dphi = TWO_PI / bins;
 
-    // 生成边缘 [-π, π]
+    // 生成边缘 [0, 2π]
     for (let i = 0; i <= bins; i++) {
-      edges[i] = -Math.PI + i * dphi;
+      edges[i] = i * dphi;
     }
+
+    const N = phiArray.length;
+    if (N === 0) return { edges, counts, dφ: dphi };
 
     // 计算直方图
     for (let i = 0; i < N; i++) {
       let p = phiArray[i];
-      // 确保 phi 在 [-π, π) 范围内
+      // 确保 phi 在 [0, 2π) 范围内
       if (p === undefined || isNaN(p)) continue;
-      while (p < -Math.PI) p += TWO_PI;
-      while (p >= Math.PI) p -= TWO_PI;
-
-      // 映射到 bin 索引
-      // 偏移量 Math.PI
-      const b = Math.min(bins - 1, Math.floor((p + Math.PI) / dphi));
-      // 安全检查
-      if (b >= 0 && b < bins) {
-        counts[b] += 1;
-      }
+      while (p < 0) p += TWO_PI;
+      while (p >= TWO_PI) p -= TWO_PI;
+      const b = Math.min(bins - 1, Math.floor(p / dphi));
+      counts[b] += 1;
     }
 
     // 归一化
@@ -1731,7 +1720,7 @@
       }
     }
 
-    //兜底：如果没找到（不应该发生），使用第一项
+    // 兜底：如果没找到（不应该发生），使用第一项
     if (!found) {
       minZeta = basis[0].zeta;
       maxN_atMinZeta = basis[0].nStar;
@@ -1832,16 +1821,14 @@
       } else {
         const rMax = rMaxOrPoints;
         const dr = rMax / steps;
-        // 【精度升级】
-        rValues = new Float64Array(steps);
+        rValues = new Float32Array(steps);
         for (let s = 0; s < steps; s++) {
           rValues[s] = (s + 1) * dr;
         }
       }
 
-      // 【精度升级】
-      const eValues = new Float64Array(steps);      // 累积能量期望 E(R)
-      const dEdrValues = new Float64Array(steps);   // 能量期望密度 ε·P(r)
+      const eValues = new Float32Array(steps);      // 累积能量期望 E(R)
+      const dEdrValues = new Float32Array(steps);   // 能量期望密度 ε·P(r)
 
       // 3. 计算 ε·P(r) 和累积积分
       let cumulative = 0;
@@ -1871,9 +1858,118 @@
       return { r: rValues, E: eValues, dEdr: dEdrValues, epsilon };
     },
 
+    /**
+     * 获取指定 1r 处的有效核电荷 Z_eff = Z - r * Vee
+     * @param {number} r - 径向距离
+     * @param {number} Z - 裸核电荷
+     * @param {string} atomType - 原子类型
+     * @param {string} orbitalKey - 轨道标识 (例如 '2s')
+     */
+    calculateZeff: function (r, Z, atomType, orbitalKey) {
+      if (atomType === 'H') return Z;
+      if (!globalScope.VeeCache || !globalScope.VeeCache.atoms[atomType]) return Z;
 
+      const cache = globalScope.VeeCache.atoms[atomType][orbitalKey];
+      const grid = globalScope.VeeCache.r_grid;
+      if (!cache || !grid) return Z;
 
+      // 使用线性插值
+      const n = grid.length;
+      let vee = 0;
+      if (r <= grid[0]) vee = cache[0];
+      else if (r >= grid[n - 1]) {
+        const rMax = grid[n - 1];
+        const vMax = cache[n - 1];
+        vee = vMax * (rMax / r);
+      }
+      else {
+        let lo = 0, hi = n - 1;
+        while (hi - lo > 1) {
+          const mid = (lo + hi) >> 1;
+          if (grid[mid] <= r) lo = mid;
+          else hi = mid;
+        }
+        const t = (r - grid[lo]) / (grid[hi] - grid[lo]);
+        vee = cache[lo] * (1 - t) + cache[hi] * t;
+      }
 
+      return Z - r * vee;
+    },
+
+    /**
+     * 由一电子本征方程定义的局域动能（local kinetic energy）
+     *
+     * 对满足局域势一电子方程的轨道 φ，有恒等式：
+     *   (-1/2 ∇² + V_eff) φ = ε φ  ⇒  t_loc(r) ≡ (-1/2 ∇²φ)/φ = ε - V_eff(r)
+     *
+     * 本项目取 V_eff(r) = V_nuc(r) + V_ee(r)；其中 V_ee 由 VeeCache 给出（与轨道有关）。
+     * 该量用于可视化/诊断，属于“模型内自洽”的局域量，不等同于严格的多体动能密度。
+     *
+     * @param {number} r - 径向距离
+     * @param {number} epsilon - 轨道本征值 (Hartree)
+     * @param {number} Z - 核电荷
+     * @param {string} atomType - 原子类型
+     * @param {string} orbitalKey - 轨道标识 (例如 '2s')
+     * @returns {number} - 局域动能 t_loc(r) (Hartree)
+     */
+    calculateReconstructedKineticEnergy: function (r, epsilon, Z, atomType, orbitalKey) {
+      if (r <= 0) return 0;
+
+      // V_nuc = -Z/r
+      const V_nuc = -Z / r;
+
+      // V_ee from cache (0 for H)
+      let V_ee = 0;
+      if (atomType !== 'H' && globalScope.VeeCache && globalScope.VeeCache.atoms[atomType]) {
+        const cache = globalScope.VeeCache.atoms[atomType][orbitalKey];
+        const grid = globalScope.VeeCache.r_grid;
+        if (cache && grid) {
+          const n = grid.length;
+          if (r <= grid[0]) V_ee = cache[0];
+          else if (r >= grid[n - 1]) {
+            const rMax = grid[n - 1];
+            const vMax = cache[n - 1];
+            V_ee = vMax * (rMax / r);
+          }
+          else {
+            let lo = 0, hi = n - 1;
+            while (hi - lo > 1) {
+              const mid = (lo + hi) >> 1;
+              if (grid[mid] <= r) lo = mid;
+              else hi = mid;
+            }
+            const t = (r - grid[lo]) / (grid[hi] - grid[lo]);
+            V_ee = cache[lo] * (1 - t) + cache[hi] * t;
+          }
+        }
+      }
+
+      // t_loc(r) = ε - V_nuc(r) - V_ee(r)
+      return epsilon - V_nuc - V_ee;
+    },
+
+    // 更符合量子化学术语的别名（保留旧名以兼容历史代码）
+    calculateLocalKineticEnergy: function (r, epsilon, Z, atomType, orbitalKey) {
+      // 注意：该函数可能会以“取出函数再调用”的方式被调用（从而丢失 this 绑定）。
+      // 因此这里显式使用全局对象引用，避免 this 依赖。
+      const H = (globalScope && globalScope.Hydrogen) ? globalScope.Hydrogen : null;
+      if (H && typeof H.calculateReconstructedKineticEnergy === 'function') {
+        return H.calculateReconstructedKineticEnergy(r, epsilon, Z, atomType, orbitalKey);
+      }
+      // 极端回退：若仍能通过 this 访问（作为方法调用），则使用它
+      if (this && typeof this.calculateReconstructedKineticEnergy === 'function') {
+        return this.calculateReconstructedKineticEnergy(r, epsilon, Z, atomType, orbitalKey);
+      }
+      return 0;
+    },
+
+    /**
+     * 保持向后兼容：原有的势能计算函数
+     */
+    calculateCumulativePotential: function (n, l, Z, atomType, rMax, steps = 500) {
+      const res = this.calculateCumulativeOrbitalEnergy(n, l, Z, atomType, rMax, steps);
+      return { r: res.r, E: res.E }; // 默认返回总能量 E，因为用户关注 E(R) -> ε
+    },
 
     /**
      * 将概率密度直方图转换为势能积分曲线
